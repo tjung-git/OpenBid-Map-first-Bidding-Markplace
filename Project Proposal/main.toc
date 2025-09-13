@@ -1,9 +1,9 @@
 \contentsline {section}{\numberline {1}Introduction}{2}{section.1}%
 \contentsline {paragraph}{Document Overview}{2}{section*.2}%
 \contentsline {section}{\numberline {2}Project Vision}{2}{section.2}%
-\contentsline {section}{\numberline {3}High-Level Features}{3}{section.3}%
-\contentsline {section}{\numberline {4}Iteration Plan}{4}{section.4}%
-\contentsline {section}{\numberline {5}Tech Stack (MVP)}{4}{section.5}%
-\contentsline {section}{\numberline {6}High-Level User Stories}{4}{section.6}%
-\contentsline {section}{\numberline {7}Planning: Task Allocation (Agile Rotation)}{5}{section.7}%
-\contentsline {paragraph}{Process}{5}{section*.12}%
+\contentsline {section}{\numberline {3}High-Level Features}{4}{section.3}%
+\contentsline {section}{\numberline {4}Iteration Plan}{6}{section.4}%
+\contentsline {section}{\numberline {5}Tech Stack (MVP)}{7}{section.5}%
+\contentsline {section}{\numberline {6}High-Level User Stories}{7}{section.6}%
+\contentsline {section}{\numberline {7}Planning: Task Allocation (Agile Rotation)}{8}{section.7}%
+\contentsline {paragraph}{Process}{9}{section*.17}%
