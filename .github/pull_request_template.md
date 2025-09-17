@@ -1,5 +1,5 @@
 ### Motivation and context
-<!-- What problem does this PR solve, or what bug does it fix? Reference any related JIRA work items. -->
+<!-- What problem does this PR solve, or what bug does it fix? -->
 
 ### Describe your changes
 <!-- Give a brief description of the changes made -->
