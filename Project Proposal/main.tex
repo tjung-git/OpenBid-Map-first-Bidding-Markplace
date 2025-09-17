@@ -34,6 +34,7 @@
 
 % ---------- Title ----------
 \newcommand{\product}{OpenBid}
+\newcommand{\repoURL}{https://github.com/your-org/openbid}
 \title{\product: Map-first Bidding Marketplace\\\Large DIGT 2107 --- Project Iteration 1.1: Initial Vision \& Planning}
 \author{\textbf{Team 1}: Tyler, Mani, Yanness, Alaister}
 \date{\today}
@@ -43,6 +44,10 @@
 
 \begin{center}
 \textbf{Course:} DIGT2107 -- Fall Term 2025 \quad|\quad \textbf{Instructor:} Dr.\ May Haidar
+\end{center}
+
+\begin{center}
+\textbf{Project Links:} \href{\repoURL}{\repoURL}
 \end{center}
 
 \newpage
@@ -78,8 +83,6 @@ Informal local services in the Toronto GTA such as home repairs, moving help, ya
   \item Ensure privacy and safety with approximate locations pre-acceptance and phone masking post-acceptance.
   \item Build on a pragmatic stack: \textbf{React + SCSS (Firebase Hosting), Node.js + Express, Firebase Firestore}.
 \end{itemize}
-
-\newpage
 
 % ===================== 3. High-Level Features =====================
 \section{High-Level Features}
@@ -132,65 +135,82 @@ Informal local services in the Toronto GTA such as home repairs, moving help, ya
   \item Admin tools: dispute intake, category management, policy/config tuning.
 \end{itemize}
 
-\newpage
-
 % ===================== 4. Iteration Plan =====================
 \section{Iteration Plan}
-\subsection*{Long-Term Timeline (Sept 2024 -- Mar 30, 2025)}
+
+\paragraph{Note on dates}
+The course header says \textbf{Fall 2025}. Where the original draft referenced 2024--2025, we now organize by \textbf{iterations (2-week groupings)} per the instructor’s template. Adjust the “Weeks” to match the actual syllabus calendar if needed.
+
+\subsection*{Iteration 1 (Weeks 1--2): Initial Vision \& Planning}
+\textbf{Objectives:} Align on scope, ship the vision doc, stand up repo/process, and define initial feature categories. \\
+\textbf{Deliverables (per template):}
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Sept -- Oct 2024: Project Foundations} \\
-  During this stage, the team will set up the technical and design foundations of the project:
-  \begin{itemize}
-    \item Create a shared GitHub repository with branching and pull request workflows.
-    \item Configure continuous integration and delivery (CI/CD) so code is automatically tested and deployed.
-    \item Implement user authentication with Firebase Auth and Duo two-factor authentication.
-    \item Define the Firestore database schema for users, jobs, and bids.
-    \item Build basic job posting functionality (create, view, edit, delete).
-    \item Configure SCSS for frontend styling.
-    \item Produce design wireframes to guide user interface development.
-  \end{itemize}
-  \item \textbf{Nov -- Dec 2024: Requirements \& Map-first Features} \\
-  In this stage, the team will move from planning into early feature development:
-  \begin{itemize}
-    \item Finalize and document detailed user stories and acceptance criteria.
-    \item Integrate Google Maps JavaScript API to support map-based job discovery.
-      \begin{itemize}
-        \item Implement geocoding to convert addresses into GPS coordinates.
-        \item Add Places autocomplete for smooth and accurate address entry.
-      \end{itemize}
-    \item Create a placeholder ("stub") version of the Neighborhood Safety Score for design/testing, to be replaced with real data later.
-    \item Set up the initial messaging/chat system, including database structure and a basic conversation UI, to allow poster and provider communication.
-  \end{itemize}
-  \item \textbf{Jan 2025: Bidding Loop and Software Testing} \\
-  Build the core workflow for how jobs get matched between posters and providers:
-  \begin{itemize}
-    \item Implement bidding: providers can place offers (price, message, and ETA).
-    \item Allow posters to accept or decline bids, and formally award a job.
-    \item Add real-time notifications for bid activity and status changes.
-    \item Integrate escrowed payments with Stripe Connect.
-    \item Add a simple "Contact Us" form that logs issues to Firestore (basic ticket collection, direct email contact, etc.).
-    \item Use Cypress for end-to-end and integration testing, and Jest for unit testing.
-  \end{itemize}
-  \item \textbf{Feb 2025: Trust \& Compliance} \\
-    Strengthen platform reliability and regulatory compliance:
-    \begin{itemize}
-      \item Make "Know Your Customer" (KYC) verification mandatory via Stripe Identity.
-      \item Integrate provider background checks (Checkr).
-      \item Build admin-facing moderation tools for disputes/reports.
-      \item Expand Customer Support system: add ticket status tracking, categories (billing, KYC, disputes, technical), and admin responses.
-    \end{itemize}
-  \item \textbf{Mar 2025: Polish \& Submission} \\
-    Finalize and refine the platform ahead of project submission:
-    \begin{itemize}
-      \item Add ratings and reviews for completed jobs to build trust and reputation.
-      \item Improve the Neighborhood Safety Score logic, using more realistic data and thresholds.
-      \item Conduct accessibility and mobile usability audits to ensure inclusivity.
-      \item Perform final end-to-end testing, fix bugs, and complete project documentation.
-    \end{itemize}
-  \textbf{Deliverables due: Sunday, 30 March 2025, 11:59 PM.}
+  \item \textbf{Project Vision Document:} this PDF (Sections 1--3).
+  \item \textbf{Initial feature categories \& high-level functionality:} see \S3 \emph{High-Level Features} and \S6 \emph{High-Level User Stories}.
+  \item \textbf{Basic repository setup:} see \S5 \emph{Repository Setup \& Branching Model} (includes link: \href{\repoURL}{\repoURL}).
+\end{itemize}
+\textbf{Planned work (Weeks 1--2):}
+\begin{itemize}[leftmargin=1.4em]
+  \item Create GitHub org/repo, add branch protections, CI, and deploy previews.
+  \item Establish Firestore schema draft (\emph{Appendix: Firestore Schema}).
+  \item Draft wireframes for map-first discovery and core job flows.
+  \item Define acceptance criteria at the epic level (to be decomposed next iteration).
 \end{itemize}
 
-% ===================== 5. Tech Stack =====================
+\subsection*{Iteration 2 (Weeks 3--4): Foundations \& Map-first Basics}
+\textbf{Goals:} Working skeleton of app + basic map and jobs. \\
+\textbf{Scope:}
+\begin{itemize}[leftmargin=1.4em]
+  \item Auth via Firebase Auth; Duo 2FA scaffold (gate kept behind feature flag).
+  \item Google Maps JS integration (map, markers, clustering stub).
+  \item Job posting CRUD (create/view/edit/delete), file upload to Cloud Storage.
+  \item CI pipelines (build, lint, test) blocking on PR; CD to Firebase Hosting.
+\end{itemize}
+
+\subsection*{Iteration 3 (Weeks 5--6): Bidding Loop \& Messaging (MVP paths)}
+\textbf{Goals:} End-to-end “post → bid → award” flow; basic chat. \\
+\textbf{Scope:}
+\begin{itemize}[leftmargin=1.4em]
+  \item Bids: create, list, accept/decline; notifications for bid events.
+  \item In-app messaging linked to job/bid; masking of contact info prior to award.
+  \item Stripe Connect sandbox escrow flow (hold on award; manual capture stub).
+  \item Map filters: category, budget type/range; address autocomplete.
+\end{itemize}
+
+\subsection*{Iteration 4 (Weeks 7--8): Trust \& Compliance}
+\textbf{Goals:} Raise trust bar before broader testing. \\
+\textbf{Scope:}
+\begin{itemize}[leftmargin=1.4em]
+  \item Mandatory KYC via Stripe Identity (pre-posting \& pre-bidding gates).
+  \item Background checks (Checkr) with consent; admin moderation queue.
+  \item Neighborhood Safety Score stub → v1 thresholds and UI nudges.
+\end{itemize}
+
+\subsection*{Iteration 5 (Weeks 9--10): Payments, Reviews \& Support}
+\textbf{Goals:} Close the loop on jobs and strengthen support. \\
+\textbf{Scope:}
+\begin{itemize}[leftmargin=1.4em]
+  \item Escrow capture on completion; refund/dispute path stub; webhooks hardening.
+  \item Ratings \& reviews on completion; profile reputation display.
+  \item Support “Contact Us” form → Firestore tickets + email confirmation; admin responses.
+\end{itemize}
+
+\subsection*{Iteration 6 (Weeks 11--12): Polish, Accessibility \& Final QA}
+\textbf{Goals:} Quality and submission readiness. \\
+\textbf{Scope:}
+\begin{itemize}[leftmargin=1.4em]
+  \item Accessibility/mobile audits; performance passes; error telemetry (Sentry).
+  \item E2E tests (Cypress) for critical flows; unit/integration coverage (Jest).
+  \item Documentation pass (runbooks, architecture overview, API inventory).
+\end{itemize}
+
+\paragraph{Milestone Deliverables (rolling)}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Iteration 1:} Vision doc + feature categories + repo set-up (this submission).
+  \item \textbf{Iteration 3:} Demo of post→bid→award with chat; map filters.
+  \item \textbf{Iteration 5:} Payments escrow loop + reviews + support tickets.
+  \item \textbf{Iteration 6:} Final QA, documentation, and submission package.
+\end{itemize}
 \section{Tech Stack (MVP)}
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Frontend:} React + SCSS, Firebase Hosting.
@@ -202,6 +222,41 @@ Informal local services in the Toronto GTA such as home repairs, moving help, ya
   \item \textbf{Maps/Geo:} Google Maps JS, Places, Geocoding, Distance Matrix.
   \item \textbf{Comms:} Twilio SMS + Proxy, Firebase Cloud Messaging.
   \item \textbf{Observability:} Sentry, OpenTelemetry, product analytics via PostHog.
+\end{itemize}
+
+% ===================== 5. Repository Setup & Branching Model (Template Part 5) =====================
+\section{Repository Setup \& Branching Model}
+
+\subsection*{Repository \& Links}
+GitHub repository: \href{\repoURL}{\repoURL}
+
+\subsection*{Setup Process}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Default branch:} \texttt{main} (protected). Require 1+ approving review, status checks (build, lint, tests), and up-to-date branch before merge.
+  \item \textbf{CI/CD:} GitHub Actions.
+    \begin{itemize}
+      \item \emph{frontend}: install, lint, unit tests (Jest), build; preview deploy on PR.
+      \item \emph{backend}: install, lint, unit tests; deploy to Firebase Functions/Cloud Run on tagged release.
+    \end{itemize}
+  \item \textbf{Environments:} \texttt{dev} (PR previews), \texttt{staging} (protected), \texttt{prod} (tagged releases).
+  \item \textbf{Secrets:} Stored in GitHub Encrypted Secrets (Firebase, Stripe, Duo, Twilio, Sentry keys).
+  \item \textbf{Issue tracking:} GitHub Issues + Projects board (Kanban: Backlog, In Progress, Review, Done). Labels: \texttt{feature}, \texttt{bug}, \texttt{chore}, \texttt{docs}, \texttt{security}, \texttt{good-first-issue}.
+  \item \textbf{PR hygiene:} PR template (scope, screenshots, tests), CODEOWNERS for review routing, conventional commits.
+\end{itemize}
+
+\subsection*{Branching Strategy}
+We use \textbf{trunk-based development} with short-lived branches and release tagging.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Branch types \& naming:}
+    \begin{itemize}
+      \item Feature: \texttt{feature/<area>-<short-desc>} (e.g., \texttt{feature/maps-clustering})
+      \item Fix: \texttt{fix/<area>-<issue\#>} (e.g., \texttt{fix/payments-escrow-123})
+      \item Chore: \texttt{chore/<topic>} (e.g., \texttt{chore/ci-lint})
+      \item Hotfix (prod): \texttt{hotfix/<desc>}
+    \end{itemize}
+  \item \textbf{Flow:} branch from \texttt{main} → PR → checks + review → squash-merge to \texttt{main}.
+  \item \textbf{Release tags:} semantic versions on \texttt{main} (e.g., \texttt{v0.1.0}) trigger staging→prod deploy.
+  \item \textbf{Long-running work:} behind feature flags; keep branches small to avoid drift.
 \end{itemize}
 
 % ===================== 6. User Stories =====================
