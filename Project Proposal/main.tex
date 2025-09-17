@@ -1,0 +1,398 @@
+% !TEX root = main.tex
+
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{listings}
+\usepackage{parskip}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue!60!black,
+  citecolor=black
+}
+
+% ---------- Listings ----------
+\lstset{
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  breaklines=true,
+  frame=single,
+  framerule=0.2pt,
+  tabsize=2
+}
+
+% ---------- Title ----------
+\newcommand{\product}{OpenBid}
+\newcommand{\repoURL}{https://github.com/your-org/openbid}
+\title{\product: Map-first Bidding Marketplace\\\Large DIGT 2107 --- Project Iteration 1.1: Initial Vision \& Planning}
+\author{\textbf{Team 1}: Tyler, Mani, Yanness, Alaister}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\textbf{Course:} DIGT2107 -- Fall Term 2025 \quad|\quad \textbf{Instructor:} Dr.\ May Haidar
+\end{center}
+
+\begin{center}
+\textbf{Project Links:} \href{\repoURL}{\repoURL}
+\end{center}
+
+\newpage
+
+% ===================== 1. Introduction =====================
+\section{Introduction}
+\textbf{Project Name:} \product \\
+\textbf{Team Number:} \textbf{1} \\
+\textbf{Team Members:} Tyler, Mani, Yanness, Alaister
+
+\paragraph{Document Overview}
+This document follows the university's Iteration 1.1 guidelines for Initial Vision and Planning. It outlines the project vision, high-level features, and a near-term iteration plan aligned with the course schedule. A detailed breakdown of user stories and requirements will be provided in the next iteration submission.
+
+% ===================== 2. Project Vision =====================
+\section{Project Vision}
+\subsection*{Vision Statement}
+Our project delivers a \textbf{web-based local work marketplace} where anyone can post small jobs and nearby providers \textbf{bid} to win them. By centering discovery on a map and implementing \textbf{KYC for all users}, escrowed payments, and transparent reviews, we help posters get trustworthy help quickly and providers find nearby work efficiently. We will work iteratively and incorporate feedback at each stage.
+
+\subsection*{Problem Statement}
+Informal local services in the Toronto GTA such as home repairs, moving help, yardwork, and small trades are fragmented across classifieds and social platforms, leading to high search costs, price opacity, and safety concerns. Consumers lack verified identity signals and protected payment flows, while providers face lead uncertainty, travel inefficiency across dispersed neighborhoods, and payment risk. GTA-specific factors-high population density with strong neighborhood heterogeneity, significant travel-time variability, and documented fraud/scam exposure-exacerbate these frictions. A map-first marketplace with mandatory identity verification (KYC), escrowed payments, and on-platform messaging/reviews can reduce search and trust costs, enable fair price discovery, and improve job completion outcomes in the GTA.
+
+\subsection*{Target Users}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Job Posters}: individuals or small businesses needing short tasks (e.g., repairs, yard work, errands).
+  \item \textbf{Job Bidders}: KYC verified individuals who can earn income from small jobs.
+  \item \textbf{Job Browser}: anyone can visit the website and browse jobs.
+\end{itemize}
+
+\subsection*{Project Goals}
+\begin{itemize}[leftmargin=1.4em]
+  \item Ship an intuitive, map-first marketplace for posting, bidding, and completing jobs.
+  \item Increase trust with \textbf{mandatory KYC}, Duo-based 2FA, escrowed payments, and reviews.
+  \item Ensure privacy and safety with approximate locations pre-acceptance and phone masking post-acceptance.
+  \item Build on a pragmatic stack: \textbf{React + SCSS (Firebase Hosting), Node.js + Express, Firebase Firestore}.
+\end{itemize}
+
+% ===================== 3. High-Level Features =====================
+\section{High-Level Features}
+\subsection*{1. Core Marketplace}
+\begin{itemize}[leftmargin=1.4em]
+  \item Post jobs with photos, budget (fixed or open), category, and date.
+  \item Bid on jobs with amount, note, and ETA; accept/decline; anti-sniping window (optional).
+  \item Escrowed payments (hold $\rightarrow$ capture on completion; refund/dispute flow).
+  \item Ratings and reviews on completion.
+\end{itemize}
+
+\subsection*{2. In-App Messaging \& Negotiation}
+\begin{itemize}[leftmargin=1.4em]
+  \item Secure real-time chat between posters and providers linked to each job.
+  \item Chat is available from the moment a bid is placed; posters and bidders can negotiate price, clarify scope, and attach images/documents.
+  \item Messages are logged in Firestore under `/messages/{messageId}` per job, enabling dispute resolution and moderation.
+  \item Notifications (push + SMS proxy fallback) alert users of new messages.
+  \item For safety, personal phone/email contact info is blocked or masked until a job is awarded.
+\end{itemize}
+
+\subsection*{3. Safety, Identity \& Trust}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{KYC for all users} (document + selfie) before posting/bidding.
+  \item Duo Security 2FA for login and sensitive actions.
+  \item Neighborhood Safety Score (0--100) informing friction: tips, daylight defaults, verified-only, or manual review.
+  \item Background checks for providers (where permitted; consent required).
+  \item Phone and exact address masking after acceptance; report/block; moderation queue.
+\end{itemize}
+
+\subsection*{4. Maps \& Discovery}
+\begin{itemize}[leftmargin=1.4em]
+  \item Map-based job discovery: clustering, radius filtering, category/budget/date filters.
+  \item Address autocomplete and validation; forward/reverse geocoding.
+  \item Optional time-to-site sorting (distance matrix) in later iterations.
+\end{itemize}
+
+\subsection*{5. Customer Support \& Contact}
+\begin{itemize}[leftmargin=1.4em]
+  \item In-app "Contact Us" form available under profile/settings.
+  \item Support tickets stored in Firestore and routed to admin dashboard.
+  \item Automatic email confirmation sent to user upon submission.
+  \item Options for common categories: billing, identity verification, job disputes, technical issues.
+  \item Escalation path: tickets auto-flagged for urgent review if related to payments or safety.
+  \item Future enhancement: live chat or chatbot triage.
+\end{itemize}
+
+\subsection*{6. Reporting \& Analytics}
+\begin{itemize}[leftmargin=1.4em]
+  \item Basic dashboards: job throughput, bid velocity, completion rates.
+  \item Admin tools: dispute intake, category management, policy/config tuning.
+\end{itemize}
+
+% ===================== 4. Iteration Plan =====================
+\section{Iteration Plan}
+
+\paragraph{Note on dates}
+The course header says \textbf{Fall 2025}. Where the original draft referenced 2024--2025, we now organize by \textbf{iterations (2-week groupings)} per the instructor’s template. Adjust the “Weeks” to match the actual syllabus calendar if needed.
+
+\subsection*{Iteration 1 (Weeks 1--2): Initial Vision \& Planning}
+\textbf{Objectives:} Align on scope, ship the vision doc, stand up repo/process, and define initial feature categories. \\
+\textbf{Deliverables (per template):}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Project Vision Document:} this PDF (Sections 1--3).
+  \item \textbf{Initial feature categories \& high-level functionality:} see \S3 \emph{High-Level Features} and \S6 \emph{High-Level User Stories}.
+  \item \textbf{Basic repository setup:} see \S5 \emph{Repository Setup \& Branching Model} (includes link: \href{\repoURL}{\repoURL}).
+\end{itemize}
+\textbf{Planned work (Weeks 1--2):}
+\begin{itemize}[leftmargin=1.4em]
+  \item Create GitHub org/repo, add branch protections, CI, and deploy previews.
+  \item Establish Firestore schema draft (\emph{Appendix: Firestore Schema}).
+  \item Draft wireframes for map-first discovery and core job flows.
+  \item Define acceptance criteria at the epic level (to be decomposed next iteration).
+\end{itemize}
+
+\subsection*{Iteration 2 (Weeks 3--4): Foundations \& Map-first Basics}
+\textbf{Goals:} Working skeleton of app + basic map and jobs. \\
+\textbf{Scope:}
+\begin{itemize}[leftmargin=1.4em]
+  \item Auth via Firebase Auth; Duo 2FA scaffold (gate kept behind feature flag).
+  \item Google Maps JS integration (map, markers, clustering stub).
+  \item Job posting CRUD (create/view/edit/delete), file upload to Cloud Storage.
+  \item CI pipelines (build, lint, test) blocking on PR; CD to Firebase Hosting.
+\end{itemize}
+
+\subsection*{Iteration 3 (Weeks 5--6): Bidding Loop \& Messaging (MVP paths)}
+\textbf{Goals:} End-to-end “post → bid → award” flow; basic chat. \\
+\textbf{Scope:}
+\begin{itemize}[leftmargin=1.4em]
+  \item Bids: create, list, accept/decline; notifications for bid events.
+  \item In-app messaging linked to job/bid; masking of contact info prior to award.
+  \item Stripe Connect sandbox escrow flow (hold on award; manual capture stub).
+  \item Map filters: category, budget type/range; address autocomplete.
+\end{itemize}
+
+\subsection*{Iteration 4 (Weeks 7--8): Trust \& Compliance}
+\textbf{Goals:} Raise trust bar before broader testing. \\
+\textbf{Scope:}
+\begin{itemize}[leftmargin=1.4em]
+  \item Mandatory KYC via Stripe Identity (pre-posting \& pre-bidding gates).
+  \item Background checks (Checkr) with consent; admin moderation queue.
+  \item Neighborhood Safety Score stub → v1 thresholds and UI nudges.
+\end{itemize}
+
+\subsection*{Iteration 5 (Weeks 9--10): Payments, Reviews \& Support}
+\textbf{Goals:} Close the loop on jobs and strengthen support. \\
+\textbf{Scope:}
+\begin{itemize}[leftmargin=1.4em]
+  \item Escrow capture on completion; refund/dispute path stub; webhooks hardening.
+  \item Ratings \& reviews on completion; profile reputation display.
+  \item Support “Contact Us” form → Firestore tickets + email confirmation; admin responses.
+\end{itemize}
+
+\subsection*{Iteration 6 (Weeks 11--12): Polish, Accessibility \& Final QA}
+\textbf{Goals:} Quality and submission readiness. \\
+\textbf{Scope:}
+\begin{itemize}[leftmargin=1.4em]
+  \item Accessibility/mobile audits; performance passes; error telemetry (Sentry).
+  \item E2E tests (Cypress) for critical flows; unit/integration coverage (Jest).
+  \item Documentation pass (runbooks, architecture overview, API inventory).
+\end{itemize}
+
+\paragraph{Milestone Deliverables (rolling)}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Iteration 1:} Vision doc + feature categories + repo set-up (this submission).
+  \item \textbf{Iteration 3:} Demo of post→bid→award with chat; map filters.
+  \item \textbf{Iteration 5:} Payments escrow loop + reviews + support tickets.
+  \item \textbf{Iteration 6:} Final QA, documentation, and submission package.
+\end{itemize}
+\section{Tech Stack (MVP)}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Frontend:} React + SCSS, Firebase Hosting.
+  \item \textbf{Backend:} Node.js + Express (on Firebase Functions/Cloud Run).
+  \item \textbf{Database:} Firebase Firestore (NoSQL, real-time).
+  \item \textbf{Storage:} Firebase Cloud Storage for job photos/docs.
+  \item \textbf{Auth:} Firebase Auth (OAuth, email+password) + Duo 2FA.
+  \item \textbf{Payments:} Stripe Connect (escrow), Stripe Identity (KYC).
+  \item \textbf{Maps/Geo:} Google Maps JS, Places, Geocoding, Distance Matrix.
+  \item \textbf{Comms:} Twilio SMS + Proxy, Firebase Cloud Messaging.
+  \item \textbf{Observability:} Sentry, OpenTelemetry, product analytics via PostHog.
+\end{itemize}
+
+% ===================== 5. Repository Setup & Branching Model (Template Part 5) =====================
+\section{Repository Setup \& Branching Model}
+
+\subsection*{Repository \& Links}
+GitHub repository: \href{\repoURL}{\repoURL}
+
+\subsection*{Setup Process}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Default branch:} \texttt{main} (protected). Require 1+ approving review, status checks (build, lint, tests), and up-to-date branch before merge.
+  \item \textbf{CI/CD:} GitHub Actions.
+    \begin{itemize}
+      \item \emph{frontend}: install, lint, unit tests (Jest), build; preview deploy on PR.
+      \item \emph{backend}: install, lint, unit tests; deploy to Firebase Functions/Cloud Run on tagged release.
+    \end{itemize}
+  \item \textbf{Environments:} \texttt{dev} (PR previews), \texttt{staging} (protected), \texttt{prod} (tagged releases).
+  \item \textbf{Secrets:} Stored in GitHub Encrypted Secrets (Firebase, Stripe, Duo, Twilio, Sentry keys).
+  \item \textbf{Issue tracking:} GitHub Issues + Projects board (Kanban: Backlog, In Progress, Review, Done). Labels: \texttt{feature}, \texttt{bug}, \texttt{chore}, \texttt{docs}, \texttt{security}, \texttt{good-first-issue}.
+  \item \textbf{PR hygiene:} PR template (scope, screenshots, tests), CODEOWNERS for review routing, conventional commits.
+\end{itemize}
+
+\subsection*{Branching Strategy}
+We use \textbf{trunk-based development} with short-lived branches and release tagging.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Branch types \& naming:}
+    \begin{itemize}
+      \item Feature: \texttt{feature/<area>-<short-desc>} (e.g., \texttt{feature/maps-clustering})
+      \item Fix: \texttt{fix/<area>-<issue\#>} (e.g., \texttt{fix/payments-escrow-123})
+      \item Chore: \texttt{chore/<topic>} (e.g., \texttt{chore/ci-lint})
+      \item Hotfix (prod): \texttt{hotfix/<desc>}
+    \end{itemize}
+  \item \textbf{Flow:} branch from \texttt{main} → PR → checks + review → squash-merge to \texttt{main}.
+  \item \textbf{Release tags:} semantic versions on \texttt{main} (e.g., \texttt{v0.1.0}) trigger staging→prod deploy.
+  \item \textbf{Long-running work:} behind feature flags; keep branches small to avoid drift.
+\end{itemize}
+
+% ===================== 6. User Stories =====================
+% ===================== 6. User Stories =====================
+\section{High-Level User Stories}
+
+\subsection*{Job Posters}
+\begin{itemize}[leftmargin=1.4em]
+  \item As a \textbf{poster}, I want to complete KYC and enable Duo 2FA so I can use the platform securely.
+  \item As a \textbf{poster}, I want to create a job with photos, budget options, and a map location so providers can find and bid on it.
+  \item As a \textbf{poster}, I want to receive and compare multiple bids, so I can choose the best provider for the job.
+  \item As a \textbf{poster}, I want to chat with bidders for clarification and negotiation before accepting one.
+  \item As a \textbf{poster}, I want to fund escrow when I accept a provider, so the payment is secured until work is completed.
+  \item As a \textbf{poster}, I want to confirm when the job is finished, so the provider is paid automatically from escrow.
+  \item As a \textbf{poster}, I want to leave ratings and reviews after the job ends, so I can help build provider reputation.
+  \item As a \textbf{poster}, I want to contact customer support if I have disputes or technical problems.
+\end{itemize}
+
+\subsection*{Job Bidders (Providers)}
+\begin{itemize}[leftmargin=1.4em]
+  \item As a \textbf{bidder}, I want to complete KYC verification before bidding so my identity is trusted on the platform.
+  \item As a \textbf{bidder}, I want to browse nearby jobs on a map with filters (category, date, budget) so I can find relevant opportunities.
+  \item As a \textbf{bidder}, I want to place bids with notes and estimated time of arrival, so posters understand my proposal.
+  \item As a \textbf{bidder}, I want to chat securely with posters inside the app to negotiate details or clarify requirements.
+  \item As a \textbf{bidder}, I want to receive real-time notifications when a poster responds to my bid or message.
+  \item As a \textbf{bidder}, I want to start work once I am awarded a job and see that payment is secured in escrow.
+  \item As a \textbf{bidder}, I want to get paid automatically from escrow when the poster confirms completion.
+  \item As a \textbf{bidder}, I want to build a reputation with ratings and reviews from past jobs, so I can win future bids more easily.
+  \item As a \textbf{bidder}, I want to contact support if I experience fraud, safety issues, or payment disputes.
+\end{itemize}
+
+\subsection*{Job Browsers (Not KYC-Verified Users)}
+\begin{itemize}[leftmargin=1.4em]
+  \item As a \textbf{browser}, I want to explore posted jobs on a map in read-only mode, so I can understand the platform's services before committing.
+  \item As a \textbf{browser}, I want to view limited job details (e.g., title, category, approximate location, budget range) without registering, so I see the platform’s value.
+  \item As a \textbf{browser}, I want to be prompted to create an account if I try to post a job or place a bid, so I know registration is required.
+  \item As a \textbf{newly registered user}, I want clear instructions that I must complete KYC verification and enable Duo 2FA before being allowed to post jobs or bid, so I understand the trust policy.
+  \item As a \textbf{browser}, I want access to support or FAQ pages, so I can ask questions or learn more before verifying my account.
+\end{itemize}
+
+% ===================== 7. Task Allocation =====================
+\section{Planning: Task Allocation (Agile Rotation)}
+\textbf{Principle:} Everyone works across frontend, backend, and Firebase. Pairs rotate weekly in a round-robin so each member pairs with every other member during the term.
+
+\paragraph{Process}
+\begin{itemize}[leftmargin=1.4em]
+  \item Sprint cadence: 1-week sprints with backlog refinement and sprint review each Friday.
+  \item Daily stand-up: 10 minutes; blockers captured as GitHub issues.
+  \item Rotation: Two pairs per week; cycle repeats every 3 weeks.
+  \item Scrum Master: rotates weekly (Tyler $\rightarrow$ Mani $\rightarrow$ Yanness $\rightarrow$ Alaister, then repeat).
+  \item Quality gates: PR requires one reviewer outside the pair, passing tests, lint compliance.
+\end{itemize}
+
+\newpage
+
+% ===================== Appendix =====================
+\section*{Appendix: API Inventory}
+\begin{longtable}{@{}p{0.32\linewidth} p{0.64\linewidth}@{}}
+\toprule
+\textbf{Area} & \textbf{APIs / Notes} \\
+\midrule
+Maps & Google Maps JS; Places Autocomplete/Details; Geocoding; Distance Matrix \\
+Auth & Firebase Auth; Duo 2FA; Stripe Identity (KYC) \\
+Payments & Stripe Connect (escrow), Webhooks, Radar \\
+Notifications & Firebase Cloud Messaging; Twilio SMS + Proxy \\
+Storage & Firebase Cloud Storage \\
+Analytics/Ops & PostHog; Sentry; OpenTelemetry \\
+\bottomrule
+\end{longtable}
+
+\newpage
+
+% ===================== Appendix: Firestore Schema =====================
+\section*{Appendix: Firestore Schema (Indicative)}
+\begin{lstlisting}[caption={Firestore Collections \& Example Documents}]
+/users/{userId}
+{
+  name: string,
+  email: string,
+  phone: string,
+  avatarUrl: string,
+  isProvider: boolean,
+  kycStatus: "pending" | "verified" | "failed",
+  duoEnabled: boolean,
+  createdAt: timestamp,
+  updatedAt: timestamp
+}
+
+
+/jobs/{jobId}
+{
+  posterId: string (ref: users/{userId}),
+  title: string,
+  description: string,
+  category: string,
+  budgetType: "fixed" | "open",
+  budgetAmount: number,
+  location: { lat: number, lng: number, address: string },
+  desiredDate: timestamp,
+  status: "open" | "awarded" | "in_progress" | "completed" | "cancelled",
+  createdAt: timestamp,
+  updatedAt: timestamp
+}
+
+
+/bids/{bidId}
+{
+  jobId: string (ref: jobs/{jobId}),
+  providerId: string (ref: users/{userId}),
+  amount: number,
+  note: string,
+  etaHours: number,
+  status: "active" | "declined" | "accepted" | "cancelled",
+  createdAt: timestamp
+}
+
+
+/messages/{messageId}
+{
+  jobId: string (ref: jobs/{jobId}),
+  senderId: string (ref: users/{userId}),
+  body: string,
+  attachmentUrl: string,
+  createdAt: timestamp
+}
+
+/reviews/{reviewId}
+{
+  jobId: string (ref: jobs/{jobId}),
+  raterId: string,
+  rateeId: string,
+  rating: number (1-5),
+  comment: string,
+  createdAt: timestamp
+}
+\end{lstlisting}
+
+
+\end{document}
