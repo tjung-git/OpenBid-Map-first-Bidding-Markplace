@@ -69,10 +69,10 @@ latexmk automates LaTeX document compilation.
 ```
 .
 ├── documentation/        # LaTeX documents for 1.1 and 1.2
-│   ├── Project Proposal/     # LaTeX documents for 1.1
+│   ├── 1.1 Project Proposal/     # LaTeX documents for 1.1
 │   │   ├── main.tex         # Main LaTeX document
 │   │   └── main.pdf         # Compiled PDF output
-│   ├── Detailed User Stories, Requirements, and Initial Prototype/     # LaTeX documents for 1.2
+│   ├── 1.2 Detailed User Stories, Requirements, and Initial Prototype/     # LaTeX documents for 1.2
 │   │   ├── main.tex         # Main LaTeX document
 │   │   └── main.pdf         # Compiled PDF output
 ├── Makefile             # Automation scripts
