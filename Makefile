@@ -12,10 +12,17 @@ help:
 # Clean LaTeX compilation artifacts
 clean-latex:
 	@echo "Cleaning LaTeX compilation artifacts..."
-	@cd "Project Proposal" && latexmk -c 2>/dev/null || true
-	@rm -f "Project Proposal"/*.aux "Project Proposal"/*.fdb_latexmk \
-		"Project Proposal"/*.fls "Project Proposal"/*.log \
-		"Project Proposal"/*.out "Project Proposal"/*.toc \
-		"Project Proposal"/*.bbl "Project Proposal"/*.blg \
-		"Project Proposal"/*.synctex.gz 2>/dev/null || true
+	@cd "documentation" && latexmk -c 2>/dev/null || true
+	@rm -f "documentation/Project Proposal"/*.aux "documentation/Project Proposal"/*.fdb_latexmk \
+		"documentation/Project Proposal"/*.fls "documentation/Project Proposal"/*.log \
+		"documentation/Project Proposal"/*.out "documentation/Project Proposal"/*.toc \
+		"documentation/Project Proposal"/*.bbl "documentation/Project Proposal"/*.blg \
+		"documentation/Project Proposal"/*.synctex.gz 2>/dev/null || true
+
+		@rm -f "documentation/Detailed User Stories, Requirements, and Initial Prototype"/*.aux "documentation/Detailed User Stories, Requirements, and Initial Prototype"/*.fdb_latexmk \
+		"documentation/Detailed User Stories, Requirements, and Initial Prototype"/*.fls "documentation/Detailed User Stories, Requirements, and Initial Prototype"/*.log \
+		"documentation/Detailed User Stories, Requirements, and Initial Prototype"/*.out "documentation/Detailed User Stories, Requirements, and Initial Prototype"/*.toc \
+		"documentation/Detailed User Stories, Requirements, and Initial Prototype"/*.bbl "documentation/Detailed User Stories, Requirements, and Initial Prototype"/*.blg \
+		"documentation/Detailed User Stories, Requirements, and Initial Prototype"/*.synctex.gz 2>/dev/null || true
+		
 	@echo "LaTeX cleanup complete!"
