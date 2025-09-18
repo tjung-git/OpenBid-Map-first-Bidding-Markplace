@@ -68,7 +68,7 @@ latexmk automates LaTeX document compilation.
 ## Project Structure
 ```
 .
-├── docouentation/        # LaTeX documents for 1.1 and 1.2
+├── documentation/        # LaTeX documents for 1.1 and 1.2
 │   ├── Project Proposal/     # LaTeX documents for 1.1
 │   │   ├── main.tex         # Main LaTeX document
 │   │   └── main.pdf         # Compiled PDF output
