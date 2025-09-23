@@ -1,0 +1,393 @@
+% !TEX root = main.tex
+% DIGT2107 — Iteration 2 document for OpenBid
+
+\documentclass[11pt]{article}
+
+% ---------- Basics (portable) ----------
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{listings}
+\usepackage{parskip}
+\usepackage{graphicx}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue!60!black,
+  citecolor=black
+}
+
+% ---------- Listings ----------
+\lstset{
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  breaklines=true,
+  frame=single,
+  framerule=0.2pt,
+  tabsize=2,
+  showstringspaces=false
+}
+
+% Minimal JSON highlighting for listings
+\lstdefinelanguage{json}{
+  basicstyle=\ttfamily\small,
+  numbers=left,
+  numberstyle=\tiny,
+  stepnumber=1,
+  numbersep=8pt,
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  literate=
+   *{0}{{0}}{1}{1}{{1}}{1}{2}{{2}}{1}{3}{{3}}{1}{4}{{4}}{1}
+    {5}{{5}}{1}{6}{{6}}{1}{7}{{7}}{1}{8}{{8}}{1}{9}{{9}}{1}
+    {:}{{:}}{1}{,}{{,}}{1}{\{}{{\{}}{1}{\}}{{\}}}{1}
+    {[}{{[}}{1}{]}{{]}}{1}
+}
+
+% ---------- Title ----------
+\newcommand{\course}{DIGT2107: Practice of Software Development}
+\newcommand{\iteration}{Project Iteration 2: Detailed User Stories, Requirements, and Initial Prototype}
+\newcommand{\project}{OpenBid}
+\newcommand{\instructor}{Dr.\ May Haidar}
+\newcommand{\duedate}{October 5, 2025}
+\newcommand{\teamnum}{1}
+\newcommand{\teammates}{Tyler, Mani, Yanness, Alaister}
+
+\title{\course\\\large \iteration\\[6pt]\project}
+\author{\teammates}
+\date{\duedate}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\textbf{Course:} DIGT2107 -- Fall Term 2025 \quad|\quad \textbf{Instructor:} \instructor \quad|\quad \textbf{Team:} \textbf{\#\teamnum}
+\end{center}
+
+\tableofcontents
+\newpage
+
+% ===================== 1. Introduction =====================
+\section{Introduction}
+\textbf{Project Name:} \project\\
+\textbf{Team Number:} \textbf{\#\teamnum}\\
+\textbf{Team Members:} \teammates
+
+\paragraph{Document Overview}
+This document outlines the deliverables for Iteration~2 of \project: detailed user stories, functional and non-functional requirements, and an initial prototype plan. The aim is to establish a solid foundation for subsequent iterations by clarifying what the system should do and validating the core experience with a working prototype.
+
+% ===================== 2. Requirements =====================
+\section{Functional and Non-Functional Requirements}
+
+\subsection{Functional Requirements}
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{Account \& Identity:} Users shall be able to sign up and sign in via OAuth (Google/Apple) and email+password. Mandatory KYC must be completed before posting or bidding.
+  \item \textbf{Two-Factor:} Users shall confirm sign-in with Duo 2FA for sensitive actions (login, payouts).
+  \item \textbf{Job Posting:} Posters shall create, update, and delete jobs with title, description, photos, budget (fixed/open), category, date, and location (map pin / address).
+  \item \textbf{Discovery:} Providers shall browse jobs on a map and list, filter by radius, category, budget range, and date.
+  \item \textbf{Bidding:} Providers shall place, edit, and withdraw bids (amount, note, ETA). Posters shall accept a winning bid.
+  \item \textbf{Payments (Escrow):} Posters shall fund an escrow hold on accept; on completion, funds shall capture and pay out to the provider (Stripe Connect).
+  \item \textbf{Messaging:} Posters and providers shall exchange messages within the job thread, with attachments and report/block controls.
+  \item \textbf{Reviews:} Both parties shall leave ratings and text reviews after completion.
+  \item \textbf{Safety Score:} The system shall compute a location safety score (0--100) and apply graduated friction (tips, daylight default, verified-only, or manual review).
+  \item \textbf{Admin:} Admins shall review reports, manage categories, and handle disputes via a basic dashboard.
+\end{enumerate}
+
+\subsection{Non-Functional Requirements}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Performance:} Map/list browse and search shall return results in \(\leq 500\) ms p95 for target metro; prototype may use simplified filters.
+  \item \textbf{Usability:} Mobile-first, accessible (WCAG 2.1 AA where practical); clear copy for KYC/2FA and escrow steps.
+  \item \textbf{Security:} All traffic over TLS; short-lived JWTs; server-side validation; reCAPTCHA on signup/post/bid.
+  \item \textbf{Scalability:} Stateless API (Node/Express) behind Firebase/Cloud Run; Firestore as primary data store; storage via Firebase Cloud Storage.
+  \item \textbf{Reliability:} Error tracking via Sentry; observability with OpenTelemetry; automated CI checks on PRs.
+  \item \textbf{Privacy:} Approximate location shown pre-accept; exact address released to the accepted provider only; phone masking post-accept.
+\end{itemize}
+
+% ===================== 3. Use Cases =====================
+\section{Use Cases}
+
+\subsection{Use Case Diagram}
+\noindent\textit{Include your UML use case diagram image here (PNG/PDF).}\\[4pt]
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.9\linewidth]{use_case_diagram.png} % <- replace with your actual file
+  \caption{Use Case Diagram: Actors and Main Use Cases}
+\end{figure}
+
+\subsection{Use Case Descriptions}
+
+\paragraph{UC-1: Manage Jobs (Poster)}
+\textbf{Actors:} Poster\\
+\textbf{Description:} Create, update, and delete job postings with required details.\\
+\textbf{Preconditions:} User is authenticated and KYC verified.\\
+\textbf{Main Flow:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item Poster selects ``New Job''.
+  \item System prompts for title, description, category, budget type/amount, date, and location.
+  \item Poster submits; system validates and saves to database; job appears on map/list.
+  \item Poster may edit or delete until a bid is accepted.
+\end{enumerate}
+\textbf{Postconditions:} Job is persisted and visible to eligible providers.
+
+\paragraph{UC-2: Browse \& Bid (Provider)}
+\textbf{Actors:} Provider\\
+\textbf{Description:} Discover nearby jobs and place bids.\\
+\textbf{Preconditions:} User is authenticated; KYC verified.\\
+\textbf{Main Flow:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item Provider opens map view; system shows jobs within radius with filters.
+  \item Provider opens a job, reviews details, and selects ``Place Bid''.
+  \item Provider enters amount, note, and ETA; system validates and saves bid.
+  \item Provider can edit/withdraw bid before award.
+\end{enumerate}
+\textbf{Postconditions:} Bid saved and visible to the poster.
+
+\paragraph{UC-3: Award \& Escrow (Poster)}
+\textbf{Actors:} Poster\\
+\textbf{Description:} Compare bids, accept a winner, and fund escrow.\\
+\textbf{Preconditions:} Poster is authenticated; job has active bids; poster has a payment method.\\
+\textbf{Main Flow:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item Poster reviews bids (amount, ETA, ratings).
+  \item Poster accepts a bid; system creates a Stripe PaymentIntent (hold).
+  \item On success, system marks job as awarded and opens thread with winner.
+\end{enumerate}
+\textbf{Postconditions:} Funds on hold; winner can proceed.
+
+\paragraph{UC-4: Complete \& Payout}
+\textbf{Actors:} Provider, Poster\\
+\textbf{Description:} Provider marks work done; poster confirms; funds captured and paid out.\\
+\textbf{Preconditions:} Job awarded; escrow hold succeeded.\\
+\textbf{Main Flow:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item Provider marks job completed; system notifies poster.
+  \item Poster confirms completion (or opens dispute).
+  \item On confirmation, system captures funds and pays out via Stripe Connect.
+\end{enumerate}
+\textbf{Postconditions:} Payment captured; both parties can review each other.
+
+% ===================== 4. Detailed User Stories =====================
+\section{Detailed User Stories}
+
+\subsection*{Category: Job \& Bid Management}
+\paragraph{US-1: Post a New Job (High, 3 pts)}
+As a \textbf{poster}, I want to add a job with title, description, photos, budget, date, and a map location so providers can bid.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Required fields validated; job saved; appears on map/list; poster can edit/delete until award.
+\end{itemize}
+
+\paragraph{US-2: Browse Nearby Jobs (High, 3 pts)}
+As a \textbf{provider}, I want to see jobs near me with filters so I can quickly find relevant work.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Map/list render; radius/category/budget/date filters; open job details view.
+\end{itemize}
+
+\paragraph{US-3: Place a Bid (High, 5 pts)}
+As a \textbf{provider}, I want to place a bid with amount, note, and ETA so the poster can evaluate me.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Bid saved; poster notified; provider can edit/withdraw prior to award.
+\end{itemize}
+
+\paragraph{US-4: Accept a Bid \& Fund Escrow (High, 5 pts)}
+As a \textbf{poster}, I want to accept a bid and put funds on hold so payment is guaranteed on completion.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Stripe hold succeeds; job moves to \texttt{awarded}; chat thread opens with winner.
+\end{itemize}
+
+\subsection*{Category: Trust \& Safety}
+\paragraph{US-5: Complete KYC (High, 3 pts)}
+As a \textbf{new user}, I want to verify my identity (document + selfie) so I can post or bid safely.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Stripe Identity flow completes; app shows verified badge; features unlock.
+\end{itemize}
+
+\paragraph{US-6: Duo 2FA (Medium, 2 pts)}
+As a \textbf{user}, I want Duo phone confirmation so my account is protected during sign-in and payouts.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} 2FA challenge required; recovery path documented.
+\end{itemize}
+
+\paragraph{US-7: Safety Score Guidance (Medium, 3 pts)}
+As a \textbf{poster}, I want safety guidance at post-time so I can choose safer options (e.g., daylight/public meetup).
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Score shown with tips; low-score flows add friction or require verification.
+\end{itemize}
+
+\subsection*{Category: Comms \& Reviews}
+\paragraph{US-8: Job Thread Messaging (Medium, 3 pts)}
+As \textbf{either party}, I want a per-job chat so we can coordinate details.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Send/receive text; attachments; report/block; notifications.
+\end{itemize}
+
+\paragraph{US-9: Leave Reviews (Medium, 2 pts)}
+As \textbf{either party}, I want to rate and review after completion so future users can trust matches.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} 1–5 stars plus comment; appears on profile; single review per party per job.
+\end{itemize}
+
+% ===================== 5. Initial Prototype =====================
+\section{Initial Prototype Guidelines}
+
+\subsection{Prototype Features (Iteration 2 scope)}
+\begin{itemize}[leftmargin=1.4em]
+  \item Minimal UI (React + SCSS) with routes: Home (Map/List), Job Details, Post Job, Bids.
+  \item Core flows: create job, browse jobs, place bid, accept bid \emph{(escrow call can be stubbed if needed)}.
+  \item Basic navigation and client-side validation.
+  \item Firestore setup (collections: users, jobs, bids, messages); mock/safe seed data for demo.
+\end{itemize}
+
+\subsection{Development Approach}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Start Small:} Implement US-1, US-2, US-3 first; wire KYC screen stub.
+  \item \textbf{Iterate Quickly:} Short PRs; CI checks; deploy preview to Firebase Hosting.
+  \item \textbf{Modularity:} Split UI into reusable components; keep server routes RESTful.
+  \item \textbf{Document Progress:} Track tasks in GitHub Projects; reference commits in issues.
+\end{itemize}
+
+\subsection{Task Completion \& Collaboration}
+\begin{itemize}[leftmargin=1.4em]
+  \item Break stories into tasks with estimates; label by feature and owner.
+  \item Use a shared task board; commit frequently with meaningful messages.
+  \item Pair programming rotation (round robin); driver/navigator swap daily; 1 reviewer outside the pair.
+\end{itemize}
+
+% ===================== 6. Documentation Updates =====================
+\section{Documentation Updates}
+
+\subsection{System Architecture (Prototype)}
+\textbf{Frontend:} React + SCSS (Firebase Hosting)\\
+\textbf{Backend:} Node.js + Express (Firebase Functions or Cloud Run)\\
+\textbf{Database:} Firebase Firestore (NoSQL, real-time)\\
+\textbf{Storage:} Firebase Cloud Storage\\
+\textbf{Auth:} Firebase Auth (OAuth, email+password) + Duo 2FA; KYC via Stripe Identity\\
+\textbf{Payments:} Stripe Connect (escrow)\\
+\textbf{Maps:} Google Maps JS, Places, Geocoding, Distance Matrix
+
+\subsection{Planning Document and Log}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Changes from Iteration~1.1:} Committed to Firebase stack; clarified escrow flow; added explicit safety score gating.
+  \item \textbf{Plan Delta:} Pulled reviews into Iteration 2 tail; background checks remain later.
+\end{itemize}
+
+% ===================== 7. Iteration Plan and Backlog =====================
+\section{Iteration Plan and Backlog}
+
+\subsection{Iteration Plan (Weeks 3--5)}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Week 3:} Finalize functional requirements; implement US-1 (post job) and base map/list; Firestore rules draft.
+  \item \textbf{Week 4:} Implement US-2 (browse) and US-3 (bid); start US-4 (accept \& escrow stub); basic messaging skeleton.
+  \item \textbf{Week 5:} Review feedback; refine UX; stabilize prototype; add US-8 (chat MVP) and US-9 (reviews, stub).
+\end{itemize}
+
+\subsection{Updated Backlog (Top)}
+\begin{longtable}{@{}p{0.16\linewidth} p{0.52\linewidth} p{0.12\linewidth} p{0.12\linewidth}@{}}
+\toprule
+\textbf{ID} & \textbf{Story} & \textbf{Priority} & \textbf{Pts} \\
+\midrule
+US-1 & Post a new job & High & 3 \\
+US-2 & Browse nearby jobs & High & 3 \\
+US-3 & Place a bid & High & 5 \\
+US-4 & Accept bid \& escrow (stub/real) & High & 5 \\
+US-5 & Complete KYC & High & 3 \\
+US-8 & Job thread messaging (MVP) & Medium & 3 \\
+US-9 & Leave reviews & Medium & 2 \\
+US-6 & Duo 2FA & Medium & 2 \\
+US-7 & Safety score guidance & Medium & 3 \\
+\bottomrule
+\end{longtable}
+
+% ===================== 8. Submission Guidelines =====================
+\section{Submission Guidelines}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{GitHub Repository:} Push prototype code and documentation; tag release as \texttt{ITR1.2}.
+  \item \textbf{eClass Submission:} Submit one PDF containing: Requirements; Use Case Diagram \& Descriptions; Detailed User Stories; Initial Prototype Overview; Updated Plan and Backlog.
+\end{itemize}
+
+% ===================== Appendix A: API Inventory =====================
+\section*{Appendix A: API Inventory (Condensed)}
+\begin{longtable}{@{}p{0.32\linewidth} p{0.64\linewidth}@{}}
+\toprule
+\textbf{Area} & \textbf{APIs / Notes} \\
+\midrule
+Auth/Identity & Firebase Auth (OAuth, email+password); Duo 2FA; Stripe Identity (KYC) \\
+Payments & Stripe Connect (escrow), Webhooks, Radar \\
+Maps/Geo & Google Maps JS; Places Autocomplete/Details; Geocoding; Distance Matrix \\
+Notifications & Firebase Cloud Messaging; Twilio SMS + Proxy \\
+Storage & Firebase Cloud Storage \\
+Analytics/Ops & PostHog; Sentry; OpenTelemetry \\
+\bottomrule
+\end{longtable}
+
+% ===================== Appendix B: Firestore Schema =====================
+\section*{Appendix B: Firestore Schema (Indicative)}
+\begin{lstlisting}[language=json,caption={Firestore Collections \& Example Documents}]
+/users/{userId}
+{
+  "name": "string",
+  "email": "string",
+  "phone": "string",
+  "avatarUrl": "string",
+  "isProvider": true,
+  "kycStatus": "pending" | "verified" | "failed",
+  "duoEnabled": true,
+  "createdAt": "timestamp",
+  "updatedAt": "timestamp"
+}
+
+/jobs/{jobId}
+{
+  "posterId": "users/{userId}",
+  "title": "string",
+  "description": "string",
+  "category": "string",
+  "budgetType": "fixed" | "open",
+  "budgetAmount": 120.50,
+  "location": { "lat": 43.6426, "lng": -79.3871, "address": "string" },
+  "desiredDate": "timestamp",
+  "status": "open" | "awarded" | "in_progress" | "completed" | "cancelled",
+  "createdAt": "timestamp",
+  "updatedAt": "timestamp"
+}
+
+/bids/{bidId}
+{
+  "jobId": "jobs/{jobId}",
+  "providerId": "users/{userId}",
+  "amount": 95.00,
+  "note": "string",
+  "etaHours": 6,
+  "status": "active" | "declined" | "accepted" | "cancelled",
+  "createdAt": "timestamp"
+}
+
+/messages/{messageId}
+{
+  "jobId": "jobs/{jobId}",
+  "senderId": "users/{userId}",
+  "body": "string",
+  "attachmentUrl": "string",
+  "createdAt": "timestamp"
+}
+
+/reviews/{reviewId}
+{
+  "jobId": "jobs/{jobId}",
+  "raterId": "users/{userId}",
+  "rateeId": "users/{userId}",
+  "rating": 5,
+  "comment": "string",
+  "createdAt": "timestamp"
+}
+\end{lstlisting}
+
+\end{document}
