@@ -199,7 +199,7 @@ This document outlines the deliverables for Iteration~2 of \project: detailed us
 
 \subsection*{Job Posters}
 \paragraph{US-1: Post a New Job (High, 3 pts)}
-As a \textbf{poster}, I want to add a job with title, description, photos, budget, date, and a map location so providers can bid.
+As a \textbf{poster}, I want to add a job with title, description, photos, budget, date, and a map location so bidders can bid.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Required fields validated; job saved; appears on map/list; poster can edit/delete until award.
 \end{itemize}
@@ -229,50 +229,50 @@ As a \textbf{poster}, I want Duo phone confirmation so my account is protected d
 \end{itemize}
 
 \paragraph{US-6: Job Thread Messaging (Medium, 3 pts)}
-As a \textbf{poster}, I want a per-job chat so I can coordinate details with providers.
+As a \textbf{poster}, I want a per-job chat so I can coordinate details with bidders.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Send/receive text; attachments; report/block; notifications.
 \end{itemize}
 
 \paragraph{US-7: Leave Reviews (Medium, 2 pts)}
-As a \textbf{poster}, I want to rate and review providers after completion so future users can trust matches.
+As a \textbf{poster}, I want to rate and review bidders after completion so future users can trust matches.
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Acceptance:} 1–5 stars plus comment; appears on provider profile; single review per job.
+  \item \textbf{Acceptance:} 1–5 stars plus comment; appears on bidder profile; single review per job.
 \end{itemize}
 
-\subsection*{Job Bidders (Providers)}
+\subsection*{Job Bidders}
 \paragraph{US-8: Browse Nearby Jobs (High, 3 pts)}
-As a \textbf{provider}, I want to see jobs near me with filters so I can quickly find relevant work.
+As a \textbf{bidder}, I want to see jobs near me with filters so I can quickly find relevant work.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Map/list render; radius/category/budget/date filters; open job details view.
 \end{itemize}
 
 \paragraph{US-9: Place a Bid (High, 5 pts)}
-As a \textbf{provider}, I want to place a bid with amount, note, and ETA so the poster can evaluate me.
+As a \textbf{bidder}, I want to place a bid with amount, note, and ETA so the poster can evaluate me.
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Acceptance:} Bid saved; poster notified; provider can edit/withdraw prior to award.
+  \item \textbf{Acceptance:} Bid saved; poster notified; bidder can edit/withdraw prior to award.
 \end{itemize}
 
 \paragraph{US-10: Complete KYC (High, 3 pts)}
-As a \textbf{provider}, I want to verify my identity (document + selfie) so I can bid on jobs safely.
+As a \textbf{bidder}, I want to verify my identity (document + selfie) so I can bid on jobs safely.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Stripe Identity flow completes; app shows verified badge; bidding features unlock.
 \end{itemize}
 
 \paragraph{US-11: Duo 2FA (Medium, 2 pts)}
-As a \textbf{provider}, I want Duo phone confirmation so my account is protected during sign-in and payouts.
+As a \textbf{bidder}, I want Duo phone confirmation so my account is protected during sign-in and payouts.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} 2FA challenge required; recovery path documented.
 \end{itemize}
 
 \paragraph{US-12: Job Thread Messaging (Medium, 3 pts)}
-As a \textbf{provider}, I want a per-job chat so I can coordinate details with posters.
+As a \textbf{bidder}, I want a per-job chat so I can coordinate details with posters.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Send/receive text; attachments; report/block; notifications.
 \end{itemize}
 
 \paragraph{US-13: Leave Reviews (Medium, 2 pts)}
-As a \textbf{provider}, I want to rate and review posters after completion so future users can trust matches.
+As a \textbf{bidder}, I want to rate and review posters after completion so future users can trust matches.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} 1–5 stars plus comment; appears on poster profile; single review per job.
 \end{itemize}
@@ -397,14 +397,14 @@ US-2 & Accept bid \& fund escrow & High & 5 \\
 US-8 & Browse nearby jobs & High & 3 \\
 US-9 & Place a bid & High & 5 \\
 US-4 & Complete KYC (Poster) & High & 3 \\
-US-10 & Complete KYC (Provider) & High & 3 \\
+US-10 & Complete KYC (Bidder) & High & 3 \\
 US-5 & Duo 2FA (Poster) & Medium & 2 \\
-US-11 & Duo 2FA (Provider) & Medium & 2 \\
+US-11 & Duo 2FA (Bidder) & Medium & 2 \\
 US-3 & Safety score guidance & Medium & 3 \\
 US-6 & Job thread messaging (Poster) & Medium & 3 \\
-US-12 & Job thread messaging (Provider) & Medium & 3 \\
+US-12 & Job thread messaging (Bidder) & Medium & 3 \\
 US-7 & Leave reviews (Poster) & Medium & 2 \\
-US-13 & Leave reviews (Provider) & Medium & 2 \\
+US-13 & Leave reviews (Bidder) & Medium & 2 \\
 US-14 & Browse jobs read-only (Browser) & Medium & 2 \\
 US-15 & View limited job details (Browser) & Medium & 1 \\
 US-16 & Registration prompt (Browser) & Medium & 1 \\
@@ -448,7 +448,7 @@ Analytics/Ops & PostHog; Sentry; OpenTelemetry \\
   "email": "string",
   "phone": "string",
   "avatarUrl": "string",
-  "isProvider": true,
+  "isBidder": true,
   "kycStatus": "pending" | "verified" | "failed",
   "duoEnabled": true,
   "createdAt": "timestamp",
@@ -473,7 +473,7 @@ Analytics/Ops & PostHog; Sentry; OpenTelemetry \\
 /bids/{bidId}
 {
   "jobId": "jobs/{jobId}",
-  "providerId": "users/{userId}",
+  "bidderId": "users/{userId}",
   "amount": 95.00,
   "note": "string",
   "etaHours": 6,
