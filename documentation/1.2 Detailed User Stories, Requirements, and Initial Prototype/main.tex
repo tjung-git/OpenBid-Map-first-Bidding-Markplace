@@ -17,6 +17,8 @@
 \usepackage{listings}
 \usepackage{parskip}
 \usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
 
 \hypersetup{
   colorlinks=true,
@@ -120,10 +122,11 @@ This document outlines the deliverables for Iteration~2 of \project: detailed us
 \textbf{Actors:} Poster \par
 \textbf{Description:} Create, update, and delete job postings with required details.\par
 \textbf{Preconditions:} User is authenticated and KYC verified.\par
-\begin{figure}[h]
+\begin{figure}[htbp]
   \centering
 \includegraphics[width=0.9\linewidth]{UC-1.png}
-  \caption{User Case 1}
+  \caption{Use Case 1: Manage Jobs}
+  \label{fig:uc1}
 \end{figure} \par
 \vspace{2em}
 \textbf{Main Flow:}
@@ -139,10 +142,11 @@ This document outlines the deliverables for Iteration~2 of \project: detailed us
 \textbf{Actors:} Bidder \par
 \textbf{Description:} Discover nearby jobs and place bids. \par
 \textbf{Preconditions:} User is authenticated; KYC verified. \par
-\begin{figure}[h]
+\begin{figure}[htbp]
   \centering
-\includegraphics[width=0.9\linewidth]{UC-2.png}
-  \caption{User Case 2}
+\includegraphics[width=0.75\linewidth]{UC-2.png}
+  \caption{Use Case 2: Browse \& Bid}
+  \label{fig:uc2}
 \end{figure} \par
 \textbf{Main Flow:}
 \begin{enumerate}[leftmargin=1.4em]
@@ -158,10 +162,11 @@ This document outlines the deliverables for Iteration~2 of \project: detailed us
 \textbf{Actors:} Poster \par
 \textbf{Description:} Compare bids, accept a winner, and fund escrow.\par
 \textbf{Preconditions:} Poster is authenticated; job has active bids; poster has a payment method saved.\par
-\begin{figure}[h]
+\begin{figure}[htbp]
   \centering
 \includegraphics[width=0.9\linewidth]{UC-3.png}
-  \caption{User Case 3}
+  \caption{Use Case 3: Award \& Escrow}
+  \label{fig:uc3}
 \end{figure} \par
 \textbf{Main Flow:}
 \begin{enumerate}[leftmargin=1.4em]
@@ -175,10 +180,11 @@ This document outlines the deliverables for Iteration~2 of \project: detailed us
 \textbf{Actors:} Job Winner, Poster \par
 \textbf{Description:} Job Winner marks work done; poster confirms; funds captured and paid out.\par
 \textbf{Preconditions:} Job awarded; escrow hold succeeded.\par
-\begin{figure}[h]
+\begin{figure}[htbp]
   \centering
 \includegraphics[width=0.9\linewidth]{UC-4.png}
-  \caption{User Case 4}
+  \caption{Use Case 4: Complete \& Payout}
+  \label{fig:uc4}
 \end{figure} \par
 \textbf{Main Flow:}
 \begin{enumerate}[leftmargin=1.4em]
