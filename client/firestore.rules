@@ -1,0 +1,27 @@
+// Simple rules (NOT production-hardened)
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(ownerId) { return isSignedIn() && request.auth.uid == ownerId; }
+
+    match /jobs/{jobId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && isOwner(resource.data.createdBy);
+
+      match /bids/{bidId} {
+        allow read: if true;
+        allow create: if isSignedIn(); // anyone signed-in can bid for 1.2
+        allow update, delete: if isSignedIn() && request.auth.uid == resource.data.providerId;
+      }
+    }
+
+    match /users/{uid} {
+      allow read: if true;
+      allow create: if isOwner(uid);
+      allow update, delete: if isOwner(uid);
+    }
+  }
+}
