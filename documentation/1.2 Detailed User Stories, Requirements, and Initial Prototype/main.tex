@@ -122,13 +122,14 @@ This document outlines the deliverables for Iteration~2 of \project: detailed us
 \textbf{Actors:} Contractor \par
 \textbf{Description:} Create, update, and delete job postings with required details.\par
 \textbf{Preconditions:} User is authenticated and KYC verified.\par
-\begin{figure}[htbp]
+
+\begin{figure}[H]
   \centering
-\includegraphics[width=0.9\linewidth]{UC-1.png}
+  \includegraphics[width=0.9\linewidth]{UC-1.png}
   \caption{Use Case 1: Manage Jobs}
   \label{fig:uc1}
-\end{figure} \par
-\vspace{2em}
+\end{figure}
+
 \textbf{Main Flow:}
 \begin{enumerate}[leftmargin=1.4em]
   \item Contractor selects ``New Job''.
@@ -136,18 +137,20 @@ This document outlines the deliverables for Iteration~2 of \project: detailed us
   \item Contractor submits; system validates and saves to database; job appears on map/list.
   \item Contractor may edit or delete until a bid is accepted.
 \end{enumerate}
-\textbf{Postconditions:} Job is persisted and visible to eligible bidders and browers.
+\textbf{Postconditions:} Job is persisted and visible to eligible bidders and \textbf{browsers}.
 
-\subsection{UC-2: Browse \& Bid (Job Bidder)}
+\subsubsection*{UC-2: Browse \& Bid (Job Bidder)}
 \textbf{Actors:} Bidder \par
 \textbf{Description:} Discover nearby jobs and place bids. \par
 \textbf{Preconditions:} User is authenticated; KYC verified. \par
-\begin{figure}[htbp]
+
+\begin{figure}[H]
   \centering
-\includegraphics[width=0.75\linewidth]{UC-2.png}
+  \includegraphics[width=0.9\linewidth]{UC-2.png}
   \caption{Use Case 2: Browse \& Bid}
   \label{fig:uc2}
-\end{figure} \par
+\end{figure}
+
 \textbf{Main Flow:}
 \begin{enumerate}[leftmargin=1.4em]
   \item Bidder opens map view; system shows jobs within radius with filters.
@@ -158,16 +161,18 @@ This document outlines the deliverables for Iteration~2 of \project: detailed us
 \end{enumerate}
 \textbf{Postconditions:} Bid saved and visible to the Contractor.
 
-\subsection{UC-3: Award \& Escrow (Job Poster)}
+\subsubsection*{UC-3: Award \& Escrow (Job Poster)}
 \textbf{Actors:} Contractor \par
 \textbf{Description:} Compare bids, accept a winner, and fund escrow.\par
 \textbf{Preconditions:} Contractor is authenticated; job has active bids; Contractor has a payment method saved.\par
-\begin{figure}[htbp]
+
+\begin{figure}[H]
   \centering
-\includegraphics[width=0.9\linewidth]{UC-3.png}
+  \includegraphics[width=0.9\linewidth]{UC-3.png}
   \caption{Use Case 3: Award \& Escrow}
   \label{fig:uc3}
-\end{figure} \par
+\end{figure}
+
 \textbf{Main Flow:}
 \begin{enumerate}[leftmargin=1.4em]
   \item Contractor reviews bids (amount, ETA, ratings).
@@ -176,16 +181,18 @@ This document outlines the deliverables for Iteration~2 of \project: detailed us
 \end{enumerate}
 \textbf{Postconditions:} Funds on hold; winner can proceed.
 
-\subsection{UC-4: Complete \& Payout}
+\subsubsection*{UC-4: Complete \& Payout}
 \textbf{Actors:} Job Winner, Contractor \par
 \textbf{Description:} Job Winner marks work done; Contractor confirms; funds captured and paid out.\par
 \textbf{Preconditions:} Job awarded; escrow hold succeeded.\par
-\begin{figure}[htbp]
+
+\begin{figure}[H]
   \centering
-\includegraphics[width=0.9\linewidth]{UC-4.png}
+  \includegraphics[width=0.9\linewidth]{UC-4.png}
   \caption{Use Case 4: Complete \& Payout}
   \label{fig:uc4}
-\end{figure} \par
+\end{figure}
+
 \textbf{Main Flow:}
 \begin{enumerate}[leftmargin=1.4em]
   \item Job Winner marks job completed; system notifies Contractor.
@@ -193,6 +200,7 @@ This document outlines the deliverables for Iteration~2 of \project: detailed us
   \item On confirmation, system captures funds and pays out via Stripe Connect.
 \end{enumerate}
 \textbf{Postconditions:} Payment captured; both parties can review each other.
+
 
 % ===================== 4. Detailed User Stories =====================
 \section{Detailed User Stories}
