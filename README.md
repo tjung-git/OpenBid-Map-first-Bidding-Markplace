@@ -105,8 +105,6 @@ make help
 cd "documentation/1.1 Project Proposal" 
 pdflatex main.tex
 
-#AND/OR
-
 #Create Project Proposal 1.2 as a PDF file
 cd "documentation/1.2 Detailed User Stories, Requirements, and Initial Prototype" 
 pdflatex main.tex
