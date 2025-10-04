@@ -85,20 +85,20 @@
 \textbf{Team Members:} \teammates
 
 \paragraph{Document Overview}
-This document outlines the deliverables for Iteration~2 of \project: detailed user stories, functional and non-functional requirements, and an initial prototype plan. The aim is to establish a solid foundation for subsequent iterations by clarifying what the system should do and validating the core experience with a working prototype.
+This document outlines the deliverables for Iteration~2 of \project: detailed user stories, functional and non-functional requirements. The aim is to establish a solid foundation for subsequent iterations by clarifying what the system should do and validating the core experience with a working prototype.
 
 % ===================== 2. Requirements =====================
 \section{Functional and Non-Functional Requirements}
 
 \subsection{Functional Requirements}
 \begin{enumerate}[leftmargin=1.4em]
-  \item \textbf{Account \& Identity:} Users shall be able to sign up and sign in via OAuth (Google/Apple) and email+password. Mandatory KYC must be completed before posting or bidding.
-  \item \textbf{Two-Factor:} Users shall confirm sign-in with Duo 2FA for sensitive actions (login, payouts).
-  \item \textbf{Job Posting:} Posters shall create, update, and delete jobs with title, description, photos, budget (fixed/open), category, date, and location (map pin / address).
-  \item \textbf{Discovery:} Job bidders shall browse jobs on a map and list, filter by radius, category, budget range, and date.
-  \item \textbf{Bidding:} Job bidders shall place, edit, and withdraw bids (amount, note, ETA). Posters shall accept a winning bid.
-  \item \textbf{Payments (Escrow):} Posters shall fund an escrow hold on accept; on completion, funds shall capture and pay out to the job assignee (Stripe Connect).
-  \item \textbf{Messaging:} Posters and job bidders shall exchange messages within the job thread, with attachments and report/block controls.
+  \item \textbf{Account \& Identity:} Users shall be able to sign up and sign in via OAuth (Google/Apple) and email+password. Mandatory KYC must be completed before Contractors can publish profiles or Bidders can place offers.
+  \item \textbf{Two-Factor Authentication (2FA):} Users shall confirm sign-in with Duo 2FA for sensitive actions (login, payouts).
+  \item \textbf{Contractor Profiles:} Contractors shall create, update, and delete professional profiles with details including skills, description, photos, rate (fixed/hourly), availability, and location (map pin/address).
+  \item \textbf{Discovery:} Bidders shall browse Contractors in list and map views, with filters by radius, category/skill, budget range, and availability date.
+  \item \textbf{Bidding:} Job bidders shall place, edit, and withdraw bids (amount, note, ETA). Contractors shall accept a winning bid.
+  \item \textbf{Payments (Escrow):}  When a Contractor accepts an offer, the Bidder shall fund an escrow hold. On job completion, funds shall be captured and paid out to the Contractor via Stripe Connect.
+  \item \textbf{Messaging:} Contractors and Bidders shall exchange secure messages within the context of an offer, with support for attachments and report/block controls.
   \item \textbf{Reviews:} Both parties shall leave ratings and text reviews after completion.
   \item \textbf{Safety Score:} The system shall compute a location safety score (0--100) and apply graduated friction (tips, daylight default, verified-only, or manual review).
   \item \textbf{Admin:} Admins shall review reports, manage categories, and handle disputes via a basic dashboard.
@@ -119,123 +119,131 @@ This document outlines the deliverables for Iteration~2 of \project: detailed us
 \subsection{Use Case Descriptions and UML diagrams}
 
 \subsubsection*{UC-1: Manage Jobs (Job Poster)}
-\textbf{Actors:} Poster \par
+\textbf{Actors:} Contractor \par
 \textbf{Description:} Create, update, and delete job postings with required details.\par
 \textbf{Preconditions:} User is authenticated and KYC verified.\par
-\begin{figure}[htbp]
+
+\begin{figure}[H]
   \centering
-\includegraphics[width=0.9\linewidth]{UC-1.png}
+  \includegraphics[width=0.9\linewidth]{UC-1.png}
   \caption{Use Case 1: Manage Jobs}
   \label{fig:uc1}
-\end{figure} \par
-\vspace{2em}
+\end{figure}
+
 \textbf{Main Flow:}
 \begin{enumerate}[leftmargin=1.4em]
-  \item Poster selects ``New Job''.
+  \item Contractor selects ``New Job''.
   \item System prompts for title, description, category, budget type/amount, date, and location.
-  \item Poster submits; system validates and saves to database; job appears on map/list.
-  \item Poster may edit or delete until a bid is accepted.
+  \item Contractor submits; system validates and saves to database; job appears on map/list.
+  \item Contractor may edit or delete until a bid is accepted.
 \end{enumerate}
-\textbf{Postconditions:} Job is persisted and visible to eligible bidders and browers.
+\textbf{Postconditions:} Job is persisted and visible to eligible bidders and \textbf{browsers}.
 
-\subsection{UC-2: Browse \& Bid (Job Bidder)}
+\subsubsection*{UC-2: Browse \& Bid (Job Bidder)}
 \textbf{Actors:} Bidder \par
 \textbf{Description:} Discover nearby jobs and place bids. \par
 \textbf{Preconditions:} User is authenticated; KYC verified. \par
-\begin{figure}[htbp]
+
+\begin{figure}[H]
   \centering
-\includegraphics[width=0.75\linewidth]{UC-2.png}
+  \includegraphics[width=0.9\linewidth]{UC-2.png}
   \caption{Use Case 2: Browse \& Bid}
   \label{fig:uc2}
-\end{figure} \par
+\end{figure}
+
 \textbf{Main Flow:}
 \begin{enumerate}[leftmargin=1.4em]
   \item Bidder opens map view; system shows jobs within radius with filters.
   \item Bidder opens a job, reviews details, and selects ``Place Bid''.
   \item Bidder enters amount, note, and ETA; system validates and saves bid.
-  \item Bidder can chat with the poster after submitting a bid.
+  \item Bidder can chat with the Contractor after submitting a bid.
   \item Bidder can edit/withdraw bid before award.
 \end{enumerate}
-\textbf{Postconditions:} Bid saved and visible to the job poster.
+\textbf{Postconditions:} Bid saved and visible to the Contractor.
 
-\subsection{UC-3: Award \& Escrow (Job Poster)}
-\textbf{Actors:} Poster \par
+\subsubsection*{UC-3: Award \& Escrow (Job Poster)}
+\textbf{Actors:} Contractor \par
 \textbf{Description:} Compare bids, accept a winner, and fund escrow.\par
-\textbf{Preconditions:} Poster is authenticated; job has active bids; poster has a payment method saved.\par
-\begin{figure}[htbp]
+\textbf{Preconditions:} Contractor is authenticated; job has active bids; Contractor has a payment method saved.\par
+
+\begin{figure}[H]
   \centering
-\includegraphics[width=0.9\linewidth]{UC-3.png}
+  \includegraphics[width=0.9\linewidth]{UC-3.png}
   \caption{Use Case 3: Award \& Escrow}
   \label{fig:uc3}
-\end{figure} \par
+\end{figure}
+
 \textbf{Main Flow:}
 \begin{enumerate}[leftmargin=1.4em]
-  \item Poster reviews bids (amount, ETA, ratings).
-  \item Poster accepts a bid; system creates a Stripe PaymentIntent (hold).
+  \item Contractor reviews bids (amount, ETA, ratings).
+  \item Contractor accepts a bid; system creates a Stripe PaymentIntent (hold).
   \item On success, system marks job as awarded and opens thread with winner.
 \end{enumerate}
 \textbf{Postconditions:} Funds on hold; winner can proceed.
 
-\subsection{UC-4: Complete \& Payout}
-\textbf{Actors:} Job Winner, Poster \par
-\textbf{Description:} Job Winner marks work done; poster confirms; funds captured and paid out.\par
+\subsubsection*{UC-4: Complete \& Payout}
+\textbf{Actors:} Job Winner, Contractor \par
+\textbf{Description:} Job Winner marks work done; Contractor confirms; funds captured and paid out.\par
 \textbf{Preconditions:} Job awarded; escrow hold succeeded.\par
-\begin{figure}[htbp]
+
+\begin{figure}[H]
   \centering
-\includegraphics[width=0.9\linewidth]{UC-4.png}
+  \includegraphics[width=0.9\linewidth]{UC-4.png}
   \caption{Use Case 4: Complete \& Payout}
   \label{fig:uc4}
-\end{figure} \par
+\end{figure}
+
 \textbf{Main Flow:}
 \begin{enumerate}[leftmargin=1.4em]
-  \item Job Winner marks job completed; system notifies poster.
-  \item Poster confirms completion (or opens dispute).
+  \item Job Winner marks job completed; system notifies Contractor.
+  \item Contractor confirms completion (or opens dispute).
   \item On confirmation, system captures funds and pays out via Stripe Connect.
 \end{enumerate}
 \textbf{Postconditions:} Payment captured; both parties can review each other.
+
 
 % ===================== 4. Detailed User Stories =====================
 \section{Detailed User Stories}
 
 \subsection*{Job Posters}
 \paragraph{US-1: Post a New Job (High, 3 pts)}
-As a \textbf{poster}, I want to add a job with title, description, photos, budget, date, and a map location so bidders can bid.
+As a \textbf{Contractor}, I want to add a job with title, description, photos, budget, date, and a map location so bidders can bid.
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Acceptance:} Required fields validated; job saved; appears on map/list; poster can edit/delete until award.
+  \item \textbf{Acceptance:} Required fields validated; job saved; appears on map/list; Contractor can edit/delete until award.
 \end{itemize}
 
 \paragraph{US-2: Accept a Bid \& Fund Escrow (High, 5 pts)}
-As a \textbf{poster}, I want to accept a bid and put funds on hold so payment is guaranteed on completion.
+As a \textbf{Contractor}, I want to accept a bid and put funds on hold so payment is guaranteed on completion.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Stripe hold succeeds; job moves to \texttt{awarded}; chat thread opens with winner.
 \end{itemize}
 
 \paragraph{US-3: Safety Score Guidance (Medium, 3 pts)}
-As a \textbf{poster}, I want safety guidance at post-time so I can choose safer options (e.g., daylight/public meetup).
+As a \textbf{Contractor}, I want safety guidance at post-time so I can choose safer options (e.g., daylight/public meetup).
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Score shown with tips; low-score flows add friction or require verification.
 \end{itemize}
 
 \paragraph{US-4: Complete KYC (High, 3 pts)}
-As a \textbf{poster}, I want to verify my identity (document + selfie) so I can post jobs safely.
+As a \textbf{Contractor}, I want to verify my identity (document + selfie) so I can post jobs safely.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Stripe Identity flow completes; app shows verified badge; posting features unlock.
 \end{itemize}
 
 \paragraph{US-5: Duo 2FA (Medium, 2 pts)}
-As a \textbf{poster}, I want Duo phone confirmation so my account is protected during sign-in and payouts.
+As a \textbf{Contractor}, I want Duo phone confirmation so my account is protected during sign-in and payouts.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} 2FA challenge required; recovery path documented.
 \end{itemize}
 
 \paragraph{US-6: Job Thread Messaging (Medium, 3 pts)}
-As a \textbf{poster}, I want a per-job chat so I can coordinate details with bidders.
+As a \textbf{Contractor}, I want a per-job chat so I can coordinate details with bidders.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Send/receive text; attachments; report/block; notifications.
 \end{itemize}
 
 \paragraph{US-7: Leave Reviews (Medium, 2 pts)}
-As a \textbf{poster}, I want to rate and review bidders after completion so future users can trust matches.
+As a \textbf{Contractor}, I want to rate and review bidders after completion so future users can trust matches.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} 1–5 stars plus comment; appears on bidder profile; single review per job.
 \end{itemize}
@@ -248,9 +256,9 @@ As a \textbf{bidder}, I want to see jobs near me with filters so I can quickly f
 \end{itemize}
 
 \paragraph{US-9: Place a Bid (High, 5 pts)}
-As a \textbf{bidder}, I want to place a bid with amount, note, and ETA so the poster can evaluate me.
+As a \textbf{bidder}, I want to place a bid with amount, note, and ETA so the Contractor can evaluate me.
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Acceptance:} Bid saved; poster notified; bidder can edit/withdraw prior to award.
+  \item \textbf{Acceptance:} Bid saved; Contractor notified; bidder can edit/withdraw prior to award.
 \end{itemize}
 
 \paragraph{US-10: Complete KYC (High, 3 pts)}
@@ -266,15 +274,15 @@ As a \textbf{bidder}, I want Duo phone confirmation so my account is protected d
 \end{itemize}
 
 \paragraph{US-12: Job Thread Messaging (Medium, 3 pts)}
-As a \textbf{bidder}, I want a per-job chat so I can coordinate details with posters.
+As a \textbf{bidder}, I want a per-job chat so I can coordinate details with Contractor.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Send/receive text; attachments; report/block; notifications.
 \end{itemize}
 
 \paragraph{US-13: Leave Reviews (Medium, 2 pts)}
-As a \textbf{bidder}, I want to rate and review posters after completion so future users can trust matches.
+As a \textbf{bidder}, I want to rate and review Contractor after completion so future users can trust matches.
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Acceptance:} 1–5 stars plus comment; appears on poster profile; single review per job.
+  \item \textbf{Acceptance:} 1–5 stars plus comment; appears on Contractor profile; single review per job.
 \end{itemize}
 
 \subsection*{Job Browsers (Not KYC-Verified Users)}
@@ -333,33 +341,7 @@ As an \textbf{admin}, I want to monitor system health and performance so I can e
   \item \textbf{Acceptance:} Dashboard with metrics; alert system; performance monitoring.
 \end{itemize}
 
-% ===================== 5. Initial Prototype =====================
-\section{Initial Prototype Guidelines}
-
-\subsection{Prototype Features (Iteration 2 scope)}
-\begin{itemize}[leftmargin=1.4em]
-  \item Minimal UI (React + SCSS) with routes: Home (Map/List), Job Details, Post Job, Bids.
-  \item Core flows: create job, browse jobs, place bid, accept bid \emph{(escrow call can be stubbed if needed)}.
-  \item Basic navigation and client-side validation.
-  \item Firestore setup (collections: users, jobs, bids, messages); mock/safe seed data for demo.
-\end{itemize}
-
-\subsection{Development Approach}
-\begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Start Small:} Implement US-1, US-2, US-3 first; wire KYC screen stub.
-  \item \textbf{Iterate Quickly:} Short PRs; CI checks; deploy preview to Firebase Hosting.
-  \item \textbf{Modularity:} Split UI into reusable components; keep server routes RESTful.
-  \item \textbf{Document Progress:} Track tasks in GitHub Projects; reference commits in issues.
-\end{itemize}
-
-\subsection{Task Completion \& Collaboration}
-\begin{itemize}[leftmargin=1.4em]
-  \item Break stories into tasks with estimates; label by feature and owner.
-  \item Use a shared task board; commit frequently with meaningful messages.
-  \item Pair programming rotation (round robin); driver/navigator swap daily; 1 reviewer outside the pair.
-\end{itemize}
-
-% ===================== 6. Documentation Updates =====================
+% ===================== 5. Documentation Updates =====================
 \section{Documentation Updates}
 
 \subsection{System Architecture (Prototype)}
@@ -377,7 +359,7 @@ As an \textbf{admin}, I want to monitor system health and performance so I can e
   \item \textbf{Plan Delta:} Pulled reviews into Iteration 2 tail; background checks remain later.
 \end{itemize}
 
-% ===================== 7. Iteration Plan and Backlog =====================
+% ===================== 6. Iteration Plan and Backlog =====================
 \section{Iteration Plan and Backlog}
 
 \subsection{Iteration Plan (Weeks 3--5)}
@@ -396,14 +378,14 @@ US-1 & Post a new job & High & 3 \\
 US-2 & Accept bid \& fund escrow & High & 5 \\
 US-8 & Browse nearby jobs & High & 3 \\
 US-9 & Place a bid & High & 5 \\
-US-4 & Complete KYC (Poster) & High & 3 \\
+US-4 & Complete KYC (Contractor) & High & 3 \\
 US-10 & Complete KYC (Bidder) & High & 3 \\
-US-5 & Duo 2FA (Poster) & Medium & 2 \\
+US-5 & Duo 2FA (Contractor) & Medium & 2 \\
 US-11 & Duo 2FA (Bidder) & Medium & 2 \\
 US-3 & Safety score guidance & Medium & 3 \\
-US-6 & Job thread messaging (Poster) & Medium & 3 \\
+US-6 & Job thread messaging (Contractor) & Medium & 3 \\
 US-12 & Job thread messaging (Bidder) & Medium & 3 \\
-US-7 & Leave reviews (Poster) & Medium & 2 \\
+US-7 & Leave reviews (Contractor) & Medium & 2 \\
 US-13 & Leave reviews (Bidder) & Medium & 2 \\
 US-14 & Browse jobs read-only (Browser) & Medium & 2 \\
 US-15 & View limited job details (Browser) & Medium & 1 \\
@@ -417,7 +399,7 @@ US-22 & System monitoring (Admin) & Medium & 2 \\
 \bottomrule
 \end{longtable}
 
-% ===================== 8. Submission Guidelines =====================
+% ===================== 7. Submission Guidelines =====================
 \section{Submission Guidelines}
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{GitHub Repository:} Push prototype code and documentation; tag release as \texttt{ITR1.2}.
@@ -457,7 +439,7 @@ Analytics/Ops & PostHog; Sentry; OpenTelemetry \\
 
 /jobs/{jobId}
 {
-  "posterId": "users/{userId}",
+  "contractorID": "users/{userId}",
   "title": "string",
   "description": "string",
   "category": "string",
