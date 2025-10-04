@@ -101,6 +101,8 @@ make help
 
 ### Manual Compilation
 ```bash
+#Both code blocks should only be run from the repo root directory
+
 #Create Project Proposal 1.1 as a PDF file
 cd "documentation/1.1 Project Proposal" 
 pdflatex main.tex
