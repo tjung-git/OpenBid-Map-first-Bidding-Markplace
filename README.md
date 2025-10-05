@@ -68,9 +68,22 @@ latexmk automates LaTeX document compilation.
 ## Project Structure
 ```
 .
-├── Project Proposal/     # LaTeX project proposal documents
-│   ├── main.tex         # Main LaTeX document
-│   └── main.pdf         # Compiled PDF output
+├── .github/              # Github configuration files
+│   ├── pull_request_template.md     # Request template for creating pull requests
+├── .vscode/              # VSCode configuration files
+│   ├── settings.json    # VSCode latex settings
+├── documentation/        # LaTeX documents for 1.1 and 1.2
+│   ├── 1.1 Project Proposal/     # LaTeX documents for 1.1
+│   │   ├── main.pdf         # Compiled 1.1 PDF output
+│   │   └── main.tex         # Main 1.1 LaTeX document
+│   ├── 1.2 Detailed User Stories, Requirements, and Initial Prototype/     # LaTeX documents for 1.2
+│   │   ├── main.pdf         # Compiled 1.2 PDF output
+│   │   ├── main.tex         # Main 1.2 LaTeX document
+│   │   ├── UC-1.png        # Manage Jobs UML diagram
+│   │   ├── UC-2.png        # Browse & Bid UML diagram
+│   │   ├── UC-3.png        # Award & Escrow UML diagram
+│   │   └── UC-4.png        # Complete & Payout UML diagram
+├── .gitignore           # git ignore
 ├── Makefile             # Automation scripts
 └── README.md           # This file
 ```
@@ -88,6 +101,13 @@ make help
 
 ### Manual Compilation
 ```bash
-cd "Project Proposal"
+#Both code blocks should only be run from the repo root directory
+
+#Create Project Proposal 1.1 as a PDF file
+cd "documentation/1.1 Project Proposal" 
+pdflatex main.tex
+
+#Create Project Proposal 1.2 as a PDF file
+cd "documentation/1.2 Detailed User Stories, Requirements, and Initial Prototype" 
 pdflatex main.tex
 ```
