@@ -1,0 +1,305 @@
+% !TEX root = main.tex
+\documentclass[11pt]{article}
+
+% ---------- Basics -----------
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{parskip}
+\usepackage{listings}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue!60!black,
+  citecolor=black
+}
+
+% ---------- Listings ----------
+\lstset{
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  breaklines=true,
+  frame=single,
+  framerule=0.2pt,
+  tabsize=2,
+  showstringspaces=false
+}
+
+% ---------- Title ----------
+\newcommand{\product}{OpenBid}
+\title{DIGT2107: Practice of Software Development\\
+\Large Project Iteration 3: Testing and Initial Development\\[4pt]
+\large \product}
+\author{Team 1: Tyler \and Mani \and Yanness \and Alaister}
+\date{Due: November 2, 2025}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\textbf{Course:} DIGT2107 -- Fall Term 2025 \quad|\quad
+\textbf{Instructor:} Dr.\ May Haidar
+\end{center}
+
+\tableofcontents
+\newpage
+
+% ===================== 1. Introduction =====================
+\section{Introduction}
+\textbf{Project Name:} \product \\
+\textbf{Team Number:} \textbf{1} \\
+\textbf{Team Members:} Tyler, Mani, Yanness, Alaister
+
+\paragraph{Document Overview}
+This document outlines the deliverables for Iteration 3, focusing on the initial development phase. It shows how our \textit{test cases} map to the \textit{functional and non-functional requirements} from earlier iterations, and it reports the current working prototype. Goals: implement core functionality tied to high-priority stories, develop comprehensive unit tests, and deliver a working prototype demonstrating traceability.
+
+% ===================== 2. Iteration Goals and Objectives =====================
+\section{Iteration Goals and Objectives}
+\begin{itemize}[leftmargin=1.4em]
+  \item Implement core flows: \textbf{auth + Duo 2FA}, \textbf{KYC gate} (stubbed via Stripe Identity sandbox token), \textbf{post a job}, \textbf{browse on map}, \textbf{place a bid}.
+  \item Develop and run unit tests mapped to requirements (frontend component tests and backend handler tests).
+  \item Deliver a prototype demonstrating requirement \(\leftrightarrow\) test case links.
+\end{itemize}
+
+% ===================== 3. Requirement to Test Case Traceability =====================
+\section{Requirement to Test Case Traceability}
+Tables below map each requirement to the test cases that validate it. Coverage status will be updated as testing completes.
+
+\subsection*{Functional Requirements (FR)}
+\begin{longtable}{@{}p{0.12\linewidth} p{0.55\linewidth} p{0.15\linewidth} p{0.14\linewidth}@{}}
+\toprule
+\textbf{Req ID} & \textbf{Requirement Description} & \textbf{Test Case IDs} & \textbf{Coverage} \\
+\midrule
+\endhead
+FR-001 & System shall allow authenticated users to \textbf{post jobs} with title, description, budget, photos, and location. & TC-001, TC-002 & Partially Covered \\
+FR-002 & System shall allow providers to \textbf{browse jobs on a map} with basic filters (radius, category). & TC-003, TC-004 & Partially Covered \\
+FR-003 & System shall allow providers to \textbf{place bids} on open jobs; posters can view and accept a bid. & TC-005, TC-006 & Partially Covered \\
+FR-004 & System shall enforce \textbf{KYC for all users} before posting or bidding. & TC-007 & Partially Covered \\
+FR-005 & System shall support \textbf{user authentication} with \textbf{Duo 2FA} for sensitive actions. & TC-008 & Partially Covered \\
+FR-006 & System shall provide \textbf{in-thread messaging} per job after acceptance. & TC-009 & Planned \\
+FR-007 & System shall record \textbf{ratings and reviews} after job completion. & TC-010 & Planned \\
+\bottomrule
+\end{longtable}
+
+\subsection*{Non-Functional Requirements (NFR)}
+\begin{longtable}{@{}p{0.12\linewidth} p{0.55\linewidth} p{0.15\linewidth} p{0.14\linewidth}@{}}
+\toprule
+\textbf{Req ID} & \textbf{Requirement Description} & \textbf{Test Case IDs} & \textbf{Coverage} \\
+\midrule
+\endhead
+NFR-001 & \textbf{Performance:} Search/browse should return results within 800\,ms P95 for a metro with 5k open jobs (stub data). & TC-011 & Planned \\
+NFR-002 & \textbf{Security:} Only KYC-verified users can hit write endpoints for jobs/bids. & TC-007, TC-012 & Partially Covered \\
+NFR-003 & \textbf{Usability:} Map view and list view maintain accessible contrast and keyboard navigation for core actions. & TC-013 & Planned \\
+\bottomrule
+\end{longtable}
+
+\paragraph{Notes}
+\begin{itemize}[leftmargin=1.4em]
+  \item Each requirement is validated by one or more test cases. Gaps are flagged as \textit{Planned}.
+  \item NFR coverage status is informative only (not required for grading), but we track it to guide future work.
+\end{itemize}
+
+% ===================== 4. Detailed Test Case Descriptions =====================
+\section{Detailed Test Case Descriptions}
+For brevity we include the highest-priority cases now; the full catalog will live in the repo under \texttt{tests/}.
+
+\subsection*{TC-001}
+\textbf{Title:} Post Job - Valid Inputs \\
+\textbf{Requirement:} FR-001 \\
+\textbf{Preconditions:} User is logged in, KYC status = verified. \\
+\textbf{Steps:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item Navigate to \texttt{/new-job}.
+  \item Enter valid title, description, budget, and pick a map location (mocked Google Maps).
+  \item Upload a photo (mock file).
+  \item Click \texttt{Post}.
+\end{enumerate}
+\textbf{Expected Result:} Job document is created in Firestore; UI redirects to Job Detail. \\
+\textbf{Actual Result:} To be filled after execution. \\
+\textbf{Status:} Pending \quad \textbf{Priority:} High
+
+\subsection*{TC-002}
+\textbf{Title:} Post Job - Validation Errors \\
+\textbf{Requirement:} FR-001 \\
+\textbf{Preconditions:} Logged in, KYC verified. \\
+\textbf{Steps:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item Navigate to \texttt{/new-job}.
+  \item Leave title empty; click \texttt{Post}.
+\end{enumerate}
+\textbf{Expected Result:} Client-side validation shows error; no write occurs. \\
+\textbf{Status:} Pending \quad \textbf{Priority:} High
+
+\subsection*{TC-003}
+\textbf{Title:} Map Browse - Within Radius \\
+\textbf{Requirement:} FR-002 \\
+\textbf{Preconditions:} Seeded jobs exist within 10\,km. \\
+\textbf{Steps:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item Open \texttt{/jobs}.
+  \item Set radius filter = 10\,km.
+\end{enumerate}
+\textbf{Expected Result:} Pins and list only include jobs within 10\,km. \\
+\textbf{Status:} Pending \quad \textbf{Priority:} High
+
+\subsection*{TC-004}
+\textbf{Title:} Map Browse - Category Filter \\
+\textbf{Requirement:} FR-002 \\
+\textbf{Expected Result:} Only jobs of selected category are shown. \\
+\textbf{Status:} Pending \quad \textbf{Priority:} Medium
+
+\subsection*{TC-005}
+\textbf{Title:} Place Bid - Valid \\
+\textbf{Requirement:} FR-003 \\
+\textbf{Preconditions:} Provider is logged in, KYC verified, job is open. \\
+\textbf{Expected Result:} Bid document created; poster sees bid in Job Detail. \\
+\textbf{Status:} Pending \quad \textbf{Priority:} High
+
+\subsection*{TC-006}
+\textbf{Title:} Accept Bid - Poster Flow \\
+\textbf{Requirement:} FR-003 \\
+\textbf{Expected Result:} Job status transitions to \texttt{awarded}; winning bid marked \texttt{accepted}. \\
+\textbf{Status:} Pending \quad \textbf{Priority:} High
+
+\subsection*{TC-007}
+\textbf{Title:} KYC Gate - Block Unverified Writes \\
+\textbf{Requirement:} FR-004, NFR-002 \\
+\textbf{Preconditions:} User KYC status = pending. \\
+\textbf{Expected Result:} Attempts to post job or bid are rejected by Firestore rules/API; UI shows KYC required. \\
+\textbf{Status:} Pending \quad \textbf{Priority:} High
+
+\subsection*{TC-008}
+\textbf{Title:} Duo 2FA Challenge on Sensitive Action \\
+\textbf{Requirement:} FR-005 \\
+\textbf{Preconditions:} User logged in without recent 2FA; action = add payout method. \\
+\textbf{Expected Result:} Duo prompt required; action proceeds only on success. \\
+\textbf{Status:} Pending \quad \textbf{Priority:} Medium
+
+\subsection*{TC-009}
+\textbf{Title:} Messaging After Acceptance \\
+\textbf{Requirement:} FR-006 \\
+\textbf{Expected Result:} Parties can exchange messages in job thread; messages persist in Firestore. \\
+\textbf{Status:} Planned \quad \textbf{Priority:} Medium
+
+\subsection*{TC-010}
+\textbf{Title:} Submit Review on Completion \\
+\textbf{Requirement:} FR-007 \\
+\textbf{Expected Result:} Review saved and visible on profile; duplicate review blocked. \\
+\textbf{Status:} Planned \quad \textbf{Priority:} Medium
+
+\subsection*{TC-011}
+\textbf{Title:} Performance P95 - Map Query \\
+\textbf{Requirement:} NFR-001 \\
+\textbf{Expected Result:} P95 end-to-end from filter change to results render \(\leq 800\,\)ms on stub dataset. \\
+\textbf{Status:} Planned \quad \textbf{Priority:} Low
+
+\subsection*{TC-012}
+\textbf{Title:} Ruleset Audit - No Write Without Claims \\
+\textbf{Requirement:} NFR-002 \\
+\textbf{Expected Result:} Firestore rules reject writes missing \texttt{kycVerified == true}. \\
+\textbf{Status:} Pending \quad \textbf{Priority:} High
+
+\subsection*{TC-013}
+\textbf{Title:} Accessibility - Keyboard Nav on Map/List \\
+\textbf{Requirement:} NFR-003 \\
+\textbf{Expected Result:} Tabbing reaches filters, list items, and primary actions; visible focus outlines present. \\
+\textbf{Status:} Planned \quad \textbf{Priority:} Low
+
+% ===================== 5. Code Repository and Branching Strategy =====================
+\section{Code Repository and Branching Strategy}
+\textbf{Repository:} \url{https://github.com/your-org/openbid} \textit{(placeholder)} \\[4pt]
+\textbf{Branches:}
+\begin{itemize}[leftmargin=1.4em]
+  \item \texttt{main}: stable releases.
+  \item \texttt{develop}: ongoing integration.
+  \item \texttt{feature/\{slug\}}: e.g., \texttt{feature/auth}, \texttt{feature/map}, \texttt{feature/bids}, \texttt{feature/kyc}, \texttt{feature/tests}.
+\end{itemize}
+
+% ===================== 6. Task Allocation and Timeline =====================
+\section{Task Allocation and Timeline}
+\textbf{Pair-Programming Rotation (weekly):} two pairs; driver/navigator swap daily; Scrum Master rotates weekly (Tyler \(\rightarrow\) Mani \(\rightarrow\) Yanness \(\rightarrow\) Alaister).
+
+\subsection*{Sprint Plan (3 weeks for Iteration 3)}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Week 1:} Implement auth + Duo 2FA hook, KYC gate stub, Post Job UI/API, initial tests (TC-001, TC-002, TC-007, TC-008).
+  \item \textbf{Week 2:} Map browse (pins, filters), Place Bid flow, tests (TC-003, TC-004, TC-005, TC-006, TC-012).
+  \item \textbf{Week 3:} Prototype hardening, accessibility pass (keyboard focus), performance harness scaffolding, test documentation (TC-011, TC-013 planning).
+\end{itemize}
+
+\subsection*{Task Breakdown (examples)}
+\begin{itemize}[leftmargin=1.4em]
+  \item Frontend: NewJob form, MapView, JobList, Bid modal, validation.
+  \item Backend (Express on Firebase Functions/Cloud Run): endpoints for jobs, bids; KYC/Duo middleware.
+  \item Firestore rules: enforce \texttt{kycVerified == true} for job/bid writes.
+  \item Testing: Vitest/Jest + React Testing Library for UI; supertest for API; rules-unit-testing for Firestore.
+  \item Docs: update traceability, add test run notes.
+\end{itemize}
+
+% ===================== 7. Prototype Overview =====================
+\section{Prototype Overview}
+\textbf{Stack (MVP):} React + SCSS (Firebase Hosting), Node.js + Express (Firebase Functions or Cloud Run), Firestore, Google Maps JS, Stripe (Connect/Identity), Duo 2FA.
+
+\subsection*{Implemented in Iteration 3 (target)}
+\begin{itemize}[leftmargin=1.4em]
+  \item Auth shell with Duo challenge on sensitive action.
+  \item KYC gate (UI + rules) using a sandbox token flow.
+  \item Post Job UI + server write; basic Job Detail.
+  \item Map browse with radius/category filters on seeded data.
+  \item Place Bid basic happy path.
+\end{itemize}
+
+% ===================== 8. Submission Guidelines =====================
+\section{Submission Guidelines}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{GitHub:} Push code and documentation; tag release as \texttt{ITR2.1}.
+  \item \textbf{eClass PDF:} include \textit{Prototype Overview}, \textit{Updated Requirements/Use Cases}, \textit{Test Plan and (initial) Results}, and \textit{Updated Iteration Plan/Backlog}.
+\end{itemize}
+
+% ===================== Appendix A: Sample Test Skeletons =====================
+\section*{Appendix A: Test Skeletons (illustrative)}
+\subsection*{Frontend (React Testing Library)}
+\begin{lstlisting}
+import { render, screen, fireEvent } from '@testing-library/react'
+import NewJob from '../src/pages/NewJob'
+
+test('TC-002: shows validation error when title empty', async () => {
+  render(<NewJob />)
+  fireEvent.click(screen.getByRole('button', { name: /post/i }))
+  expect(await screen.findByText(/title is required/i)).toBeInTheDocument()
+})
+\end{lstlisting}
+
+\subsection*{API (Express + supertest)}
+\begin{lstlisting}
+import request from 'supertest'
+import app from '../functions/app'
+
+test('TC-007: blocks job create when kyc not verified', async () => {
+  const token = await getAuthToken({ kycVerified: false })
+  const res = await request(app)
+    .post('/jobs')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ title: 'Yard help', ... })
+  expect(res.status).toBe(403)
+})
+\end{lstlisting}
+
+\subsection*{Firestore Rules (rules-unit-testing)}
+\begin{lstlisting}
+it('TC-012: rejects write without kycVerified', async () => {
+  const db = authedDB({ uid: 'u1', kycVerified: false })
+  const ref = db.collection('jobs').doc('j1')
+  await assertFails(ref.set({ title: 'T', ... }))
+})
+\end{lstlisting}
+
+\end{document}
