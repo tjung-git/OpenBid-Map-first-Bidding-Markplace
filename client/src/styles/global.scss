@@ -1,0 +1,22 @@
+@use '@carbon/styles/scss/theme' as carbonTheme;   // mixin
+@use '@carbon/styles/scss/themes' as carbonThemes; // tokens
+@use '@carbon/styles/scss/reset';                  // optional sensible reset
+
+/* Default: g100 (dark) */
+:root {
+  @include carbonTheme.theme(carbonThemes.$g100);
+  color-scheme: dark; /* helps native form controls */
+}
+
+/* Optional light theme you can toggle to with a wrapper */
+.carbon-light {
+  @include carbonTheme.theme(carbonThemes.$g10);
+  color-scheme: light;
+}
+
+/* App basics */
+html, body, #root { height: 100%; }
+body {
+  background: var(--cds-background, #161616);   /* g100 background */
+  color: var(--cds-text-primary, #f4f4f4);
+}
