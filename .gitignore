@@ -1,8 +1,17 @@
 # macOS
 .DS_Store
 
-# Node.js
+# Node.js dependencies
 node_modules/
+client/node_modules/
+server/node_modules/
 
 # Environment variables
 .env
+client/.env
+server/.env
+
+# Keep the example files
+!.env.example
+!client/.env.example
+!server/.env.example
