@@ -9,6 +9,7 @@ import {
   InlineNotification,
 } from "@carbon/react";
 import MapView from "../components/MapView";
+import "../styles/pages/jobs.css";
 
 export default function JobDetail() {
   const { jobId } = useParams();
@@ -38,7 +39,7 @@ export default function JobDetail() {
       <p>{job.description}</p>
       <MapView markers={[job.location]} center={job.location} />
 
-      <h3 style={{ marginTop: 16 }}>Place a Bid</h3>
+      <h3 className="job-section-title">Place a Bid</h3>
       {err && (
         <InlineNotification
           title="Error"
@@ -60,12 +61,12 @@ export default function JobDetail() {
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
-        <Button type="submit" style={{ marginTop: 8 }}>
+        <Button type="submit" className="job-bid-button">
           Submit Bid
         </Button>
       </Form>
 
-      <h3 style={{ marginTop: 16 }}>Bids</h3>
+      <h3 className="job-section-title">Bids</h3>
       <ul>
         {bids.map((b) => (
           <li key={b.id}>
