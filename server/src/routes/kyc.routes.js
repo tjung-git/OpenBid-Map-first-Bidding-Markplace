@@ -16,7 +16,7 @@ router.post("/verification", async (req, res, next) => {
   try {
     const s = await auth.verify(req);
     if (!s) return res.status(401).json({ error: "unauthorized" });
-    const r = await kyc.Verification(s.uid);
+    const r = await kyc.verification(s.uid);
     res.json(r);
   } catch (e) {
     next(e);
@@ -27,7 +27,7 @@ router.get("/status", async (req, res, next) => {
   try {
     const s = await auth.verify(req);
     if (!s) return res.status(401).json({ error: "unauthorized" });
-    const r = await kyc.Status(s.uid);
+    const r = await kyc.status(s.uid);
     res.json(r);
   } catch (e) {
     next(e);
@@ -40,7 +40,7 @@ if (config.prototype) {
     try {
       const s = await auth.verify(req);
       if (!s) return res.status(401).json({ error: "unauthorized" });
-      await mockKyc.ForcePass(s.uid);
+      await mockKyc.forcePass(s.uid);
       const u = await db.user.get(s.uid);
       db.user.upsert({ ...u, kycStatus: "verified" });
       res.json({ ok: true });
