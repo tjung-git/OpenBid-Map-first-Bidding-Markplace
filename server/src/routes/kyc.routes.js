@@ -12,7 +12,7 @@ const auth = config.prototype ? mockAuth : realAuth;
 const kyc = config.prototype ? mockKyc : realKyc;
 const db = config.prototype ? mockDb : realDb;
 
-router.post("/start", async (req, res, next) => {
+router.post("/kyc-verification", async (req, res, next) => {
   try {
     const s = await auth.verify(req);
     if (!s) return res.status(401).json({ error: "unauthorized" });
@@ -23,7 +23,7 @@ router.post("/start", async (req, res, next) => {
   }
 });
 
-router.get("/status", async (req, res, next) => {
+router.get("/kyc-status", async (req, res, next) => {
   try {
     const s = await auth.verify(req);
     if (!s) return res.status(401).json({ error: "unauthorized" });
@@ -36,7 +36,7 @@ router.get("/status", async (req, res, next) => {
 
 // prototype helper to mark KYC passed
 if (config.prototype) {
-  router.post("/force-pass", async (req, res, next) => {
+  router.post("/kyc-force-pass", async (req, res, next) => {
     try {
       const s = await auth.verify(req);
       if (!s) return res.status(401).json({ error: "unauthorized" });
