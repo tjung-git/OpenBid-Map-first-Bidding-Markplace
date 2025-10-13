@@ -8,7 +8,13 @@ export const config = {
     projectId: process.env.FIREBASE_PROJECT_ID,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
     privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    apiKey: process.env.FIREBASE_WEB_API_KEY,
   },
+  // URL Firebase should redirect to after email verification completes.
+  emailVerificationRedirect:
+    process.env.EMAIL_VERIFICATION_REDIRECT ||
+    process.env.APP_URL ||
+    "http://localhost:5176/login", // your local host/login
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY,
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
