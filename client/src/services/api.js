@@ -26,8 +26,8 @@ export const api = {
     const r = await fetch(`${base}/api/auth/me`, { headers: headers() });
     return r.ok ? r.json() : null;
   },
-  async kycStart() {
-    const r = await fetch(`${base}/api/kyc/start`, {
+  async kycVerification() {
+    const r = await fetch(`${base}/api/kyc/verification`, {
       method: "POST",
       headers: headers(),
     });

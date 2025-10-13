@@ -12,22 +12,22 @@ const auth = config.prototype ? mockAuth : realAuth;
 const kyc = config.prototype ? mockKyc : realKyc;
 const db = config.prototype ? mockDb : realDb;
 
-router.post("/kyc-verification", async (req, res, next) => {
+router.post("/verification", async (req, res, next) => {
   try {
     const s = await auth.verify(req);
     if (!s) return res.status(401).json({ error: "unauthorized" });
-    const r = await kyc.start(s.uid);
+    const r = await kyc.Verification(s.uid);
     res.json(r);
   } catch (e) {
     next(e);
   }
 });
 
-router.get("/kyc-status", async (req, res, next) => {
+router.get("/status", async (req, res, next) => {
   try {
     const s = await auth.verify(req);
     if (!s) return res.status(401).json({ error: "unauthorized" });
-    const r = await kyc.status(s.uid);
+    const r = await kyc.Status(s.uid);
     res.json(r);
   } catch (e) {
     next(e);
@@ -36,11 +36,11 @@ router.get("/kyc-status", async (req, res, next) => {
 
 // prototype helper to mark KYC passed
 if (config.prototype) {
-  router.post("/kyc-force-pass", async (req, res, next) => {
+  router.post("/force-pass", async (req, res, next) => {
     try {
       const s = await auth.verify(req);
       if (!s) return res.status(401).json({ error: "unauthorized" });
-      await mockKyc.forcePass(s.uid);
+      await mockKyc.ForcePass(s.uid);
       const u = await db.user.get(s.uid);
       db.user.upsert({ ...u, kycStatus: "verified" });
       res.json({ ok: true });

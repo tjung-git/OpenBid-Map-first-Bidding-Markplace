@@ -2,7 +2,7 @@ import Stripe from 'stripe';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_FOR_TESTIN);
 
 export const kyc = {
-  async kycVerification(uid) {
+  async verification(uid) {
     const verificationSession = await stripe.identity.verificationSessions.create({
       type: 'document',
       provided_details: {
@@ -19,7 +19,7 @@ export const kyc = {
     };
   },
 
-  async kycStatus(uid) {
+  async status(uid) {
     // implement caching
     return { status: "pending" };
   },
