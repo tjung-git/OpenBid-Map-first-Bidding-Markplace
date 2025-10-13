@@ -2,19 +2,28 @@ import { useEffect, useState } from "react";
 import { DataTable, Button, InlineNotification } from "@carbon/react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
+import { getRequirements, getUser } from "../services/session";
+import "../styles/pages/jobs.css";
 import MapView from "../components/MapView";
 
 export default function JobList() {
   const [jobs, setJobs] = useState([]);
   const [err, setErr] = useState("");
   const nav = useNavigate();
+  const user = getUser();
+  const requirements = getRequirements();
 
   useEffect(() => {
+    const params = [];
+    if (user?.userType === "contractor") {
+      params.push("mine=true");
+    }
+    const query = params.length ? `?${params.join("&")}` : "";
     api
-      .jobsList()
+      .jobsList(query)
       .then((d) => setJobs(d.jobs || []))
       .catch(() => setErr("Failed to load jobs"));
-  }, []);
+  }, [user?.userType]);
 
   const headers = [
     { key: "title", header: "Title" },
@@ -45,15 +54,29 @@ export default function JobList() {
           .filter((j) => j.location?.lat && j.location?.lng)
           .map((j) => j.location)}
       />
-      <div style={{ marginTop: 16 }}>
-        <Button onClick={() => nav("/new-job")}>Post a Job</Button>
-      </div>
+      {getUser()?.userType === "contractor" && (
+        <div className="job-list-actions">
+          <Button
+            onClick={() => {
+              const requirements = getRequirements();
+              if (!requirements.kycVerified) {
+                nav("/kyc", {
+                  state: {
+                    notice: "Complete 2FA/KYC before posting jobs.",
+                  },
+                });
+                return;
+              }
+              nav("/new-job");
+            }}
+          >
+            Post a Job
+          </Button>
+        </div>
+      )}
       <DataTable rows={rows} headers={headers}>
         {({ rows, headers, getHeaderProps, getRowProps }) => (
-          <table
-            className="cds--data-table cds--data-table--zebra"
-            style={{ marginTop: 16 }}
-          >
+          <table className="cds--data-table cds--data-table--zebra job-table">
             <thead>
               <tr>
                 {headers.map((h) => (
