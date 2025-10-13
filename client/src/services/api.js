@@ -11,13 +11,28 @@ function headers() {
 }
 
 export const api = {
-  async login(email) {
+  async signup(payload) {
+    const r = await fetch(`${base}/api/auth/signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async login(email, password) {
     const r = await fetch(`${base}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, password }),
     });
     const data = await r.json();
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
     if (cfg.prototype && data.user?.uid)
       localStorage.setItem("mockUid", data.user.uid);
     return data;
@@ -44,8 +59,8 @@ export const api = {
     });
     return r.json();
   },
-  async jobsList() {
-    const r = await fetch(`${base}/api/jobs`, { headers: headers() });
+  async jobsList(query = "") {
+    const r = await fetch(`${base}/api/jobs${query}`, { headers: headers() });
     return r.json();
   },
   async jobCreate(payload) {
