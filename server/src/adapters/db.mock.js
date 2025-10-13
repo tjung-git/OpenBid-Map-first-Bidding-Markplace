@@ -10,12 +10,36 @@ const id = (p) => `${p}_${seq++}`;
 
 export const db = {
   user: {
-    upsert(u) {
-      state.users.set(u.uid, u);
-      return u;
+    async upsert(u) {
+      const current = state.users.get(u.uid) || {};
+      const merged = { ...current, ...u };
+      state.users.set(u.uid, merged);
+      return merged;
     },
-    get(uid) {
+    async get(uid) {
       return state.users.get(uid) || null;
+    },
+    async create(user) {
+      const newUser = { ...user };
+      state.users.set(user.uid, newUser);
+      return newUser;
+    },
+    async update(uid, patch) {
+      const current = state.users.get(uid);
+      if (!current) return null;
+      const updated = { ...current, ...patch };
+      state.users.set(uid, updated);
+      return updated;
+    },
+    async findByEmail(email) {
+      const normalized = email?.toLowerCase();
+      if (!normalized) return null;
+      for (const user of state.users.values()) {
+        if (user.email?.toLowerCase() === normalized) {
+          return user;
+        }
+      }
+      return null;
     },
   },
   job: {
