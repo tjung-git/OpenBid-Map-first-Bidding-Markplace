@@ -18,7 +18,7 @@ export default function KycGate() {
   }, []);
 
   async function start() {
-    const r = await api.kycStart();
+    const r = await api.kycVerification();
     if (cfg.prototype) {
       // in PROTOTYPE, just inform the user KYC session would start
       // or allow "force pass"

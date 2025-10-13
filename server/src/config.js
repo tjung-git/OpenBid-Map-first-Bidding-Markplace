@@ -10,7 +10,7 @@ export const config = {
     privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
   },
   stripe: {
-    secretKey: process.env.STRIPE_SECRET_KEY,
+    secretKey: process.env.STRIPE_SECRET_KEY_FOR_TESTING,
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     identityTemplate: process.env.STRIPE_IDENTITY_VERIFICATION_TEMPLATE,
   },
