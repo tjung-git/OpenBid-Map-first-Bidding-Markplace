@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Form,
   TextInput,
@@ -7,7 +7,9 @@ import {
   InlineNotification,
 } from "@carbon/react";
 import { api } from "../services/api";
+import { getRequirements, getUser } from "../services/session";
 import { useNavigate } from "react-router-dom";
+import "../styles/pages/jobs.css";
 
 export default function NewJob() {
   const [title, setTitle] = useState("");
@@ -17,10 +19,37 @@ export default function NewJob() {
   const [lng, setLng] = useState(-79.3832);
   const [err, setErr] = useState("");
   const nav = useNavigate();
+  const user = getUser();
+  useEffect(() => {
+    if (!user || user.userType !== "contractor") {
+      nav("/jobs", { replace: true });
+      return;
+    }
+    if (!getRequirements().kycVerified) {
+      nav("/kyc", {
+        replace: true,
+        state: {
+          notice: "Complete 2FA/KYC before posting jobs.",
+        },
+      });
+    }
+  }, [nav, user]);
 
   async function submit(e) {
     e.preventDefault();
     setErr("");
+    if (getUser()?.userType !== "contractor") {
+      setErr("Only contractors can post jobs.");
+      return;
+    }
+    if (!getRequirements().kycVerified) {
+      nav("/kyc", {
+        state: {
+          notice: "Complete 2FA/KYC before posting jobs.",
+        },
+      });
+      return;
+    }
     const r = await api.jobCreate({
       title,
       description: desc,
@@ -62,13 +91,7 @@ export default function NewJob() {
           value={budget}
           onChange={(_, { value }) => setBudget(Number(value))}
         />
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "1rem",
-          }}
-        >
+        <div className="job-form-grid">
           <NumberInput
             id="lat"
             label="Latitude"
@@ -82,7 +105,7 @@ export default function NewJob() {
             onChange={(_, { value }) => setLng(Number(value))}
           />
         </div>
-        <Button type="submit" style={{ marginTop: "1rem" }}>
+        <Button type="submit" className="job-submit">
           Create
         </Button>
       </Form>
