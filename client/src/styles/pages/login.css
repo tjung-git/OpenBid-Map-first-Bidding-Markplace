@@ -1,0 +1,16 @@
+.auth-container {
+  max-width: 480px;
+  margin: 4rem auto 0;
+}
+
+.auth-form-actions {
+  margin-top: 1.5rem;
+}
+
+.auth-inline-link {
+  margin-top: 0.75rem;
+}
+
+.auth-notification {
+  margin-top: 1rem;
+}

@@ -1,0 +1,25 @@
+.job-list-actions {
+  margin-top: 16px;
+}
+
+.job-table {
+  margin-top: 16px;
+}
+
+.job-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.job-submit {
+  margin-top: 1rem;
+}
+
+.job-section-title {
+  margin-top: 16px;
+}
+
+.job-bid-button {
+  margin-top: 8px;
+}
