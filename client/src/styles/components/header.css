@@ -22,3 +22,24 @@
   color: #e0b400;
   font-weight: 600;
 }
+
+.header-logo-button {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  gap: 0.5rem;
+}
+
+.header-logo-button img {
+  height: 28px;
+  width: 28px;
+}
+
+.header-logo-text {
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
