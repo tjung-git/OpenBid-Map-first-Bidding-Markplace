@@ -73,6 +73,10 @@ export default function Login() {
   return (
     <div className="container auth-container">
       <Form onSubmit={submit}>
+        <div className="auth-logo">
+          <img src="/Images/OpenBidLogo.svg" alt="OpenBid logo" />
+          <span>OpenBid</span>
+        </div>
         <h2>Sign in</h2>
         <TextInput
           id="email"

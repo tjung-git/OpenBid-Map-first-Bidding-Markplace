@@ -54,6 +54,10 @@ export default function Signup() {
   return (
     <div className="container auth-form-container">
       <Form onSubmit={submit}>
+        <div className="auth-logo">
+          <img src="/Images/OpenBidLogo.svg" alt="OpenBid logo" />
+          <span>OpenBid</span>
+        </div>
         <h2>Create your account</h2>
         <TextInput
           id="firstName"
