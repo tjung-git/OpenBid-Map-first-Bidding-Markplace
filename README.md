@@ -149,8 +149,8 @@ These steps provision Firebase, configure the Node/React apps, and run the proto
    FIREBASE_CLIENT_EMAIL=<client_email>
    FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
    FIREBASE_WEB_API_KEY=<firebase web api key>
-   APP_URL=http://localhost:5176
-   EMAIL_VERIFICATION_REDIRECT=http://localhost:5176/login
+   APP_URL=http://localhost:5173
+   EMAIL_VERIFICATION_REDIRECT=http://localhost:5173/login
    APP_NAME=OpenBid
    ```
 
@@ -193,4 +193,4 @@ npm run dev
 ```
 
 - With `PROTOTYPE=TRUE` the backend falls back to in-memory mocks (no Firebase, no email). Keep it `FALSE` for the real stack.
-- Visit `http://localhost:5176/` to access the login page.
+- Visit `http://localhost:5173/` to access the login page.

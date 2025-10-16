@@ -14,7 +14,7 @@ export const config = {
   emailVerificationRedirect:
     process.env.EMAIL_VERIFICATION_REDIRECT ||
     process.env.APP_URL ||
-    "http://localhost:5176/login", // your local host/login
+    "http://localhost:5173/login", // your local host/login
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY,
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
