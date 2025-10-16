@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import {
   Header,
@@ -23,8 +24,23 @@ export default function App() {
     ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1)
     : null;
 
+  const handleBrandNavigation = useCallback(() => {
+    const currentUser = getUser();
+    if (!currentUser) {
+      nav("/login");
+      return;
+    }
+
+    if (currentUser.userType === "contractor") {
+      nav("/new-job");
+    } else {
+      nav("/jobs");
+    }
+  }, [nav]);
+
   function handleNewJob() {
-    if (!requirements.kycVerified) {
+    const latestRequirements = getRequirements();
+    if (!latestRequirements.kycVerified) {
       nav("/kyc", {
         state: {
           notice: "Complete 2FA/KYC before posting jobs.",
@@ -37,7 +53,17 @@ export default function App() {
   return (
     <>
       <Header aria-label="OpenBid">
-        <HeaderName prefix="">OpenBid</HeaderName>
+        <HeaderName prefix="">
+          <button
+            type="button"
+            className="header-logo-button"
+            onClick={handleBrandNavigation}
+            aria-label="OpenBid home"
+          >
+            <img src="/Images/OpenBidLogo.svg" alt="OpenBid logo" />
+            <span className="header-logo-text">OpenBid</span>
+          </button>
+        </HeaderName>
         <HeaderGlobalBar>
           <div className="header-user-info">
             <span className="header-user-info__greeting">
