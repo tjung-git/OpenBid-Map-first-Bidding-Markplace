@@ -96,21 +96,23 @@ export default function Signup() {
           <SelectItem value="bidder" text="Bidder" />
           <SelectItem value="contractor" text="Contractor" />
         </Select>
-        <Button
-          type="submit"
-          className="auth-form-actions"
-          disabled={submitting}
-        >
-          {submitting ? "Creating…" : "Create account"}
-        </Button>
-        <Button
-          kind="tertiary"
-          className="auth-inline-link"
-          onClick={() => navigate("/login")}
-          disabled={submitting}
-        >
-          Already have an account? Sign in
-        </Button>
+        <div className="auth-action-row">
+          <Button
+            type="submit"
+            className="auth-form-actions"
+            disabled={submitting}
+          >
+            {submitting ? "Creating…" : "Create account"}
+          </Button>
+          <Button
+            kind="tertiary"
+            className="auth-inline-link"
+            onClick={() => navigate("/login")}
+            disabled={submitting}
+          >
+            Already have an account? Sign in
+          </Button>
+        </div>
         {error && (
           <InlineNotification
             title="Error"

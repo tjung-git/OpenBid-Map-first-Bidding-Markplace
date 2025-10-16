@@ -11,6 +11,18 @@
   margin-top: 0.75rem;
 }
 
+.auth-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.auth-action-row .auth-form-actions,
+.auth-action-row .auth-inline-link {
+  margin-top: 0;
+}
+
 .auth-notification {
   margin-top: 1rem;
 }
