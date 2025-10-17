@@ -10,6 +10,7 @@ export default function Nav() {
   const showNewJob =
     isContractor && (path.startsWith("/new-job") || path.startsWith("/kyc"));
   const showKyc = isContractor && path.startsWith("/kyc");
+  const isJobDetail = /^\/jobs\/[^/]+$/.test(path);
   return (
     <nav className="container nav-container">
       <Breadcrumb noTrailingSlash>
@@ -24,6 +25,11 @@ export default function Nav() {
         {showKyc && (
           <BreadcrumbItem isCurrentPage={loc.pathname === "/kyc"}>
             <Link to="/kyc">KYC</Link>
+          </BreadcrumbItem>
+        )}
+        {isJobDetail && (
+          <BreadcrumbItem isCurrentPage>
+            Job Detail
           </BreadcrumbItem>
         )}
       </Breadcrumb>
