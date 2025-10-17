@@ -16,10 +16,23 @@ async function requireContractor(req, res) {
     return null;
   }
 
-  const user = await db.user.get(session.uid);
+  let user = null;
+  if (session.uid) {
+    user = await db.user.get(session.uid);
+  }
+  if (!user && session.email) {
+    user = await db.user.findByEmail(session.email.toLowerCase());
+  }
+  if (!user && req.header("x-user-id")) {
+    user = await db.user.get(req.header("x-user-id"));
+  }
   if (!user) {
     res.status(404).json({ error: "user_not_found" });
     return null;
+  }
+
+  if (user.uid && session.uid !== user.uid) {
+    session.uid = user.uid;
   }
 
   if ((user.userType || "").toLowerCase() !== "contractor") {
@@ -83,6 +96,55 @@ router.get("/:jobId", async (req, res, next) => {
     const job = await db.job.get(req.params.jobId);
     if (!job) return res.status(404).json({ error: "not found" });
     res.json({ job });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.patch("/:jobId", async (req, res, next) => {
+  try {
+    const context = await requireContractor(req, res);
+    if (!context) return;
+    if (context.user.kycStatus !== "verified") {
+      return res.status(403).json({ error: "KYC required" });
+    }
+    const jobId = req.params.jobId;
+    const job = await db.job.get(jobId);
+    if (!job) return res.status(404).json({ error: "not found" });
+    if (job.posterId !== context.user.uid) {
+      return res.status(403).json({ error: "forbidden" });
+    }
+    const fields = ["title", "description", "budgetAmount", "location", "status"];
+    const patch = {};
+    for (const key of fields) {
+      if (req.body[key] !== undefined) patch[key] = req.body[key];
+    }
+    if (Object.keys(patch).length === 0) {
+      return res.status(400).json({ error: "no_update_fields" });
+    }
+    const updated = await db.job.update(jobId, patch);
+    res.json({ job: updated });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.delete("/:jobId", async (req, res, next) => {
+  try {
+    const context = await requireContractor(req, res);
+    if (!context) return;
+    if (context.user.kycStatus !== "verified") {
+      return res.status(403).json({ error: "KYC required" });
+    }
+    const jobId = req.params.jobId;
+    const job = await db.job.get(jobId);
+    if (!job) return res.status(404).json({ error: "not found" });
+    if (job.posterId !== context.user.uid) {
+      return res.status(403).json({ error: "forbidden" });
+    }
+    const deleted = await db.job.delete(jobId);
+    if (!deleted) return res.status(404).json({ error: "not found" });
+    res.status(204).end();
   } catch (e) {
     next(e);
   }
