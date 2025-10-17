@@ -1,10 +1,28 @@
-import { Navigate, useLocation } from "react-router-dom";
-import { getSession } from "../services/session";
+import { useEffect } from "react";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import {
+  getSession,
+  startInactivityMonitor,
+  logout,
+} from "../services/session";
 import App from "../App.jsx";
 
 export default function ProtectedApp() {
   const session = getSession();
   const location = useLocation();
+  const nav = useNavigate();
+
+  useEffect(() => {
+    if (!session?.user) return undefined;
+    const stop = startInactivityMonitor(() => {
+      logout();
+      nav("/login", {
+        replace: true,
+        state: { notice: "Session expired after inactivity." },
+      });
+    });
+    return stop;
+  }, [session?.user, nav]);
 
   if (!session?.user) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
