@@ -1,21 +1,35 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DataTable, Button, InlineNotification } from "@carbon/react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import { getRequirements, getUser } from "../services/session";
-import "../styles/pages/jobs.css";
 import MapView from "../components/MapView";
+import "../styles/pages/jobs.css";
 
 export default function JobList() {
   const [jobs, setJobs] = useState([]);
   const [err, setErr] = useState("");
+  const [success, setSuccess] = useState("");
   const nav = useNavigate();
+  const location = useLocation();
   const user = getUser();
   const requirements = getRequirements();
 
+  const isContractor = user?.userType === "contractor";
+  const kycVerified = Boolean(requirements.kycVerified);
+
   useEffect(() => {
+    if (location.state?.notice) {
+      setSuccess(location.state.notice);
+      setErr("");
+      nav(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, nav]);
+
+  useEffect(() => {
+    if (!user) return;
     const params = [];
-    if (user?.userType === "contractor") {
+    if (isContractor) {
       params.push("mine=true");
     }
     const query = params.length ? `?${params.join("&")}` : "";
@@ -23,24 +37,86 @@ export default function JobList() {
       .jobsList(query)
       .then((d) => setJobs(d.jobs || []))
       .catch(() => setErr("Failed to load jobs"));
-  }, [user?.userType]);
+  }, [user, isContractor]);
+
+  const markers = useMemo(() => {
+    return jobs
+      .filter((job) => job.location?.lat && job.location?.lng)
+      .map((job) => job.location);
+  }, [jobs]);
 
   const headers = [
     { key: "title", header: "Title" },
+    { key: "description", header: "Description" },
     { key: "budgetAmount", header: "Budget" },
-    { key: "status", header: "Status" },
+    { key: "createdAt", header: "Created" },
   ];
 
-  const rows = jobs.map((j) => ({
-    id: j.id,
-    title: j.title,
-    budgetAmount: j.budgetAmount ?? "-",
-    status: j.status,
-  }));
+  const rows = useMemo(() => {
+    const sorted = [...jobs].sort((a, b) => {
+      const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bDate - aDate;
+    });
+    return sorted.map((job) => ({
+      id: job.id,
+      title: job.title,
+      description: job.description || "-",
+      budgetAmount:
+        typeof job.budgetAmount === "number"
+          ? `$${job.budgetAmount.toFixed(2)}`
+          : job.budgetAmount ?? "-",
+      createdAt: job.createdAt
+        ? new Date(job.createdAt).toLocaleString()
+        : "-",
+    }));
+  }, [jobs]);
+
+  function handlePostClick() {
+    const latest = getRequirements();
+    if (!latest.kycVerified) {
+      nav("/kyc", {
+        state: { notice: "Complete KYC before posting jobs." },
+      });
+      return;
+    }
+    nav("/new-job");
+  }
+
+  async function handleDelete(jobId) {
+    if (!isContractor) return;
+    const job = jobs.find((j) => j.id === jobId);
+    const jobTitle = job?.title || "Job";
+    const confirmed = window.confirm(
+      `Delete "${jobTitle}"? This cannot be undone.`
+    );
+    if (!confirmed) return;
+    try {
+      await api.jobDelete(jobId);
+      setJobs((prev) => prev.filter((j) => j.id !== jobId));
+      setSuccess(`"${jobTitle}" deleted.`);
+      setErr("");
+    } catch (deleteErr) {
+      const message =
+        deleteErr?.data?.error === "forbidden"
+          ? "You can only delete jobs you created."
+          : "Unable to delete job. Please try again.";
+      setErr(message);
+    }
+  }
 
   return (
     <div>
       <h2>Nearby Jobs</h2>
+      {success && (
+        <InlineNotification
+          title="Success"
+          subtitle={success}
+          kind="success"
+          lowContrast
+          onClose={() => setSuccess("")}
+        />
+      )}
       {err && (
         <InlineNotification
           title="Error"
@@ -49,31 +125,26 @@ export default function JobList() {
           lowContrast
         />
       )}
-      <MapView
-        markers={jobs
-          .filter((j) => j.location?.lat && j.location?.lng)
-          .map((j) => j.location)}
-      />
-      {getUser()?.userType === "contractor" && (
+
+      {isContractor && !kycVerified && (
+        <InlineNotification
+          title="KYC Required"
+          subtitle="Complete KYC to post or edit your jobs. You can still view the jobs you have created."
+          kind="info"
+          lowContrast
+        />
+      )}
+
+      <MapView markers={markers} />
+
+      {isContractor && (
         <div className="job-list-actions">
-          <Button
-            onClick={() => {
-              const requirements = getRequirements();
-              if (!requirements.kycVerified) {
-                nav("/kyc", {
-                  state: {
-                    notice: "Complete 2FA/KYC before posting jobs.",
-                  },
-                });
-                return;
-              }
-              nav("/new-job");
-            }}
-          >
-            Post a Job
+          <Button onClick={handlePostClick}>
+            {kycVerified ? "Post a Job" : "Complete KYC"}
           </Button>
         </div>
       )}
+
       <DataTable rows={rows} headers={headers}>
         {({ rows, headers, getHeaderProps, getRowProps }) => (
           <table className="cds--data-table cds--data-table--zebra job-table">
@@ -88,15 +159,24 @@ export default function JobList() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} {...getRowProps({ row: r })}>
-                  {r.cells.map((c) => (
-                    <td key={c.id}>{c.value}</td>
+              {rows.map((row) => (
+                <tr key={row.id} {...getRowProps({ row })}>
+                  {row.cells.map((cell) => (
+                    <td key={cell.id}>{cell.value}</td>
                   ))}
-                  <td>
-                    <Button size="sm" onClick={() => nav(`/jobs/${r.id}`)}>
+                  <td className="job-row-actions">
+                    <Button size="sm" onClick={() => nav(`/jobs/${row.id}`)}>
                       Open
                     </Button>
+                    {isContractor && (
+                      <Button
+                        size="sm"
+                        kind="danger--ghost"
+                        onClick={() => handleDelete(row.id)}
+                      >
+                        Delete
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -104,6 +184,19 @@ export default function JobList() {
           </table>
         )}
       </DataTable>
+
+      {rows.length === 0 && (
+        <InlineNotification
+          title="No Jobs Found"
+          subtitle={
+            isContractor
+              ? "Jobs you create will appear here."
+              : "There are no jobs available yet."
+          }
+          kind="info"
+          lowContrast
+        />
+      )}
     </div>
   );
 }
