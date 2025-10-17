@@ -172,10 +172,61 @@ router.post("/login", async (req, res, next) => {
       }
     }
 
+    if ((user.emailVerification || "").toLowerCase() !== "verified") {
+      return res.status(403).json({
+        error: "verification_required",
+        emailVerification: user.emailVerification || "pending",
+      });
+    }
+
     let session = { uid: user.uid, email: user.email };
     if (!config.prototype) {
-      const authSession = await auth.signIn(user.email);
-      session = { ...authSession, uid: user.uid, email: user.email };
+      try {
+        const authSession = await auth.signIn(user.email, password);
+        session = { ...authSession, uid: user.uid, email: user.email };
+      } catch (error) {
+        if (error instanceof FirebaseIdentityError) {
+          if (error.message === "INVALID_PASSWORD") {
+            return res.status(401).json({ error: "invalid credentials" });
+          }
+          if (error.message === "EMAIL_NOT_FOUND") {
+            try {
+              const createdAccount = await signUpWithEmailPassword(
+                normalizedEmail,
+                password
+              );
+              await sendVerificationEmail(createdAccount.idToken);
+              const authSession = await auth.signIn(user.email, password);
+              session = { ...authSession, uid: user.uid, email: user.email };
+              await db.user.update(user.uid, {
+                emailVerification:
+                  user.emailVerification === "verified"
+                    ? "verified"
+                    : "pending",
+                updatedAt: new Date().toISOString(),
+              });
+            } catch (provisionError) {
+              console.error(
+                "[auth] Failed to provision Firebase account during login",
+                provisionError
+              );
+              return res
+                .status(500)
+                .json({ error: "firebase_provision_failed" });
+            }
+          } else {
+            console.error(
+              "[auth] Firebase sign-in failed",
+              error.message,
+              error.status
+            );
+            return res.status(502).json({ error: "firebase_signin_failed" });
+          }
+        } else {
+          console.error("[auth] Failed to establish session", error);
+          return res.status(500).json({ error: "auth_session_failed" });
+        }
+      }
     }
 
     const requirements = {
