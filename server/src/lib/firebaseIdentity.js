@@ -51,6 +51,19 @@ export async function signUpWithEmailPassword(email, password) {
   };
 }
 
+export async function signInWithEmailPassword(email, password) {
+  const body = await request("accounts:signInWithPassword", {
+    email,
+    password,
+    returnSecureToken: true,
+  });
+  return {
+    idToken: body.idToken,
+    refreshToken: body.refreshToken,
+    expiresIn: body.expiresIn,
+  };
+}
+
 // Trigger Firebase's built-in verification email for the newly issued ID token.
 export async function sendVerificationEmail(idToken) {
   if (!idToken) {
