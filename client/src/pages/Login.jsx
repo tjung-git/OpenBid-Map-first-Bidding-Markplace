@@ -34,11 +34,7 @@ export default function Login() {
     setSubmitting(true);
     try {
       const data = await api.login(email, password);
-      setSession({
-        user: data.user,
-        requirements: data.requirements,
-        prototype: data.prototype,
-      });
+      setSession(data);
 
       if (!data.requirements.emailVerified) {
         setError(
