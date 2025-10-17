@@ -62,6 +62,17 @@ export const db = {
       state.jobs.set(jobId, updated);
       return updated;
     },
+    delete(jobId) {
+      const exists = state.jobs.has(jobId);
+      if (!exists) return false;
+      state.jobs.delete(jobId);
+      for (const [bidId, bid] of Array.from(state.bids.entries())) {
+        if (bid.jobId === jobId) {
+          state.bids.delete(bidId);
+        }
+      }
+      return true;
+    },
   },
   bid: {
     listByJob(jobId) {
@@ -84,6 +95,16 @@ export const db = {
       const updated = { ...cur, ...patch, updatedAt: Date.now() };
       state.bids.set(bidId, updated);
       return updated;
+    },
+    deleteByJob(jobId) {
+      let count = 0;
+      for (const [bidId, bid] of Array.from(state.bids.entries())) {
+        if (bid.jobId === jobId) {
+          state.bids.delete(bidId);
+          count += 1;
+        }
+      }
+      return count;
     },
   },
 };
