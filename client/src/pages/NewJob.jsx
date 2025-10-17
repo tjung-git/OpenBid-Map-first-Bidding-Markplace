@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Form,
   TextInput,
@@ -9,6 +9,7 @@ import {
 import { api } from "../services/api";
 import { getRequirements, getUser } from "../services/session";
 import { useNavigate } from "react-router-dom";
+import MapView from "../components/MapView";
 import "../styles/pages/jobs.css";
 
 export default function NewJob() {
@@ -18,6 +19,9 @@ export default function NewJob() {
   const [lat, setLat] = useState(43.6532);
   const [lng, setLng] = useState(-79.3832);
   const [err, setErr] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const mapCenter = useMemo(() => ({ lat, lng }), [lat, lng]);
+  const mapMarkers = useMemo(() => [{ lat, lng }], [lat, lng]);
   const nav = useNavigate();
   const user = getUser();
   useEffect(() => {
@@ -25,11 +29,12 @@ export default function NewJob() {
       nav("/jobs", { replace: true });
       return;
     }
-    if (!getRequirements().kycVerified) {
-      nav("/kyc", {
+    const requirements = getRequirements();
+    if (!requirements.kycVerified) {
+      nav("/jobs", {
         replace: true,
         state: {
-          notice: "Complete 2FA/KYC before posting jobs.",
+          notice: "Complete KYC before posting jobs.",
         },
       });
     }
@@ -38,26 +43,41 @@ export default function NewJob() {
   async function submit(e) {
     e.preventDefault();
     setErr("");
-    if (getUser()?.userType !== "contractor") {
+    if (submitting) return;
+    const latestUser = getUser();
+    const latestRequirements = getRequirements();
+    if (latestUser?.userType !== "contractor") {
       setErr("Only contractors can post jobs.");
       return;
     }
-    if (!getRequirements().kycVerified) {
+    if (!latestRequirements.kycVerified) {
       nav("/kyc", {
         state: {
-          notice: "Complete 2FA/KYC before posting jobs.",
+          notice: "Complete KYC before posting jobs.",
         },
       });
       return;
     }
-    const r = await api.jobCreate({
-      title,
-      description: desc,
-      budgetAmount: budget,
-      location: { lat, lng, address: "Mock Address" },
-    });
-    if (r.error) setErr(r.error);
-    else nav(`/jobs/${r.job.id}`);
+    setSubmitting(true);
+    try {
+      const r = await api.jobCreate({
+        title,
+        description: desc,
+        budgetAmount: budget,
+        location: { lat, lng, address: "Mock Address" },
+      });
+      if (r.error) {
+        setErr(r.error);
+      } else {
+        nav(`/jobs/${r.job.id}`, {
+          state: { notice: `${title} job posted.` },
+        });
+      }
+    } catch {
+      setErr("Unable to create job. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -74,20 +94,20 @@ export default function NewJob() {
       <Form onSubmit={submit}>
         <TextInput
           id="title"
-          labelText="Title"
+          labelText="Job Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
         />
         <TextInput
           id="desc"
-          labelText="Description"
+          labelText="Job Description"
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
         />
         <NumberInput
           id="budget"
-          label="Budget"
+          label="Job Budget"
           value={budget}
           onChange={(_, { value }) => setBudget(Number(value))}
         />
@@ -105,7 +125,9 @@ export default function NewJob() {
             onChange={(_, { value }) => setLng(Number(value))}
           />
         </div>
-        <Button type="submit" className="job-submit">
+        <MapView center={mapCenter} markers={mapMarkers} />
+        {/* TODO: Wire MapView interactions so the marker can drive lat/lng updates automatically. */}
+        <Button type="submit" className="job-submit" disabled={submitting}>
           Create
         </Button>
       </Form>
