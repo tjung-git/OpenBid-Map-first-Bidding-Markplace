@@ -142,6 +142,26 @@ export const db = {
       const updated = await ref.get();
       return toRecord(updated);
     },
+    async delete(jobId) {
+      if (!jobId) return false;
+      const dbRef = firestore();
+      const ref = dbRef.collection(collections.jobs).doc(jobId);
+      const snapshot = await ref.get();
+      if (!snapshot.exists) return false;
+      await ref.delete();
+
+      const bidsSnapshot = await dbRef
+        .collection(collections.bids)
+        .where("jobId", "==", jobId)
+        .get();
+      if (!bidsSnapshot.empty) {
+        const batch = dbRef.batch();
+        bidsSnapshot.docs.forEach((doc) => batch.delete(doc.ref));
+        await batch.commit();
+      }
+
+      return true;
+    },
   },
   bid: {
     async listByJob(jobId) {
@@ -177,6 +197,19 @@ export const db = {
       await ref.update(clean(withTimestamps(patch, { isNew: false })));
       const updated = await ref.get();
       return toRecord(updated);
+    },
+    async deleteByJob(jobId) {
+      if (!jobId) return 0;
+      const dbRef = firestore();
+      const snapshot = await dbRef
+        .collection(collections.bids)
+        .where("jobId", "==", jobId)
+        .get();
+      if (snapshot.empty) return 0;
+      const batch = dbRef.batch();
+      snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+      await batch.commit();
+      return snapshot.size;
     },
   },
 };
