@@ -15,12 +15,28 @@ import "../styles/pages/bid.css";
 
 const PAGE_SIZE = 5;
 
+const normalizeAmount = (value) => {
+  if (value == null) return null;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  const direct = Number(value);
+  if (Number.isFinite(direct)) return direct;
+  if (typeof value === "string") {
+    const cleaned = value.replace(/[^0-9.\-]/g, "");
+    const parsed = Number(cleaned);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
 export default function JobBid() {
   const { jobId } = useParams();
   const nav = useNavigate();
   const location = useLocation();
   const user = getUser();
   const requirements = getRequirements();
+  const existingNotice = location.state?.notice || "";
 
   const [job, setJob] = useState(null);
   const [contractor, setContractor] = useState(null);
@@ -45,7 +61,7 @@ export default function JobBid() {
   }, [job?.location?.lat, job?.location?.lng]);
 
   const hydrateBids = useCallback(
-    (list = [], highest = null, { resetPage = false } = {}) => {
+    (list = [], highest = null, { resetPage = false, minAmount = null } = {}) => {
       setBids(list);
       setHighestBid(highest);
 
@@ -59,7 +75,11 @@ export default function JobBid() {
         } else {
           setOwnBidId(null);
           if (resetPage) {
-            setAmount(0);
+            if (Number.isFinite(minAmount) && minAmount > 0) {
+              setAmount(minAmount);
+            } else {
+              setAmount(0);
+            }
             setNote("");
           }
         }
@@ -71,7 +91,7 @@ export default function JobBid() {
         return prev > total ? total : prev;
       });
     },
-    [user?.uid]
+    [user?.uid, job?.budgetAmount]
   );
 
   const loadJob = useCallback(async () => {
@@ -82,10 +102,15 @@ export default function JobBid() {
         api.jobGet(jobId),
         api.bidsForJob(jobId),
       ]);
-      setJob(jobResp?.job || null);
+      const jobData = jobResp?.job || null;
+      setJob(jobData);
       setContractor(jobResp?.contractor || null);
       const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
-      hydrateBids(list, bidsResp?.highestBid || null, { resetPage: true });
+      const minAmount = normalizeAmount(jobData?.budgetAmount);
+      hydrateBids(list, bidsResp?.highestBid || null, {
+        resetPage: true,
+        minAmount,
+      });
     } catch (err) {
       console.error("[JobBid] load failed", err);
       setError("Unable to load job for bidding.");
@@ -114,7 +139,9 @@ export default function JobBid() {
       try {
         const bidsResp = await api.bidsForJob(jobId);
         const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
-        hydrateBids(list, bidsResp?.highestBid || null);
+        hydrateBids(list, bidsResp?.highestBid || null, {
+          minAmount: normalizeAmount(job?.budgetAmount),
+        });
       } catch (err) {
         console.error("[JobBid] refresh failed", err);
         if (!silent) {
@@ -132,6 +159,19 @@ export default function JobBid() {
     }, 10000);
     return () => window.clearInterval(interval);
   }, [loading, refreshBids]);
+
+  useEffect(() => {
+    if (!loading && isBidder && ownBidId) {
+      const notice =
+        success ||
+        existingNotice ||
+        "You already placed a bid for this job. Showing your bid details.";
+      nav(`/bids/${jobId}`, {
+        replace: true,
+        state: { notice },
+      });
+    }
+  }, [loading, isBidder, ownBidId, jobId, nav, success, existingNotice]);
 
   const sortedBids = useMemo(() => {
     return [...bids].sort((a, b) => {
@@ -180,10 +220,10 @@ export default function JobBid() {
     });
   }, [sortedBids, ownBid, highestEntry]);
 
-  const budgetAmountNumber = useMemo(() => {
-    const value = Number(job?.budgetAmount);
-    return Number.isFinite(value) ? value : null;
-  }, [job?.budgetAmount]);
+  const budgetAmountNumber = useMemo(
+    () => normalizeAmount(job?.budgetAmount),
+    [job?.budgetAmount]
+  );
 
   const budgetDisplay = useMemo(() => {
     if (budgetAmountNumber !== null) {
@@ -205,6 +245,16 @@ export default function JobBid() {
       setPage(totalPages);
     }
   }, [page, totalPages]);
+
+  useEffect(() => {
+    if (!ownBid && Number.isFinite(budgetAmountNumber) && budgetAmountNumber > 0) {
+      setAmount((current) =>
+        Number.isFinite(current) && current >= budgetAmountNumber
+          ? current
+          : budgetAmountNumber
+      );
+    }
+  }, [ownBid, budgetAmountNumber]);
 
   const paginatedBids = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
@@ -237,8 +287,19 @@ export default function JobBid() {
 
   function handleAmountChange(_, { value }) {
     const numeric = Number(value);
+    const minAmount = budgetAmountNumber || 0;
     if (Number.isFinite(numeric)) {
-      setAmount(numeric);
+      if (numeric < minAmount) {
+        setError(
+          Number.isFinite(minAmount) && minAmount > 0
+            ? `You cannot bid below the contractor's budget of ${budgetDisplay}.`
+            : "Enter a valid bid amount greater than 0."
+        );
+        setAmount(minAmount > 0 ? minAmount : 0);
+      } else {
+        setAmount(numeric);
+        if (error) setError("");
+      }
     }
   }
 
@@ -260,8 +321,13 @@ export default function JobBid() {
       }
       return;
     }
-    if (!Number.isFinite(amount) || amount <= 0) {
-      setError("Enter a valid bid amount greater than 0.");
+    const minAmount = budgetAmountNumber || 0;
+    if (!Number.isFinite(amount) || amount < minAmount) {
+      setError(
+        minAmount > 0
+          ? `You cannot bid below the contractor's budget of ${budgetDisplay}.`
+          : "Enter a valid bid amount greater than 0."
+      );
       return;
     }
     setSubmitting(true);
@@ -319,10 +385,17 @@ export default function JobBid() {
   ) => {
     if (!bid) return null;
     const amountValue = Number(bid.amount);
+    const status = (bid.status || "active").toLowerCase();
+    const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+    const itemClassNames = ["bid-list-item"];
+    if (highlightOwn) itemClassNames.push("bid-list-item--own");
+    if (["accepted", "rejected", "active"].includes(status)) {
+      itemClassNames.push(`bid-list-item--${status}`);
+    }
     return (
       <li
         key={bid.id || `${bid.providerId}-${bid.bidCreatedAt}`}
-        className="bid-list-item"
+        className={itemClassNames.join(" ")}
       >
         <div>
           <p className="bid-list-amount">
@@ -331,7 +404,11 @@ export default function JobBid() {
             {highlightOwn && <span className="bid-tag bid-tag--own">Your bid</span>}
           </p>
           <p className="bid-list-meta">
-            {bid.bidderName || "Bidder"} · {bid.status || "active"} ·{" "}
+            {bid.bidderName || "Bidder"} ·{" "}
+            <span className={`bid-status-badge bid-status-badge--${status}`}>
+              {statusLabel}
+            </span>{" "}
+            ·{" "}
             {new Date(
               bid.bidCreatedAt || bid.createdAt || Date.now()
             ).toLocaleString()}
@@ -346,12 +423,12 @@ export default function JobBid() {
     <div className="container bid-detail-container">
       <div className="bid-detail-header">
         <Button kind="ghost" onClick={() => nav("/jobs")}>
-          Back to Jobs
+          Back to Job List
         </Button>
         <div>
           <h2>{job.title}</h2>
           <p className="job-detail-meta">
-            Contractor:{" "}
+            Posted by{" "}
             {[contractor?.firstName, contractor?.lastName]
               .filter(Boolean)
               .join(" ") || contractor?.email || "Unknown contractor"}
