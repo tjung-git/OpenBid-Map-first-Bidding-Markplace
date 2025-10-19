@@ -5,9 +5,7 @@ import { cfg } from "../services/config";
 import { TextInput } from '@carbon/react';
 import { Text } from '@carbon/react/lib/components/Text';
 
-export default function SearchComplete({ 
-    onSelectPlace,
-}){
+export default function SearchComplete({ onSelectPlace }){
   const [address, setAddress] = useState('');
   const [isLoaded, setIsloaded] = useState(false);
   const loaderRef = useRef(null); // Ref to store the loader instance
@@ -22,9 +20,9 @@ export default function SearchComplete({
     loaderRef.current.load().then(() => {
       console.log('Google Maps API loaded successfully!');
       setIsloaded(true);
-      }).catch(e => {
-        console.error('Error loading Google Maps API:', e);
-      });
+    }).catch(e => {
+      console.error('Error loading Google Maps API:', e);
+    });
     }, []);
 
     const handleChange = (newAddress) => {
