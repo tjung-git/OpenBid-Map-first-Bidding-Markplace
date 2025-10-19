@@ -1,0 +1,157 @@
+import { useEffect, useState } from "react";
+import { Button, InlineNotification } from "@carbon/react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { api } from "../services/api";
+import { getUser } from "../services/session";
+import "../styles/pages/bid.css";
+
+export default function MyBids() {
+  const [bids, setBids] = useState([]);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(true);
+  const nav = useNavigate();
+  const location = useLocation();
+  const user = getUser();
+
+  useEffect(() => {
+    if (user && user.userType !== "bidder") {
+      nav("/jobs", { replace: true });
+    }
+  }, [user, nav]);
+
+  useEffect(() => {
+    if (location.state?.notice) {
+      setSuccess(location.state.notice);
+      const { notice, ...rest } = location.state;
+      nav(location.pathname, { replace: true, state: rest });
+    }
+  }, [location.state, location.pathname, nav]);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      setError("");
+      try {
+        const resp = await api.bidsForUser();
+        setBids(resp.bids || []);
+      } catch (err) {
+        setError("Unable to load your bids.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (user?.userType === "bidder") {
+      load();
+    }
+  }, [user?.userType]);
+
+  async function remove(bidId) {
+    const confirmed = window.confirm(
+      "Delete this bid? This cannot be undone."
+    );
+    if (!confirmed) return;
+    try {
+      await api.bidDelete(bidId);
+      setBids((prev) => prev.filter((bid) => bid.id !== bidId));
+      setSuccess("Bid deleted.");
+    } catch (err) {
+      setError("Unable to delete bid.");
+    }
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <div className="container bid-detail-container">
+      <div className="bid-detail-header">
+        <h2>My Bids</h2>
+        <Button kind="ghost" onClick={() => nav("/jobs")}>Back to Jobs</Button>
+      </div>
+      {success && (
+        <InlineNotification
+          title="Success"
+          subtitle={success}
+          kind="success"
+          lowContrast
+          onClose={() => setSuccess("")}
+        />
+      )}
+      {error && (
+        <InlineNotification
+          title="Error"
+          subtitle={error}
+          kind="error"
+          lowContrast
+          onClose={() => setError("")}
+        />
+      )}
+      {loading ? (
+        <p>Loading…</p>
+      ) : bids.length === 0 ? (
+        <InlineNotification
+          title="No Bids Found"
+          subtitle="You have not placed any bids yet."
+          kind="info"
+          lowContrast
+        />
+      ) : (
+        <div className="bid-list">
+          {bids.map((bid) => {
+            const amountValue = Number(bid.amount);
+            const amountDisplay = Number.isFinite(amountValue)
+              ? amountValue.toLocaleString()
+              : bid.amount;
+            const createdAt = bid.bidCreatedAt || bid.createdAt;
+            return (
+              <div key={bid.id} className="bid-list-item">
+                <div className="bid-list-amount">
+                  ${amountDisplay}
+                  <span className="bid-tag">Bid</span>
+                </div>
+                <p className="bid-list-meta">
+                  Job: {bid.jobTitle || bid.jobId} · Contractor: {bid.contractorName || "Unknown"}
+                </p>
+                {bid.jobBudgetAmount !== undefined && (
+                  <p className="bid-list-meta">
+                    Job Budget: {Number.isFinite(Number(bid.jobBudgetAmount))
+                      ? `$${Number(bid.jobBudgetAmount).toLocaleString()}`
+                      : bid.jobBudgetAmount}
+                  </p>
+                )}
+                {bid.jobDescription && (
+                  <p className="bid-list-note">{bid.jobDescription}</p>
+                )}
+                <p className="bid-list-meta">
+                  {createdAt ? new Date(createdAt).toLocaleString() : ""} · Status: {bid.status || "active"}
+                </p>
+                {bid.note && <p className="bid-list-note">“{bid.note}”</p>}
+                <div className="job-row-actions">
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      nav(`/jobs/myBids/bidDetails/${bid.jobId}`, {
+                        state: { fromMyBids: true },
+                      })
+                    }
+                  >
+                    View Details
+                  </Button>
+                  <Button
+                    size="sm"
+                    kind="danger--ghost"
+                    onClick={() => remove(bid.id)}
+                  >
+                    Delete Bid
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
