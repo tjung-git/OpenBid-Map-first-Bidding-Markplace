@@ -1,0 +1,388 @@
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import {
+  Form,
+  NumberInput,
+  TextInput,
+  Button,
+  InlineNotification,
+  Tile,
+} from "@carbon/react";
+import { api } from "../services/api";
+import { getRequirements, getUser } from "../services/session";
+import MapView from "../components/MapView";
+import "../styles/pages/bid.css";
+
+const PAGE_SIZE = 5;
+
+export default function BidDetail() {
+  const { jobId } = useParams();
+  const nav = useNavigate();
+  const location = useLocation();
+  const user = getUser();
+  const requirements = getRequirements();
+
+  const [job, setJob] = useState(null);
+  const [contractor, setContractor] = useState(null);
+  const [bids, setBids] = useState([]);
+  const [highestBid, setHighestBid] = useState(null);
+  const [amount, setAmount] = useState(0);
+  const [note, setNote] = useState("");
+  const [ownBidId, setOwnBidId] = useState(null);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(location.state?.notice || "");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const isBidder = user?.userType === "bidder";
+  const kycVerified = requirements.kycVerified;
+
+  const mapMarkers = useMemo(() => {
+    if (!job?.location?.lat || !job?.location?.lng) return [];
+    return [job.location];
+  }, [job?.location?.lat, job?.location?.lng]);
+
+  useEffect(() => {
+    if (location.state?.notice) {
+      const { notice, ...rest } = location.state;
+      nav(location.pathname, { replace: true, state: rest });
+      setSuccess(notice);
+    }
+  }, [location.state, location.pathname, nav]);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      try {
+        const jobResp = await api.jobGet(jobId);
+        setJob(jobResp.job);
+        setContractor(jobResp.contractor || null);
+        const bidsResp = await api.bidsForJob(jobId);
+        const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
+        setBids(list);
+        setHighestBid(bidsResp.highestBid || null);
+        if (user?.uid) {
+          const existing = list.find((bid) => bid.providerId === user.uid);
+          if (existing) {
+            setOwnBidId(existing.id);
+            setAmount(Number(existing.amount) || 0);
+            setNote(existing.note || "");
+          } else {
+            setOwnBidId(null);
+          }
+        }
+        setPage(1);
+      } catch (err) {
+        setError("Unable to load bid details.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [jobId, user?.uid]);
+
+  useEffect(() => {
+    if (loading) return undefined;
+    const interval = window.setInterval(() => {
+      refreshBids({ silent: true });
+    }, 10000);
+    return () => window.clearInterval(interval);
+  }, [loading, jobId]);
+
+  function handleAmountChange(_, { value }) {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) {
+      setAmount(numeric);
+    }
+  }
+
+  async function submitBid(e) {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    if (!isBidder) {
+      setError("Only bidders can place bids.");
+      return;
+    }
+    if (!kycVerified) {
+      nav("/kyc", {
+        replace: true,
+        state: { notice: "Complete KYC before bidding on jobs." },
+      });
+      return;
+    }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setError("Enter a valid bid amount greater than 0.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      if (ownBidId) {
+        const resp = await api.bidUpdate(jobId, ownBidId, {
+          amount,
+          note,
+        });
+        if (resp.error) {
+          setError("Unable to update bid. Please try again.");
+        } else {
+          setSuccess("Bid updated.");
+          await refreshBids();
+        }
+      } else {
+        const resp = await api.bid(jobId, { amount, note });
+        if (resp.error) {
+          setError("Unable to place bid. Please try again.");
+        } else {
+          setSuccess("Bid placed.");
+          setOwnBidId(resp.bid?.id || null);
+          await refreshBids();
+        }
+      }
+    } catch (err) {
+      setError("Unable to submit bid. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function refreshBids({ silent = false } = {}) {
+    try {
+      const bidsResp = await api.bidsForJob(jobId);
+      const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
+      setBids(list);
+      setHighestBid(bidsResp.highestBid || null);
+      if (user?.uid) {
+        const existing = list.find((bid) => bid.providerId === user.uid);
+        if (existing) {
+          setOwnBidId(existing.id);
+          setAmount(Number(existing.amount) || 0);
+          setNote(existing.note || "");
+        } else if (!silent) {
+          setOwnBidId(null);
+        }
+      }
+    } catch (err) {
+      if (!silent) {
+        setError("Unable to refresh bids.");
+      }
+    }
+  }
+
+  const sortedBids = useMemo(() => {
+    return [...bids].sort((a, b) => {
+      const aCreated = new Date(a.bidCreatedAt || a.createdAt || 0).getTime();
+      const bCreated = new Date(b.bidCreatedAt || b.createdAt || 0).getTime();
+      return bCreated - aCreated;
+    });
+  }, [bids]);
+
+  const ownBid = sortedBids.find((bid) => bid.providerId === user?.uid) || null;
+  const highestEntry = highestBid
+    ? sortedBids.find((bid) => bid.id === highestBid.id) || null
+    : sortedBids.reduce((acc, bid) => {
+        const amount = Number(bid.amount);
+        if (!Number.isFinite(amount)) return acc;
+        if (!acc || amount > Number(acc.amount)) return bid;
+        return acc;
+      }, null);
+
+  useEffect(() => {
+    const total = Math.max(
+      1,
+      Math.ceil(sortedBids.length / PAGE_SIZE)
+    );
+    if (page > total) {
+      setPage(total);
+    }
+  }, [page, sortedBids.length]);
+
+  const paginatedBids = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return sortedBids.slice(start, start + PAGE_SIZE);
+  }, [sortedBids, page]);
+
+  if (loading) {
+    return (
+      <div className="container">
+        <p>Loading bid details…</p>
+      </div>
+    );
+  }
+
+  if (!job) {
+    return (
+      <div className="container">
+        <InlineNotification
+          title="Not Found"
+          subtitle="Job could not be found."
+          kind="error"
+          lowContrast
+        />
+      </div>
+    );
+  }
+
+  const totalPages = Math.max(1, Math.ceil(sortedBids.length / PAGE_SIZE));
+
+  return (
+    <div className="container bid-detail-container">
+      <div className="bid-detail-header">
+        <Button
+          kind="ghost"
+          onClick={() =>
+            nav(location.state?.fromMyBids ? "/jobs/myBids" : "/jobs")
+          }
+        >
+          {location.state?.fromMyBids ? "Back to My Bids" : "Back to Job List"}
+        </Button>
+        <div>
+          <h2>{job.title}</h2>
+          <p className="job-detail-meta">
+            Contractor:{" "}
+            {[contractor?.firstName, contractor?.lastName]
+              .filter(Boolean)
+              .join(" ") || contractor?.email || "Unknown contractor"}
+          </p>
+        </div>
+      </div>
+
+      {success && (
+        <InlineNotification
+          title="Success"
+          subtitle={success}
+          kind="success"
+          lowContrast
+          onClose={() => setSuccess("")}
+        />
+      )}
+      {error && (
+        <InlineNotification
+          title="Error"
+          subtitle={error}
+          kind="error"
+          lowContrast
+          onClose={() => setError("")}
+        />
+      )}
+
+      <div className="bid-detail-content">
+        <Tile className="bid-detail-card">
+          <MapView markers={mapMarkers} center={mapMarkers[0]} />
+          <div className="bid-detail-job-info">
+            <p className="bid-detail-label">Job Description</p>
+            <p>{job.description || "No description provided."}</p>
+            <p className="bid-detail-label">Location</p>
+            <p>{job.location?.address || "Lat/Lng provided"}</p>
+          </div>
+        </Tile>
+
+        <Tile className="bid-detail-card">
+          <h3>Place Your Bid</h3>
+          {highestEntry ? (
+            <p className="bid-detail-highest">
+              Highest bid: ${Number(highestEntry.amount).toLocaleString()}{" "}
+              {highestEntry.bidderName ? `by ${highestEntry.bidderName}` : ""}
+            </p>
+          ) : (
+            <p className="bid-detail-highest">Be the first to bid.</p>
+          )}
+          <Form onSubmit={submitBid} className="bid-detail-form">
+            <NumberInput
+              id="bid-amount"
+              label="Your Bid Amount"
+              value={amount}
+              onChange={handleAmountChange}
+              min={0}
+              step={5}
+            />
+            <TextInput
+              id="bid-note"
+              labelText="Note (optional)"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="bid-detail-submit"
+            >
+              {ownBidId
+                ? submitting
+                  ? "Updating…"
+                  : "Update Bid"
+                : submitting
+                ? "Placing…"
+                : "Place Bid"}
+            </Button>
+          </Form>
+        </Tile>
+      </div>
+
+      <Tile className="bid-detail-card">
+        <h3>Recent Bids</h3>
+        {sortedBids.length === 0 ? (
+          <p>No bids yet.</p>
+        ) : (
+          <>
+            <ul className="bid-list">
+              {paginatedBids.map((bid) => {
+                const amountValue = Number(bid.amount);
+                const isOwn = bid.providerId === user?.uid;
+                const isHighest = highestEntry && highestEntry.id === bid.id;
+                return (
+                  <li key={bid.id} className="bid-list-item">
+                    <div>
+                      <p className="bid-list-amount">
+                        $
+                        {Number.isFinite(amountValue)
+                          ? amountValue.toLocaleString()
+                          : bid.amount}
+                        {isHighest && <span className="bid-tag">Highest</span>}
+                        {isOwn && (
+                          <span className="bid-tag bid-tag--own">Your bid</span>
+                        )}
+                      </p>
+                      <p className="bid-list-meta">
+                        {bid.bidderName || "Bidder"} · {bid.status || "active"} ·{" "}
+                        {new Date(
+                          bid.bidCreatedAt || bid.createdAt || Date.now()
+                        ).toLocaleString()}
+                      </p>
+                      {bid.note && <p className="bid-list-note">“{bid.note}”</p>}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            {totalPages > 1 && (
+              <div className="bid-pagination">
+                <Button
+                  kind="ghost"
+                  size="sm"
+                  disabled={page === 1}
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                >
+                  Previous
+                </Button>
+                <span className="bid-pagination__status">
+                  Page {page} of {totalPages}
+                </span>
+                <Button
+                  kind="ghost"
+                  size="sm"
+                  disabled={page === totalPages}
+                  onClick={() =>
+                    setPage((current) => Math.min(totalPages, current + 1))
+                  }
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </Tile>
+    </div>
+  );
+}
