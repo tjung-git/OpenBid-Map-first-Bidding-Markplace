@@ -11,14 +11,16 @@ export default function Nav() {
     isContractor && (path.startsWith("/new-job") || path.startsWith("/kyc"));
   const showKyc = isContractor && path.startsWith("/kyc");
   const isJobBid = /^\/jobs\/[^/]+\/bid$/.test(path);
+  const isMyBids = path === "/jobs/myBids";
+  const inMyBidsSection = path.startsWith("/jobs/myBids/");
   const isJobDetail =
     /^\/jobs\/[^/]+$/.test(path) &&
-    !path.startsWith("/jobs/myBids") &&
+    !isMyBids &&
+    !inMyBidsSection &&
     !isJobBid;
   const isBidDetail =
     /^\/bids\/[^/]+$/.test(path) ||
     /^\/jobs\/myBids\/bidDetails\/[^/]+$/.test(path);
-  const isMyBids = path === "/jobs/myBids";
   return (
     <nav className="container nav-container">
       <Breadcrumb noTrailingSlash>
@@ -35,8 +37,8 @@ export default function Nav() {
             <Link to="/kyc">KYC</Link>
           </BreadcrumbItem>
         )}
-        {(isMyBids || path.startsWith("/jobs/myBids/")) && (
-          <BreadcrumbItem isCurrentPage={path === "/jobs/myBids"}>
+        {inMyBidsSection && (
+          <BreadcrumbItem>
             <Link to="/jobs/myBids">My Bids</Link>
           </BreadcrumbItem>
         )}
