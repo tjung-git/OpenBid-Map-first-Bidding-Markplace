@@ -42,13 +42,14 @@ export default function JobBid() {
   const [contractor, setContractor] = useState(null);
   const [bids, setBids] = useState([]);
   const [highestBid, setHighestBid] = useState(null);
-  const [amount, setAmount] = useState(0);
+  const [amountInput, setAmountInput] = useState("");
   const [note, setNote] = useState("");
   const [ownBidId, setOwnBidId] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(location.state?.notice || "");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(1);
 
   const isBidder = user?.userType === "bidder";
@@ -70,15 +71,17 @@ export default function JobBid() {
         if (existing) {
           const numericAmount = Number(existing.amount);
           setOwnBidId(existing.id);
-          setAmount(Number.isFinite(numericAmount) ? numericAmount : 0);
+          setAmountInput(
+            Number.isFinite(numericAmount) ? String(numericAmount) : ""
+          );
           setNote(existing.note || "");
         } else {
           setOwnBidId(null);
           if (resetPage) {
             if (Number.isFinite(minAmount) && minAmount > 0) {
-              setAmount(minAmount);
+              setAmountInput(String(minAmount));
             } else {
-              setAmount(0);
+              setAmountInput("");
             }
             setNote("");
           }
@@ -91,7 +94,7 @@ export default function JobBid() {
         return prev > total ? total : prev;
       });
     },
-    [user?.uid, job?.budgetAmount]
+    [user?.uid]
   );
 
   const loadJob = useCallback(async () => {
@@ -135,12 +138,13 @@ export default function JobBid() {
   }, [location.state, location.pathname, nav]);
 
   const refreshBids = useCallback(
-    async ({ silent = false } = {}) => {
+    async ({ silent = false, reset = false } = {}) => {
       try {
         const bidsResp = await api.bidsForJob(jobId);
         const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
         hydrateBids(list, bidsResp?.highestBid || null, {
           minAmount: normalizeAmount(job?.budgetAmount),
+          resetPage: reset,
         });
       } catch (err) {
         console.error("[JobBid] refresh failed", err);
@@ -149,7 +153,7 @@ export default function JobBid() {
         }
       }
     },
-    [jobId, hydrateBids]
+    [jobId, hydrateBids, job?.budgetAmount]
   );
 
   useEffect(() => {
@@ -248,11 +252,13 @@ export default function JobBid() {
 
   useEffect(() => {
     if (!ownBid && Number.isFinite(budgetAmountNumber) && budgetAmountNumber > 0) {
-      setAmount((current) =>
-        Number.isFinite(current) && current >= budgetAmountNumber
-          ? current
-          : budgetAmountNumber
-      );
+      setAmountInput((current) => {
+        const numeric = Number(current);
+        if (Number.isFinite(numeric) && numeric >= budgetAmountNumber) {
+          return current;
+        }
+        return String(budgetAmountNumber);
+      });
     }
   }, [ownBid, budgetAmountNumber]);
 
@@ -286,27 +292,32 @@ export default function JobBid() {
   }
 
   function handleAmountChange(_, { value }) {
-    const numeric = Number(value);
-    const minAmount = budgetAmountNumber || 0;
-    if (Number.isFinite(numeric)) {
-      if (numeric < minAmount) {
-        setError(
-          Number.isFinite(minAmount) && minAmount > 0
-            ? `You cannot bid below the contractor's budget of ${budgetDisplay}.`
-            : "Enter a valid bid amount greater than 0."
-        );
-        setAmount(minAmount > 0 ? minAmount : 0);
-      } else {
-        setAmount(numeric);
-        if (error) setError("");
+    const raw = value == null ? "" : String(value);
+    const cleaned = raw.replace(/[^0-9.]/g, "");
+    const normalized = cleaned.replace(/^0+(?=\d)/, "");
+    if (!normalized) {
+      setAmountInput("");
+      if (error && error.includes("budget")) {
+        setError("");
       }
+      return;
     }
+    const numeric = Number(normalized);
+    if (Number.isFinite(budgetAmountNumber) && numeric < budgetAmountNumber) {
+      setError(
+        `You cannot bid below the contractor's budget of ${budgetDisplay}.`
+      );
+    } else if (error && error.includes("budget")) {
+      setError("");
+    }
+    setAmountInput(normalized);
   }
 
   async function submitBid(e) {
     e.preventDefault();
     setError("");
     setSuccess("");
+    const numericAmount = Number(amountInput);
     if (!canBid) {
       setError(
         isBidder
@@ -321,8 +332,12 @@ export default function JobBid() {
       }
       return;
     }
+    if (!Number.isFinite(numericAmount) || amountInput === "") {
+      setError("Enter a valid bid amount greater than 0.");
+      return;
+    }
     const minAmount = budgetAmountNumber || 0;
-    if (!Number.isFinite(amount) || amount < minAmount) {
+    if (numericAmount < minAmount) {
       setError(
         minAmount > 0
           ? `You cannot bid below the contractor's budget of ${budgetDisplay}.`
@@ -333,7 +348,10 @@ export default function JobBid() {
     setSubmitting(true);
     try {
       if (ownBidId) {
-        const resp = await api.bidUpdate(jobId, ownBidId, { amount, note });
+        const resp = await api.bidUpdate(jobId, ownBidId, {
+          amount: numericAmount,
+          note,
+        });
         if (resp?.error) {
           setError(errorMessageFromResponse(resp, { mode: "update" }));
         } else {
@@ -341,13 +359,16 @@ export default function JobBid() {
           await refreshBids();
         }
       } else {
-        const resp = await api.bid(jobId, { amount, note });
+        const resp = await api.bid(jobId, {
+          amount: numericAmount,
+          note,
+        });
         if (resp?.error) {
           setError(errorMessageFromResponse(resp, { mode: "create" }));
         } else {
           setSuccess("Bid placed.");
           setOwnBidId(resp.bid?.id || null);
-          await refreshBids();
+          await refreshBids({ reset: true });
         }
       }
     } catch (err) {
@@ -355,6 +376,33 @@ export default function JobBid() {
       setError("Unable to submit bid. Please try again.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleDeleteBid() {
+    if (!ownBidId || deleting) return;
+    const confirmed = window.confirm(
+      "Delete your bid? This cannot be undone."
+    );
+    if (!confirmed) return;
+    setDeleting(true);
+    setError("");
+    try {
+      await api.bidDelete(ownBidId);
+      setSuccess("Bid deleted.");
+      setOwnBidId(null);
+      setNote("");
+      const minAmount = normalizeAmount(job?.budgetAmount);
+      if (Number.isFinite(minAmount) && minAmount > 0) {
+        setAmountInput(String(minAmount));
+      } else {
+        setAmountInput("");
+      }
+      await refreshBids({ reset: true });
+    } catch (err) {
+      setError("Unable to delete bid. Please try again.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -497,7 +545,8 @@ export default function JobBid() {
             <NumberInput
               id="bid-amount"
               label="Your Bid Amount"
-              value={amount}
+              value={amountInput === "" ? "" : Number(amountInput)}
+              allowEmpty
               onChange={handleAmountChange}
               min={budgetAmountNumber ?? 0}
               step={5}
@@ -528,6 +577,16 @@ export default function JobBid() {
                 ? "Placing…"
                 : "Place Bid"}
             </Button>
+            {ownBidId && (
+              <Button
+                type="button"
+                kind="danger--ghost"
+                onClick={handleDeleteBid}
+                disabled={submitting || deleting}
+              >
+                Delete Bid
+              </Button>
+            )}
           </Form>
         </Tile>
       </div>
