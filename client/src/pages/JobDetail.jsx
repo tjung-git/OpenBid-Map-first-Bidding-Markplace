@@ -27,7 +27,7 @@ export default function JobDetail() {
 
   const [job, setJob] = useState(null);
   const [bids, setBids] = useState([]);
-  const [bidAmount, setBidAmount] = useState(50);
+  const [bidAmount, setBidAmount] = useState("");
   const [bidNote, setBidNote] = useState("");
   const [bidError, setBidError] = useState("");
   const [updateError, setUpdateError] = useState("");
@@ -81,9 +81,9 @@ export default function JobDetail() {
     const rawBudget =
       job.budgetAmount !== undefined && job.budgetAmount !== null
         ? String(job.budgetAmount)
-        : "0";
-    const cleaned = rawBudget.replace(/[^0-9.\-]/g, "");
-    setEditBudget(cleaned || "0");
+        : "";
+    const cleaned = rawBudget ? rawBudget.replace(/[^0-9.\-]/g, "") : "";
+    setEditBudget(cleaned);
     setEditLat(job.location?.lat ?? 43.6532);
     setEditLng(job.location?.lng ?? -79.3832);
   }, [job]);
@@ -112,8 +112,13 @@ export default function JobDetail() {
       setBidError("Bidding is closed for this job.");
       return;
     }
+    const numericBid = Number(bidAmount);
+    if (!Number.isFinite(numericBid) || bidAmount === "" || numericBid <= 0) {
+      setBidError("Enter a valid bid amount greater than 0.");
+      return;
+    }
     const response = await api.bid(jobId, {
-      amount: bidAmount,
+      amount: numericBid,
       note: bidNote,
     });
     if (response.error) {
@@ -126,6 +131,7 @@ export default function JobDetail() {
     }
     await refreshBids();
     setBidNote("");
+    setBidAmount("");
     setFlash("Bid submitted.");
   }
 
@@ -145,7 +151,8 @@ export default function JobDetail() {
       const payload = {
         title: editTitle,
         description: editDesc,
-        budgetAmount: Number.parseFloat(editBudget) || 0,
+        budgetAmount:
+          editBudget === "" ? null : Number.parseFloat(editBudget) || 0,
         location: {
           ...(job?.location || {}),
           lat: editLat,
@@ -290,10 +297,16 @@ export default function JobDetail() {
             />
             <TextInput
               id="job-budget"
-              type="number"
+              type="text"
               labelText="Job Budget"
               value={editBudget}
-              onChange={(e) => setEditBudget(e.target.value)}
+              onChange={(e) => {
+                const raw = e.target.value;
+                const cleaned = raw.replace(/[^0-9.]/g, "");
+                const normalized = cleaned.replace(/^0+(?=\d)/, "");
+                setEditBudget(normalized);
+              }}
+              placeholder="Enter budget"
               disabled={jobLocked}
             />
             <div className="job-form-grid">
@@ -361,12 +374,20 @@ export default function JobDetail() {
                 />
               )}
               <Form onSubmit={placeBid}>
-                <NumberInput
-                  id="bid-amount"
-                  label="Amount"
-                  value={bidAmount}
-                  onChange={(_, { value }) => setBidAmount(Number(value))}
-                />
+            <NumberInput
+              id="bid-amount"
+              label="Amount"
+              value={bidAmount === "" ? "" : Number(bidAmount)}
+              allowEmpty
+              onChange={(_, { value }) => {
+                if (value === "" || value == null) {
+                  setBidAmount("");
+                } else {
+                  const sanitized = String(value).replace(/[^0-9.]/g, "");
+                  setBidAmount(sanitized);
+                }
+              }}
+            />
                 <TextInput
                   id="bid-note"
                   labelText="Note"
