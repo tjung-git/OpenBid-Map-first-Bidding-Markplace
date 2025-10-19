@@ -1,10 +1,12 @@
 @use '@carbon/styles/scss/theme' as carbonTheme;   // mixin
 @use '@carbon/styles/scss/themes' as carbonThemes; // tokens
 @use '@carbon/styles/scss/reset';                  // optional sensible reset
+@use '@carbon/grid';
 
 /* Default: g100 (dark) */
 :root {
   @include carbonTheme.theme(carbonThemes.$g100);
+  @include grid.flex-grid();
   color-scheme: dark; /* helps native form controls */
 }
 
