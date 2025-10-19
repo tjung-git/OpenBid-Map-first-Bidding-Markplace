@@ -95,7 +95,27 @@ router.get("/:jobId", async (req, res, next) => {
     if (!session) return res.status(401).json({ error: "unauthorized" });
     const job = await db.job.get(req.params.jobId);
     if (!job) return res.status(404).json({ error: "not found" });
-    res.json({ job });
+    let contractor = null;
+    if (job.posterId) {
+      const contractorRecord = await db.user.get(job.posterId);
+      if (contractorRecord) {
+        const {
+          passwordHash,
+          kycStatus,
+          emailVerification,
+          ...rest
+        } = contractorRecord;
+        contractor = {
+          uid: contractorRecord.uid,
+          firstName: contractorRecord.firstName,
+          lastName: contractorRecord.lastName,
+          email: contractorRecord.email,
+          userType: contractorRecord.userType,
+          ...rest,
+        };
+      }
+    }
+    res.json({ job, contractor });
   } catch (e) {
     next(e);
   }
