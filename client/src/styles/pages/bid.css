@@ -96,6 +96,9 @@
   border: 1px solid var(--cds-border-subtle, #393939);
   border-radius: 0.25rem;
   padding: 0.75rem;
+  border-left: 4px solid transparent;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease, border-left-color 0.2s ease;
 }
 
 .bid-list-amount {
@@ -116,6 +119,11 @@
   font-style: italic;
 }
 
+.bid-list-status-note {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+}
+
 .bid-tag {
   background: var(--cds-background-inverse, #525252);
   color: var(--cds-text-inverse, #ffffff);
@@ -126,4 +134,55 @@
 
 .bid-tag--own {
   background: var(--cds-support-success, #198038);
+}
+
+.bid-list-item--accepted {
+  border-color: var(--cds-support-success, #198038);
+  border-left-color: var(--cds-support-success, #198038);
+  background: rgba(25, 128, 56, 0.08);
+}
+
+.bid-list-item--rejected {
+  border-color: var(--cds-support-error, #da1e28);
+  border-left-color: var(--cds-support-error, #da1e28);
+  background: rgba(218, 30, 40, 0.08);
+}
+
+.bid-list-item--own {
+  box-shadow: inset 0 0 0 1px var(--cds-focus, #0f62fe);
+}
+
+.bid-list-item--active {
+  border-color: rgba(15, 98, 254, 0.3);
+  border-left-color: var(--cds-support-info, #0f62fe);
+  background: rgba(15, 98, 254, 0.07);
+}
+
+.bid-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(82, 82, 82, 0.15);
+  color: var(--cds-text-inverse, #ffffff);
+}
+
+.bid-status-badge--active {
+  background: rgba(15, 98, 254, 0.15);
+  color: var(--cds-support-info, #0f62fe);
+}
+
+.bid-status-badge--accepted {
+  background: rgba(25, 128, 56, 0.18);
+  color: var(--cds-support-success, #198038);
+}
+
+.bid-status-badge--rejected {
+  background: rgba(218, 30, 40, 0.18);
+  color: var(--cds-support-error, #da1e28);
 }
