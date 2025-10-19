@@ -67,8 +67,10 @@ export default function MyBids() {
   return (
     <div className="container bid-detail-container">
       <div className="bid-detail-header">
+        <Button kind="ghost" onClick={() => nav("/jobs")}>
+          Back to Job List
+        </Button>
         <h2>My Bids</h2>
-        <Button kind="ghost" onClick={() => nav("/jobs")}>Back to Jobs</Button>
       </div>
       {success && (
         <InlineNotification
@@ -105,8 +107,15 @@ export default function MyBids() {
               ? amountValue.toLocaleString()
               : bid.amount;
             const createdAt = bid.bidCreatedAt || bid.createdAt;
+            const status = (bid.status || "active").toLowerCase();
+            const statusLabel =
+              status.charAt(0).toUpperCase() + status.slice(1);
+            const itemClassNames = ["bid-list-item", "bid-list-item--own"];
+            if (["accepted", "rejected", "active"].includes(status)) {
+              itemClassNames.push(`bid-list-item--${status}`);
+            }
             return (
-              <div key={bid.id} className="bid-list-item">
+              <div key={bid.id} className={itemClassNames.join(" ")}>
                 <div className="bid-list-amount">
                   ${amountDisplay}
                   <span className="bid-tag">Bid</span>
@@ -125,9 +134,17 @@ export default function MyBids() {
                   <p className="bid-list-note">{bid.jobDescription}</p>
                 )}
                 <p className="bid-list-meta">
-                  {createdAt ? new Date(createdAt).toLocaleString() : ""} · Status: {bid.status || "active"}
+                  {createdAt ? new Date(createdAt).toLocaleString() : ""} ·{" "}
+                  <span
+                    className={`bid-status-badge bid-status-badge--${status}`}
+                  >
+                    {statusLabel}
+                  </span>
                 </p>
                 {bid.note && <p className="bid-list-note">“{bid.note}”</p>}
+                {bid.statusNote && (
+                  <p className="bid-list-status-note">{bid.statusNote}</p>
+                )}
                 <div className="job-row-actions">
                   <Button
                     size="sm"
