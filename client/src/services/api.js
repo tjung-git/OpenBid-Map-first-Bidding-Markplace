@@ -111,6 +111,29 @@ export const api = {
     const r = await fetch(`${base}/api/bids/${jobId}`, { headers: headers() });
     return r.json();
   },
+  async bidsForUser() {
+    const r = await fetch(`${base}/api/bids/myBids`, { headers: headers() });
+    return r.json();
+  },
+  async bidUpdate(jobId, bidId, payload) {
+    const r = await fetch(`${base}/api/bids/${jobId}/${bidId}`, {
+      method: "PATCH",
+      headers: headers(),
+      body: JSON.stringify(payload),
+    });
+    return r.json();
+  },
+  async bidDelete(bidId) {
+    const r = await fetch(`${base}/api/bids/${bidId}`, {
+      method: "DELETE",
+      headers: headers(),
+    });
+    if (!r.ok && r.status !== 204) {
+      const data = await r.json().catch(() => ({}));
+      throw { status: r.status, data };
+    }
+    return true;
+  },
   async bid(jobId, payload) {
     const r = await fetch(`${base}/api/bids/${jobId}`, {
       method: "POST",
