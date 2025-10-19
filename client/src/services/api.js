@@ -123,6 +123,13 @@ export const api = {
     });
     return r.json();
   },
+  async bidAccept(jobId, bidId) {
+    const r = await fetch(`${base}/api/bids/${jobId}/${bidId}/accept`, {
+      method: "POST",
+      headers: headers(),
+    });
+    return r.json();
+  },
   async bidDelete(bidId) {
     const r = await fetch(`${base}/api/bids/${bidId}`, {
       method: "DELETE",
