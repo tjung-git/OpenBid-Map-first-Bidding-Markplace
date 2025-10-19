@@ -10,7 +10,15 @@ export default function Nav() {
   const showNewJob =
     isContractor && (path.startsWith("/new-job") || path.startsWith("/kyc"));
   const showKyc = isContractor && path.startsWith("/kyc");
-  const isJobDetail = /^\/jobs\/[^/]+$/.test(path);
+  const isJobBid = /^\/jobs\/[^/]+\/bid$/.test(path);
+  const isJobDetail =
+    /^\/jobs\/[^/]+$/.test(path) &&
+    !path.startsWith("/jobs/myBids") &&
+    !isJobBid;
+  const isBidDetail =
+    /^\/bids\/[^/]+$/.test(path) ||
+    /^\/jobs\/myBids\/bidDetails\/[^/]+$/.test(path);
+  const isMyBids = path === "/jobs/myBids";
   return (
     <nav className="container nav-container">
       <Breadcrumb noTrailingSlash>
@@ -27,9 +35,29 @@ export default function Nav() {
             <Link to="/kyc">KYC</Link>
           </BreadcrumbItem>
         )}
+        {(isMyBids || path.startsWith("/jobs/myBids/")) && (
+          <BreadcrumbItem isCurrentPage={path === "/jobs/myBids"}>
+            <Link to="/jobs/myBids">My Bids</Link>
+          </BreadcrumbItem>
+        )}
         {isJobDetail && (
           <BreadcrumbItem isCurrentPage>
             Job Detail
+          </BreadcrumbItem>
+        )}
+        {isJobBid && (
+          <BreadcrumbItem isCurrentPage>
+            Bid on Job
+          </BreadcrumbItem>
+        )}
+        {isBidDetail && (
+          <BreadcrumbItem isCurrentPage>
+            Bid Detail
+          </BreadcrumbItem>
+        )}
+        {isMyBids && (
+          <BreadcrumbItem isCurrentPage>
+            My Bids
           </BreadcrumbItem>
         )}
       </Breadcrumb>
