@@ -4,7 +4,7 @@ import { Loader } from "@googlemaps/js-api-loader";
 import { useEffect, useRef } from "react";
 
 export default function MapView({
-  center = { lat: 43.6532, lng: -79.3832 },
+  center,
   markers = [],
 }) {
   const divRef = useRef(null);
@@ -14,6 +14,7 @@ export default function MapView({
     const loader = new Loader({
       apiKey: cfg.mapsKey,
       version: "weekly",
+      libraries: ['places']
     });
     let map;
     loader.load().then((google) => {

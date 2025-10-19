@@ -3,6 +3,7 @@ import { DataTable, Button, InlineNotification, FlexGrid, Column, TextInput, Row
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import MapView from "../components/MapView";
+import SearchAutocomplete from "../components/SearchAutcomplete"
 import { Text } from "@carbon/react/lib/components/Text";
 
 export default function JobList() {
@@ -10,7 +11,18 @@ export default function JobList() {
   const [err, setErr] = useState("");
   const [minBudget, setMinBudget] = useState(0);
   const [maxBudget, setMaxBudget] = useState(1000000);
+  const [center, setCenter] = useState({ lat: 43.6532, lng: -79.3832 });
+  const [selectedAddress, setSelectedAddress] = useState("Toronto, ON, Canada");
   const nav = useNavigate();
+
+  const handlePlaceSelection = (placeData) => {
+    console.log('Selected Place:', placeData);
+    const {address, latLng} = placeData;
+    console.log(address);
+    console.log(latLng);
+    setCenter(latLng);
+    setSelectedAddress(address);
+  };
 
   useEffect(() => {
     api
@@ -46,17 +58,20 @@ export default function JobList() {
         />
       )}
       <FlexGrid>
-        <Column>
-          <p>Location</p>
-        </Column>
-        <Column>
-        
-        </Column>
+        <Row>
+          <Column>
+            <SearchAutocomplete onSelectPlace={handlePlaceSelection}/>
+          </Column>
+          <Column>
+            <Text>Current Location: {selectedAddress}</Text>
+          </Column>
+        </Row>
       </FlexGrid>
       <MapView
         markers={jobs
-          .filter((j) => j.location?.lat && j.location?.lng && j.budgetAmount >= minBudget && j.budgetAmount <= maxBudget)
+          .filter((j) => j.location?.lat && j.location?.lng && ((j.budgetAmount >= minBudget && j.budgetAmount <= maxBudget) || j.budgetAmount ==="-"))
           .map((j) => j.location)}
+        center={center}
       />
       <div style={{ marginTop: 16 }}>
         <Button onClick={() => nav("/new-job")}>Post a Job</Button>
