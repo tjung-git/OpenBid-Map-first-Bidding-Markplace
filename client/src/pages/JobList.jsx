@@ -66,14 +66,31 @@ export default function JobList() {
           <Column>
             <Text>Budget Filter</Text>
           </Column>
+        </Row>
+        <Row>
           <Column>
-            <NumberInput min={0} max={1000000} onChange={(event) => setMinBudget(Number(event.target.value))} value={minBudget}></NumberInput>
+            <NumberInput 
+              size="md"
+              id="minBudget" label="Min budget" 
+              min={0} 
+              max={1000000} 
+              onChange={(event) => setMinBudget(Number(event.target.value))} 
+              value={minBudget}
+              hideSteppers
+            >
+            </NumberInput>
           </Column>
           <Column>
-            <NumberInput min={0} max={1000000} onChange={(event) => setMaxBudget(Number(event.target.value))} value={maxBudget}></NumberInput>
-          </Column>
-          <Column>
-            <Button style={{backgroundColor: "red"}} onClick={()=>{setMinBudget(0); setMaxBudget(1000000)}}>Reset Budget Filter</Button>
+            <NumberInput
+              size="md" 
+              id="maxBudget" 
+              label="Max budget" 
+              min={0} max={1000000} 
+              onChange={(event) => setMaxBudget(Number(event.target.value))} 
+              value={maxBudget}
+              hideSteppers
+            >
+            </NumberInput>
           </Column>
         </Row>
       </FlexGrid>
