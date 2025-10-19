@@ -32,6 +32,9 @@ const sanitizeUser = (user) => {
   return rest;
 };
 
+const isKycVerified = (value) =>
+  typeof value === "string" && value.trim().toLowerCase() === "verified";
+
 router.post("/signup", async (req, res, next) => {
   try {
     const { firstName, lastName, email, password, userType } = req.body;
@@ -107,6 +110,7 @@ router.post("/signup", async (req, res, next) => {
       userType: userTypeNormalized,
       emailVerification: config.prototype ? "verified" : "pending",
       kycStatus: config.prototype ? "verified" : "pending",
+      kycSessionId: null,
       passwordHash,
       createdAt: nowIso,
       updatedAt: nowIso,
@@ -232,7 +236,7 @@ router.post("/login", async (req, res, next) => {
     const requirements = {
       // Let callers know why access might be blocked without exposing internals.
       emailVerified: user.emailVerification === "verified",
-      kycVerified: user.kycStatus === "verified",
+      kycVerified: isKycVerified(user.kycStatus),
     };
 
     res.json({
