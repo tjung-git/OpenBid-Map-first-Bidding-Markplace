@@ -75,8 +75,18 @@ export const db = {
     },
   },
   bid: {
+    get(bidId) {
+      return state.bids.get(bidId) || null;
+    },
     listByJob(jobId) {
-      return Array.from(state.bids.values()).filter((b) => b.jobId === jobId);
+      return Array.from(state.bids.values()).filter(
+        (b) => b.jobId === jobId || b.jobID === jobId
+      );
+    },
+    listByUser(uid) {
+      return Array.from(state.bids.values()).filter(
+        (b) => b.providerId === uid
+      );
     },
     create(data) {
       const bidId = id("bid");
@@ -84,6 +94,8 @@ export const db = {
         id: bidId,
         createdAt: Date.now(),
         status: "active",
+        bidCreatedAt: new Date().toISOString(),
+        jobID: data.jobId,
         ...data,
       };
       state.bids.set(bidId, bid);
@@ -92,9 +104,17 @@ export const db = {
     update(bidId, patch) {
       const cur = state.bids.get(bidId);
       if (!cur) return null;
-      const updated = { ...cur, ...patch, updatedAt: Date.now() };
+      const updated = {
+        ...cur,
+        ...patch,
+        updatedAt: Date.now(),
+        bidUpdatedAt: new Date().toISOString(),
+      };
       state.bids.set(bidId, updated);
       return updated;
+    },
+    delete(bidId) {
+      return state.bids.delete(bidId);
     },
     deleteByJob(jobId) {
       let count = 0;
