@@ -15,6 +15,21 @@ import "../styles/pages/bid.css";
 
 const PAGE_SIZE = 5;
 
+const normalizeAmount = (value) => {
+  if (value == null) return null;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  const direct = Number(value);
+  if (Number.isFinite(direct)) return direct;
+  if (typeof value === "string") {
+    const cleaned = value.replace(/[^0-9.\-]/g, "");
+    const parsed = Number(cleaned);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
 export default function BidDetail() {
   const { jobId } = useParams();
   const nav = useNavigate();
@@ -28,13 +43,14 @@ export default function BidDetail() {
   const [contractor, setContractor] = useState(null);
   const [bids, setBids] = useState([]);
   const [highestBid, setHighestBid] = useState(null);
-  const [amount, setAmount] = useState(0);
+  const [amountInput, setAmountInput] = useState("");
   const [note, setNote] = useState("");
   const [ownBidId, setOwnBidId] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(location.state?.notice || "");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(1);
 
   const isBidder = user?.userType === "bidder";
@@ -48,6 +64,14 @@ export default function BidDetail() {
   }, [contractor?.firstName, contractor?.lastName, contractor?.email]);
   const jobStatus = (job?.status || "open").toLowerCase();
   const biddingClosed = jobStatus !== "open";
+  const budgetAmountNumber = useMemo(
+    () => normalizeAmount(job?.budgetAmount),
+    [job?.budgetAmount]
+  );
+  const budgetDisplay = useMemo(() => {
+    if (!Number.isFinite(budgetAmountNumber)) return null;
+    return `$${budgetAmountNumber.toLocaleString()}`;
+  }, [budgetAmountNumber]);
 
   const mapMarkers = useMemo(() => {
     if (!job?.location?.lat || !job?.location?.lng) return [];
@@ -67,21 +91,36 @@ export default function BidDetail() {
       setLoading(true);
       try {
         const jobResp = await api.jobGet(jobId);
-        setJob(jobResp.job);
+        const jobData = jobResp.job || null;
+        setJob(jobData);
         setContractor(jobResp.contractor || null);
         const bidsResp = await api.bidsForJob(jobId);
         const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
         setBids(list);
         setHighestBid(bidsResp.highestBid || null);
+        const minAmount = normalizeAmount(jobData?.budgetAmount);
         if (user?.uid) {
           const existing = list.find((bid) => bid.providerId === user.uid);
           if (existing) {
             setOwnBidId(existing.id);
-            setAmount(Number(existing.amount) || 0);
+            const numericAmount = Number(existing.amount);
+            setAmountInput(
+              Number.isFinite(numericAmount) ? String(numericAmount) : ""
+            );
             setNote(existing.note || "");
           } else {
             setOwnBidId(null);
+            if (Number.isFinite(minAmount) && minAmount > 0) {
+              setAmountInput(String(minAmount));
+            } else {
+              setAmountInput("");
+            }
+            setNote("");
           }
+        } else if (Number.isFinite(minAmount) && minAmount > 0) {
+          setAmountInput(String(minAmount));
+        } else {
+          setAmountInput("");
         }
         setPage(1);
       } catch (err) {
@@ -114,10 +153,10 @@ export default function BidDetail() {
   }, [loading, isBidder, job, ownBidId, jobId, nav, locationNotice]);
 
   function handleAmountChange(_, { value }) {
-    const numeric = Number(value);
-    if (Number.isFinite(numeric)) {
-      setAmount(numeric);
-    }
+    const raw = value == null ? "" : String(value);
+    const cleaned = raw.replace(/[^0-9.]/g, "");
+    const normalized = cleaned.replace(/^0+(?=\d)/, "");
+    setAmountInput(normalized);
   }
 
   async function submitBid(e) {
@@ -139,15 +178,25 @@ export default function BidDetail() {
       });
       return;
     }
-    if (!Number.isFinite(amount) || amount <= 0) {
+    const numericAmount = Number(amountInput);
+    if (!Number.isFinite(numericAmount) || amountInput === "" || numericAmount <= 0) {
       setError("Enter a valid bid amount greater than 0.");
+      return;
+    }
+    const minAmount = budgetAmountNumber || 0;
+    if (numericAmount < minAmount) {
+      setError(
+        minAmount > 0
+          ? `You cannot bid below the contractor's budget of ${budgetDisplay}.`
+          : "Enter a valid bid amount greater than 0."
+      );
       return;
     }
     setSubmitting(true);
     try {
       if (ownBidId) {
         const resp = await api.bidUpdate(jobId, ownBidId, {
-          amount,
+          amount: numericAmount,
           note,
         });
         if (resp.error) {
@@ -164,7 +213,7 @@ export default function BidDetail() {
           await refreshBids();
         }
       } else {
-        const resp = await api.bid(jobId, { amount, note });
+        const resp = await api.bid(jobId, { amount: numericAmount, note });
         if (resp.error) {
           const messages = {
             bidding_closed: "Bidding is closed for this job.",
@@ -178,7 +227,7 @@ export default function BidDetail() {
         } else {
           setSuccess("Bid placed.");
           setOwnBidId(resp.bid?.id || null);
-          await refreshBids();
+          await refreshBids({ reset: true });
         }
       }
     } catch (err) {
@@ -188,7 +237,34 @@ export default function BidDetail() {
     }
   }
 
-  async function refreshBids({ silent = false } = {}) {
+  async function handleDeleteBid() {
+    if (!ownBidId || deleting) return;
+    const confirmed = window.confirm(
+      "Delete your bid? This cannot be undone."
+    );
+    if (!confirmed) return;
+    setDeleting(true);
+    setError("");
+    try {
+      await api.bidDelete(ownBidId);
+      setSuccess("Bid deleted.");
+      setOwnBidId(null);
+      setNote("");
+      const minAmount = normalizeAmount(job?.budgetAmount);
+      if (Number.isFinite(minAmount) && minAmount > 0) {
+        setAmountInput(String(minAmount));
+      } else {
+        setAmountInput("");
+      }
+      await refreshBids({ reset: true });
+    } catch (err) {
+      setError("Unable to delete bid. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  async function refreshBids({ silent = false, reset = false } = {}) {
     try {
       const bidsResp = await api.bidsForJob(jobId);
       const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
@@ -198,11 +274,31 @@ export default function BidDetail() {
         const existing = list.find((bid) => bid.providerId === user.uid);
         if (existing) {
           setOwnBidId(existing.id);
-          setAmount(Number(existing.amount) || 0);
+          const numericAmount = Number(existing.amount);
+          setAmountInput(
+            Number.isFinite(numericAmount) ? String(numericAmount) : ""
+          );
           setNote(existing.note || "");
-        } else if (!silent) {
+        } else {
           setOwnBidId(null);
+          if (reset) {
+            const minAmount = normalizeAmount(job?.budgetAmount);
+            if (Number.isFinite(minAmount) && minAmount > 0) {
+              setAmountInput(String(minAmount));
+            } else {
+              setAmountInput("");
+            }
+            setNote("");
+          }
         }
+      } else if (reset) {
+        const minAmount = normalizeAmount(job?.budgetAmount);
+        if (Number.isFinite(minAmount) && minAmount > 0) {
+          setAmountInput(String(minAmount));
+        } else {
+          setAmountInput("");
+        }
+        setNote("");
       }
     } catch (err) {
       if (!silent) {
@@ -329,15 +425,26 @@ export default function BidDetail() {
               lowContrast
             />
           )}
+          {budgetDisplay && (
+            <p className="bid-detail-helper">
+              Minimum bid (contractor budget): {budgetDisplay}
+            </p>
+          )}
           <Form onSubmit={submitBid} className="bid-detail-form">
             <NumberInput
               id="bid-amount"
               label="Your Bid Amount"
-              value={amount}
+              value={amountInput === "" ? "" : Number(amountInput)}
               onChange={handleAmountChange}
-              min={0}
+              allowEmpty
+              min={budgetAmountNumber ?? 0}
               step={5}
               disabled={submitting || biddingClosed}
+              helperText={
+                budgetDisplay
+                  ? `Enter an amount of at least ${budgetDisplay}.`
+                  : undefined
+              }
             />
             <TextInput
               id="bid-note"
@@ -359,6 +466,16 @@ export default function BidDetail() {
                 ? "Placing…"
                 : "Place Bid"}
             </Button>
+            {ownBidId && (
+              <Button
+                type="button"
+                kind="danger--ghost"
+                onClick={handleDeleteBid}
+                disabled={submitting || deleting}
+              >
+                Delete Bid
+              </Button>
+            )}
           </Form>
         </Tile>
       </div>
