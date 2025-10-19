@@ -13,6 +13,7 @@ export default function JobList() {
   const [maxBudget, setMaxBudget] = useState(1000000);
   const [center, setCenter] = useState({ lat: 43.6532, lng: -79.3832 });
   const [selectedAddress, setSelectedAddress] = useState("Toronto, ON, Canada");
+  const [radius, setRadius] = useState(1000000); //In metres
   const nav = useNavigate();
 
   const handlePlaceSelection = (placeData) => {
@@ -58,12 +59,30 @@ export default function JobList() {
         />
       )}
       <FlexGrid>
+        <Row style={{marginTop: 16}}>
+          <Text>Location</Text>
+        </Row>
         <Row>
           <Column>
             <SearchAutocomplete onSelectPlace={handlePlaceSelection}/>
           </Column>
           <Column>
             <Text>Current Location: {selectedAddress}</Text>
+          </Column>
+        </Row>
+        <Row style={{marginTop: 16}}>
+          <Column>
+            <NumberInput 
+              size="md"
+              id="radius" 
+              label="Radius" 
+              min={5} 
+              max={1000000} 
+              onChange={(event) => setRadius(Number(event.target.value))} 
+              value={radius}
+              hideSteppers
+              helperText="Radius is set to 1000000 by default, radius should be altered after the location is selected to limit results."
+            />
           </Column>
         </Row>
       </FlexGrid>

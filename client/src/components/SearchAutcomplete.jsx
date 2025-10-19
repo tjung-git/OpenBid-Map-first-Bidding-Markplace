@@ -57,6 +57,7 @@ const LocationSearchInput = ({
                 })}
                 id="SearchAutocompleteInput"
                 labelText="Location Search"
+                helperText="Map will be centered on the selected location."
               />
               <Text>
                 {loading && <div>Loading...</div>}

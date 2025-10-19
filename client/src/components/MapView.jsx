@@ -4,7 +4,7 @@ import { Loader } from "@googlemaps/js-api-loader";
 import { useEffect, useRef } from "react";
 
 export default function MapView({
-  center,
+  center = { lat: 43.6532, lng: -79.3832 },
   markers = [],
 }) {
   const divRef = useRef(null);
