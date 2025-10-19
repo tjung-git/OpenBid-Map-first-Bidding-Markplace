@@ -37,5 +37,5 @@ export default function MapView({
       </Tile>
     );
   }
-  return <div ref={divRef} style={{ height: 320, borderRadius: 8 }} />;
+  return <div ref={divRef} style={{ height: 320, borderRadius: 8, marginTop: 16 }} />;
 }

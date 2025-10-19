@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { DataTable, Button, InlineNotification } from "@carbon/react";
+import { DataTable, Button, InlineNotification, FlexGrid, Column } from "@carbon/react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import MapView from "../components/MapView";
@@ -40,6 +40,14 @@ export default function JobList() {
           lowContrast
         />
       )}
+      <FlexGrid>
+        <Column>
+          <p>Location</p>
+        </Column>
+        <Column>
+
+        </Column>
+      </FlexGrid>
       <MapView
         markers={jobs
           .filter((j) => j.location?.lat && j.location?.lng)
