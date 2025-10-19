@@ -22,6 +22,8 @@ export default function BidDetail() {
   const user = getUser();
   const requirements = getRequirements();
 
+  const locationNotice = location.state?.notice || "";
+
   const [job, setJob] = useState(null);
   const [contractor, setContractor] = useState(null);
   const [bids, setBids] = useState([]);
@@ -37,6 +39,15 @@ export default function BidDetail() {
 
   const isBidder = user?.userType === "bidder";
   const kycVerified = requirements.kycVerified;
+  const contractorName = useMemo(() => {
+    const name =
+      [contractor?.firstName, contractor?.lastName].filter(Boolean).join(" ") ||
+      contractor?.email ||
+      "Unknown contractor";
+    return name;
+  }, [contractor?.firstName, contractor?.lastName, contractor?.email]);
+  const jobStatus = (job?.status || "open").toLowerCase();
+  const biddingClosed = jobStatus !== "open";
 
   const mapMarkers = useMemo(() => {
     if (!job?.location?.lat || !job?.location?.lng) return [];
@@ -90,6 +101,18 @@ export default function BidDetail() {
     return () => window.clearInterval(interval);
   }, [loading, jobId]);
 
+  useEffect(() => {
+    if (!loading && isBidder && job && !ownBidId) {
+      const notice =
+        locationNotice ||
+        "Place a bid to view detailed status for this job.";
+      nav(`/jobs/${jobId}/bid`, {
+        replace: true,
+        state: { notice },
+      });
+    }
+  }, [loading, isBidder, job, ownBidId, jobId, nav, locationNotice]);
+
   function handleAmountChange(_, { value }) {
     const numeric = Number(value);
     if (Number.isFinite(numeric)) {
@@ -101,6 +124,10 @@ export default function BidDetail() {
     e.preventDefault();
     setError("");
     setSuccess("");
+    if (biddingClosed) {
+      setError("Bidding is closed for this job.");
+      return;
+    }
     if (!isBidder) {
       setError("Only bidders can place bids.");
       return;
@@ -124,7 +151,14 @@ export default function BidDetail() {
           note,
         });
         if (resp.error) {
-          setError("Unable to update bid. Please try again.");
+          const messages = {
+            bidding_closed: "Bidding is closed for this job.",
+            bid_closed: "This bid is closed and cannot be updated.",
+          };
+          setError(
+            messages[resp.error] ||
+              "Unable to update bid. Please try again."
+          );
         } else {
           setSuccess("Bid updated.");
           await refreshBids();
@@ -132,7 +166,15 @@ export default function BidDetail() {
       } else {
         const resp = await api.bid(jobId, { amount, note });
         if (resp.error) {
-          setError("Unable to place bid. Please try again.");
+          const messages = {
+            bidding_closed: "Bidding is closed for this job.",
+            bid_already_exists:
+              "You have already placed a bid on this job.",
+          };
+          setError(
+            messages[resp.error] ||
+              "Unable to place bid. Please try again."
+          );
         } else {
           setSuccess("Bid placed.");
           setOwnBidId(resp.bid?.id || null);
@@ -228,21 +270,13 @@ export default function BidDetail() {
   return (
     <div className="container bid-detail-container">
       <div className="bid-detail-header">
-        <Button
-          kind="ghost"
-          onClick={() =>
-            nav(location.state?.fromMyBids ? "/jobs/myBids" : "/jobs")
-          }
-        >
-          {location.state?.fromMyBids ? "Back to My Bids" : "Back to Job List"}
+        <Button kind="ghost" onClick={() => nav("/jobs")}>
+          Back to Job List
         </Button>
         <div>
           <h2>{job.title}</h2>
           <p className="job-detail-meta">
-            Contractor:{" "}
-            {[contractor?.firstName, contractor?.lastName]
-              .filter(Boolean)
-              .join(" ") || contractor?.email || "Unknown contractor"}
+            Posted by {contractorName}
           </p>
         </div>
       </div>
@@ -278,7 +312,7 @@ export default function BidDetail() {
         </Tile>
 
         <Tile className="bid-detail-card">
-          <h3>Place Your Bid</h3>
+          <h3>{ownBidId ? "Update Your Bid" : "Place Your Bid"}</h3>
           {highestEntry ? (
             <p className="bid-detail-highest">
               Highest bid: ${Number(highestEntry.amount).toLocaleString()}{" "}
@@ -286,6 +320,14 @@ export default function BidDetail() {
             </p>
           ) : (
             <p className="bid-detail-highest">Be the first to bid.</p>
+          )}
+          {biddingClosed && (
+            <InlineNotification
+              title="Bidding Closed"
+              subtitle="This job is no longer accepting bids."
+              kind="info"
+              lowContrast
+            />
           )}
           <Form onSubmit={submitBid} className="bid-detail-form">
             <NumberInput
@@ -295,16 +337,18 @@ export default function BidDetail() {
               onChange={handleAmountChange}
               min={0}
               step={5}
+              disabled={submitting || biddingClosed}
             />
             <TextInput
               id="bid-note"
               labelText="Note (optional)"
               value={note}
               onChange={(e) => setNote(e.target.value)}
+              disabled={submitting || biddingClosed}
             />
             <Button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || biddingClosed}
               className="bid-detail-submit"
             >
               {ownBidId
@@ -330,8 +374,16 @@ export default function BidDetail() {
                 const amountValue = Number(bid.amount);
                 const isOwn = bid.providerId === user?.uid;
                 const isHighest = highestEntry && highestEntry.id === bid.id;
+                const status = (bid.status || "active").toLowerCase();
+                const statusLabel =
+                  status.charAt(0).toUpperCase() + status.slice(1);
+                const itemClassNames = ["bid-list-item"];
+                if (isOwn) itemClassNames.push("bid-list-item--own");
+                if (["accepted", "rejected", "active"].includes(status)) {
+                  itemClassNames.push(`bid-list-item--${status}`);
+                }
                 return (
-                  <li key={bid.id} className="bid-list-item">
+                  <li key={bid.id} className={itemClassNames.join(" ")}>
                     <div>
                       <p className="bid-list-amount">
                         $
@@ -344,12 +396,23 @@ export default function BidDetail() {
                         )}
                       </p>
                       <p className="bid-list-meta">
-                        {bid.bidderName || "Bidder"} · {bid.status || "active"} ·{" "}
+                        {bid.bidderName || "Bidder"} ·{" "}
+                        <span
+                          className={`bid-status-badge bid-status-badge--${status}`}
+                        >
+                          {statusLabel}
+                        </span>{" "}
+                        ·{" "}
                         {new Date(
                           bid.bidCreatedAt || bid.createdAt || Date.now()
                         ).toLocaleString()}
                       </p>
                       {bid.note && <p className="bid-list-note">“{bid.note}”</p>}
+                      {bid.statusNote && (
+                        <p className="bid-list-status-note">
+                          {bid.statusNote}
+                        </p>
+                      )}
                     </div>
                   </li>
                 );
