@@ -163,6 +163,10 @@ export default function BidDetail() {
     e.preventDefault();
     setError("");
     setSuccess("");
+    if (ownBidFinalized) {
+      setError("This bid has already been finalized.");
+      return;
+    }
     if (biddingClosed) {
       setError("Bidding is closed for this job.");
       return;
@@ -238,7 +242,7 @@ export default function BidDetail() {
   }
 
   async function handleDeleteBid() {
-    if (!ownBidId || deleting) return;
+    if (!ownBidId || deleting || ownBidFinalized) return;
     const confirmed = window.confirm(
       "Delete your bid? This cannot be undone."
     );
@@ -316,6 +320,9 @@ export default function BidDetail() {
   }, [bids]);
 
   const ownBid = sortedBids.find((bid) => bid.providerId === user?.uid) || null;
+  const ownBidStatus = (ownBid?.status || "").toLowerCase();
+  const ownBidFinalized =
+    isBidder && ["accepted", "rejected"].includes(ownBidStatus);
   const highestEntry = highestBid
     ? sortedBids.find((bid) => bid.id === highestBid.id) || null
     : sortedBids.reduce((acc, bid) => {
@@ -339,6 +346,8 @@ export default function BidDetail() {
     const start = (page - 1) * PAGE_SIZE;
     return sortedBids.slice(start, start + PAGE_SIZE);
   }, [sortedBids, page]);
+
+  const showCompetitiveSections = !ownBidFinalized;
 
   if (loading) {
     return (
@@ -409,19 +418,28 @@ export default function BidDetail() {
 
         <Tile className="bid-detail-card">
           <h3>{ownBidId ? "Update Your Bid" : "Place Your Bid"}</h3>
-          {highestEntry ? (
-            <p className="bid-detail-highest">
-              Highest bid: ${Number(highestEntry.amount).toLocaleString()}{" "}
-              {highestEntry.bidderName ? `by ${highestEntry.bidderName}` : ""}
-            </p>
-          ) : (
-            <p className="bid-detail-highest">Be the first to bid.</p>
-          )}
+          {showCompetitiveSections &&
+            (highestEntry ? (
+              <p className="bid-detail-highest">
+                Highest bid: ${Number(highestEntry.amount).toLocaleString()}{" "}
+                {highestEntry.bidderName ? `by ${highestEntry.bidderName}` : ""}
+              </p>
+            ) : (
+              <p className="bid-detail-highest">Be the first to bid.</p>
+            ))}
           {biddingClosed && (
             <InlineNotification
               title="Bidding Closed"
               subtitle="This job is no longer accepting bids."
               kind="info"
+              lowContrast
+            />
+          )}
+          {ownBidFinalized && ownBidStatus && (
+            <InlineNotification
+              title="Bid Decision Finalized"
+              subtitle={`Your bid was ${ownBidStatus} and can no longer be changed.`}
+              kind={ownBidStatus === "accepted" ? "success" : "info"}
               lowContrast
             />
           )}
@@ -439,7 +457,7 @@ export default function BidDetail() {
               allowEmpty
               min={budgetAmountNumber ?? 0}
               step={5}
-              disabled={submitting || biddingClosed}
+              disabled={submitting || biddingClosed || ownBidFinalized}
               helperText={
                 budgetDisplay
                   ? `Enter an amount of at least ${budgetDisplay}.`
@@ -451,11 +469,11 @@ export default function BidDetail() {
               labelText="Note (optional)"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              disabled={submitting || biddingClosed}
+              disabled={submitting || biddingClosed || ownBidFinalized}
             />
             <Button
               type="submit"
-              disabled={submitting || biddingClosed}
+              disabled={submitting || biddingClosed || ownBidFinalized}
               className="bid-detail-submit"
             >
               {ownBidId
@@ -471,7 +489,7 @@ export default function BidDetail() {
                 type="button"
                 kind="danger--ghost"
                 onClick={handleDeleteBid}
-                disabled={submitting || deleting}
+                disabled={submitting || deleting || ownBidFinalized}
               >
                 Delete Bid
               </Button>
@@ -480,89 +498,99 @@ export default function BidDetail() {
         </Tile>
       </div>
 
-      <Tile className="bid-detail-card">
-        <h3>Recent Bids</h3>
-        {sortedBids.length === 0 ? (
-          <p>No bids yet.</p>
-        ) : (
-          <>
-            <ul className="bid-list">
-              {paginatedBids.map((bid) => {
-                const amountValue = Number(bid.amount);
-                const isOwn = bid.providerId === user?.uid;
-                const isHighest = highestEntry && highestEntry.id === bid.id;
-                const status = (bid.status || "active").toLowerCase();
-                const statusLabel =
-                  status.charAt(0).toUpperCase() + status.slice(1);
-                const itemClassNames = ["bid-list-item"];
-                if (isOwn) itemClassNames.push("bid-list-item--own");
-                if (["accepted", "rejected", "active"].includes(status)) {
-                  itemClassNames.push(`bid-list-item--${status}`);
-                }
-                return (
-                  <li key={bid.id} className={itemClassNames.join(" ")}>
-                    <div>
-                      <p className="bid-list-amount">
-                        $
-                        {Number.isFinite(amountValue)
-                          ? amountValue.toLocaleString()
-                          : bid.amount}
-                        {isHighest && <span className="bid-tag">Highest</span>}
-                        {isOwn && (
-                          <span className="bid-tag bid-tag--own">Your bid</span>
-                        )}
-                      </p>
-                      <p className="bid-list-meta">
-                        {bid.bidderName || "Bidder"} ·{" "}
-                        <span
-                          className={`bid-status-badge bid-status-badge--${status}`}
-                        >
-                          {statusLabel}
-                        </span>{" "}
-                        ·{" "}
-                        {new Date(
-                          bid.bidCreatedAt || bid.createdAt || Date.now()
-                        ).toLocaleString()}
-                      </p>
-                      {bid.note && <p className="bid-list-note">“{bid.note}”</p>}
-                      {bid.statusNote && (
-                        <p className="bid-list-status-note">
-                          {bid.statusNote}
-                        </p>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-            {totalPages > 1 && (
-              <div className="bid-pagination">
-                <Button
-                  kind="ghost"
-                  size="sm"
-                  disabled={page === 1}
-                  onClick={() => setPage((current) => Math.max(1, current - 1))}
-                >
-                  Previous
-                </Button>
-                <span className="bid-pagination__status">
-                  Page {page} of {totalPages}
-                </span>
-                <Button
-                  kind="ghost"
-                  size="sm"
-                  disabled={page === totalPages}
-                  onClick={() =>
-                    setPage((current) => Math.min(totalPages, current + 1))
+      {showCompetitiveSections && (
+        <Tile className="bid-detail-card">
+          <h3>Recent Bids</h3>
+          {sortedBids.length === 0 ? (
+            <p>No bids yet.</p>
+          ) : (
+            <>
+              <ul className="bid-list">
+                {paginatedBids.map((bid) => {
+                  const amountValue = Number(bid.amount);
+                  const isOwn = bid.providerId === user?.uid;
+                  const isHighest = highestEntry && highestEntry.id === bid.id;
+                  const status = (bid.status || "active").toLowerCase();
+                  const statusLabel =
+                    status.charAt(0).toUpperCase() + status.slice(1);
+                  const itemClassNames = ["bid-list-item"];
+                  if (isOwn) itemClassNames.push("bid-list-item--own");
+                  if (["accepted", "rejected", "active"].includes(status)) {
+                    itemClassNames.push(`bid-list-item--${status}`);
                   }
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-          </>
-        )}
-      </Tile>
+                  return (
+                    <li key={bid.id} className={itemClassNames.join(" ")}>
+                      <div>
+                        <p className="bid-list-amount">
+                          $
+                          {Number.isFinite(amountValue)
+                            ? amountValue.toLocaleString()
+                            : bid.amount}
+                          {isHighest && (
+                            <span className="bid-tag">Highest</span>
+                          )}
+                          {isOwn && (
+                            <span className="bid-tag bid-tag--own">
+                              Your bid
+                            </span>
+                          )}
+                        </p>
+                        <p className="bid-list-meta">
+                          {bid.bidderName || "Bidder"} ·{" "}
+                          <span
+                            className={`bid-status-badge bid-status-badge--${status}`}
+                          >
+                            {statusLabel}
+                          </span>{" "}
+                          ·{" "}
+                          {new Date(
+                            bid.bidCreatedAt || bid.createdAt || Date.now()
+                          ).toLocaleString()}
+                        </p>
+                        {bid.statusNote && (
+                          <p className="bid-list-status-note">
+                            {bid.statusNote}
+                          </p>
+                        )}
+                        {bid.note && !isBidder && (
+                          <p className="bid-list-note">“{bid.note}”</p>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              {totalPages > 1 && (
+                <div className="bid-pagination">
+                  <Button
+                    kind="ghost"
+                    size="sm"
+                    disabled={page === 1}
+                    onClick={() =>
+                      setPage((current) => Math.max(1, current - 1))
+                    }
+                  >
+                    Previous
+                  </Button>
+                  <span className="bid-pagination__status">
+                    Page {page} of {totalPages}
+                  </span>
+                  <Button
+                    kind="ghost"
+                    size="sm"
+                    disabled={page === totalPages}
+                    onClick={() =>
+                      setPage((current) => Math.min(totalPages, current + 1))
+                    }
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </Tile>
+      )}
     </div>
   );
 }

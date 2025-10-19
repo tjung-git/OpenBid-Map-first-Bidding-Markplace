@@ -47,6 +47,10 @@ export default function MyBids() {
   }, [user?.userType]);
 
   async function remove(bidId) {
+    const target = bids.find((bid) => bid.id === bidId);
+    if (target && (target.status || "").toLowerCase() === "accepted") {
+      return;
+    }
     const confirmed = window.confirm(
       "Delete this bid? This cannot be undone."
     );
@@ -107,7 +111,8 @@ export default function MyBids() {
               ? amountValue.toLocaleString()
               : bid.amount;
             const createdAt = bid.bidCreatedAt || bid.createdAt;
-            const status = (bid.status || "active").toLowerCase();
+                const status = (bid.status || "active").toLowerCase();
+                const deleteDisabled = status === "accepted";
             const statusLabel =
               status.charAt(0).toUpperCase() + status.slice(1);
             const itemClassNames = ["bid-list-item", "bid-list-item--own"];
@@ -159,7 +164,12 @@ export default function MyBids() {
                   <Button
                     size="sm"
                     kind="danger--ghost"
-                    onClick={() => remove(bid.id)}
+                    disabled={deleteDisabled}
+                    onClick={() => {
+                      if (!deleteDisabled) {
+                        remove(bid.id);
+                      }
+                    }}
                   >
                     Delete Bid
                   </Button>
