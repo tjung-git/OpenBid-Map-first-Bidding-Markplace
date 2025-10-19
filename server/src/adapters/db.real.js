@@ -164,14 +164,36 @@ export const db = {
     },
   },
   bid: {
+    async get(bidId) {
+      if (!bidId) return null;
+      const doc = await firestore()
+        .collection(collections.bids)
+        .doc(bidId)
+        .get();
+      return toRecord(doc);
+    },
     async listByJob(jobId) {
       if (!jobId) return [];
       const snapshot = await firestore()
         .collection(collections.bids)
-        .where("jobId", "==", jobId)
-        .orderBy("createdAt", "desc")
         .get();
-      return snapshot.docs.map((doc) => toRecord(doc));
+      return snapshot.docs
+        .map((doc) => toRecord(doc))
+        .filter((bid) => bid.jobId === jobId || bid.jobID === jobId);
+    },
+    async listByUser(uid) {
+      if (!uid) return [];
+      const snapshot = await firestore()
+        .collection(collections.bids)
+        .where("providerId", "==", uid)
+        .get();
+      return snapshot.docs
+        .map((doc) => toRecord(doc))
+        .sort((a, b) => {
+          const aCreated = new Date(a.bidCreatedAt || a.createdAt || 0).getTime();
+          const bCreated = new Date(b.bidCreatedAt || b.createdAt || 0).getTime();
+          return bCreated - aCreated;
+        });
     },
     async create(data) {
       const ref = await firestore()
@@ -181,6 +203,10 @@ export const db = {
             withTimestamps(
               {
                 status: "active",
+                jobId: data.jobId,
+                jobID: data.jobId,
+                bidCreatedAt:
+                  data.bidCreatedAt || new Date().toISOString(),
                 ...data,
               },
               { isNew: true }
@@ -197,6 +223,14 @@ export const db = {
       await ref.update(clean(withTimestamps(patch, { isNew: false })));
       const updated = await ref.get();
       return toRecord(updated);
+    },
+    async delete(bidId) {
+      if (!bidId) return false;
+      const ref = firestore().collection(collections.bids).doc(bidId);
+      const snapshot = await ref.get();
+      if (!snapshot.exists) return false;
+      await ref.delete();
+      return true;
     },
     async deleteByJob(jobId) {
       if (!jobId) return 0;
