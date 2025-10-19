@@ -145,6 +145,12 @@ export default function JobList() {
         </div>
       )}
 
+      {!isContractor && (
+        <div className="job-list-actions">
+          <Button onClick={() => nav("/jobs/myBids")}>My Bids</Button>
+        </div>
+      )}
+
       <DataTable rows={rows} headers={headers}>
         {({ rows, headers, getHeaderProps, getRowProps }) => (
           <table className="cds--data-table cds--data-table--zebra job-table">
@@ -165,7 +171,16 @@ export default function JobList() {
                     <td key={cell.id}>{cell.value}</td>
                   ))}
                   <td className="job-row-actions">
-                    <Button size="sm" onClick={() => nav(`/jobs/${row.id}`)}>
+                    <Button
+                      size="sm"
+                    onClick={() =>
+                      nav(
+                        isContractor
+                          ? `/jobs/${row.id}`
+                          : `/jobs/${row.id}/bid`
+                      )
+                    }
+                    >
                       Open
                     </Button>
                     {isContractor && (
