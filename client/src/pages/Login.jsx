@@ -24,8 +24,9 @@ export default function Login() {
   useEffect(() => {
     if (location.state?.signupComplete) {
       setInfo(location.state.signupComplete);
+      nav(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state]);
+  }, [location.state, location.pathname, nav]);
 
   async function submit(e) {
     e.preventDefault();
