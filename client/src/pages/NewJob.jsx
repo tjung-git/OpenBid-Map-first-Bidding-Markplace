@@ -15,7 +15,7 @@ import "../styles/pages/jobs.css";
 export default function NewJob() {
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
-  const [budget, setBudget] = useState(100);
+  const [budgetInput, setBudgetInput] = useState("");
   const [lat, setLat] = useState(43.6532);
   const [lng, setLng] = useState(-79.3832);
   const [err, setErr] = useState("");
@@ -59,11 +59,17 @@ export default function NewJob() {
       return;
     }
     setSubmitting(true);
+    const cleanedBudget = budgetInput.replace(/[^0-9.]/g, "");
+    const numericBudget = cleanedBudget === "" ? null : Number(cleanedBudget);
+    if (!Number.isFinite(numericBudget) || numericBudget === null || numericBudget <= 0) {
+      setErr("Enter a valid budget amount greater than 0.");
+      return;
+    }
     try {
       const r = await api.jobCreate({
         title,
         description: desc,
-        budgetAmount: budget,
+        budgetAmount: numericBudget,
         location: { lat, lng, address: "Mock Address" },
       });
       if (r.error) {
@@ -108,8 +114,14 @@ export default function NewJob() {
         <NumberInput
           id="budget"
           label="Job Budget"
-          value={budget}
-          onChange={(_, { value }) => setBudget(Number(value))}
+          allowEmpty
+          value={budgetInput === "" ? "" : Number(budgetInput)}
+          onChange={(_, { value }) => {
+            const raw = value == null ? "" : String(value);
+            const cleaned = raw.replace(/[^0-9.]/g, "");
+            const normalized = cleaned.replace(/^0+(?=\d)/, "");
+            setBudgetInput(normalized);
+          }}
         />
         <div className="job-form-grid">
           <NumberInput
