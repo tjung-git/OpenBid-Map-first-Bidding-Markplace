@@ -8,6 +8,7 @@ import { Text } from "@carbon/react/lib/components/Text";
 
 export default function JobList() {
   const [jobs, setJobs] = useState([]);
+  const [filteredJobs, setFilteredJobs] = useState([]);
   const [err, setErr] = useState("");
   const [minBudget, setMinBudget] = useState(0);
   const [maxBudget, setMaxBudget] = useState(1000000);
@@ -23,7 +24,7 @@ export default function JobList() {
 
   if(lat1 > 90 || lat1 < -90 || lat2 > 90 || lat2 < -90 || lng1 > 180 || lng1 < -180 || lng2 > 180 || lng2 < -180){
     //Returns a very large number if there is an invalid input
-    return Infinity
+    return Infinity;
   }
 
   var R = 6371; // Radius of the earth in km
@@ -55,23 +56,20 @@ function deg2rad(deg) {
       .jobsList()
       .then((d) => setJobs(d.jobs || []))
       .catch(() => setErr("Failed to load jobs"));
+    
+    setFilteredJobs(jobs);
   }, []);
+
+  useEffect(() => {
+    setFilteredJobs(jobs.filter((j) => j.location?.lat && j.location?.lng && ((j.budgetAmount >= minBudget && j.budgetAmount <= maxBudget) || j.budgetAmount ==="-") 
+            && HaversineFormulaKm(center.lat, center.lng, j.location?.lat, j.location?.lng) <= radius));
+  }, [radius, minBudget, maxBudget, jobs, center]);
 
   const headers = [
     { key: "title", header: "Title" },
     { key: "budgetAmount", header: "Budget" },
     { key: "status", header: "Status" },
   ];
-
-  const rows = jobs
-    .filter((j) => (j.budgetAmount >= minBudget && j.budgetAmount <= maxBudget) || j.budgetAmount === "-" 
-      && HaversineFormulaKm(center.lat, center.lng, j.location?.lat, j.location?.lng) <= radius)
-    .map((j) => ({
-      id: j.id,
-      title: j.title,
-      budgetAmount: j.budgetAmount ?? "-",
-      status: j.status,
-    }));
 
   return (
     <div>
@@ -110,9 +108,7 @@ function deg2rad(deg) {
         </Row>
       </FlexGrid>
       <MapView
-        markers={jobs
-          .filter((j) => j.location?.lat && j.location?.lng && ((j.budgetAmount >= minBudget && j.budgetAmount <= maxBudget) || j.budgetAmount ==="-") 
-            && HaversineFormulaKm(center.lat, center.lng, j.location?.lat, j.location?.lng) <= radius)
+        markers={filteredJobs
           .map((j) => j.location)}
         center={center}
       />
@@ -152,7 +148,13 @@ function deg2rad(deg) {
           </Column>
         </Row>
       </FlexGrid>
-      <DataTable rows={rows} headers={headers}>
+      <DataTable rows={filteredJobs
+        .map((j) => ({
+          id: j.id,
+          title: j.title,
+          budgetAmount: j.budgetAmount ?? "-",
+          status: j.status,
+        }))} headers={headers}>
         {({ rows, headers, getHeaderProps, getRowProps }) => (
           <table
             className="cds--data-table cds--data-table--zebra"
