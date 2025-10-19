@@ -52,81 +52,103 @@ export default function Signup() {
   }
 
   return (
-    <div className="container auth-form-container">
-      <Form onSubmit={submit}>
-        <div className="auth-logo">
-          <img src="/Images/OpenBidLogo.svg" alt="OpenBid logo" />
-          <span>OpenBid</span>
+    <div className="auth-page-layout">
+      <div className="auth-page-layout__intro">
+        <div className="auth-intro-card">
+          <div className="auth-intro-logo">
+            <img src="/Images/OpenBidLogo.svg" alt="OpenBid logo" />
+            <span>OpenBid</span>
+          </div>
+          <h1 className="auth-intro-title">Join OpenBid today</h1>
+          <p className="auth-intro-text">
+            Create an account to discover nearby projects, collaborate with trusted
+            professionals, and manage every bid from a single dashboard.
+          </p>
+          <ul className="auth-intro-highlights">
+            <li>Explore jobs on a live map before you bid</li>
+            <li>Compare offers quickly with clear contractor details</li>
+            <li>Secure payments when the work is delivered</li>
+          </ul>
         </div>
-        <h2>Create your account</h2>
-        <TextInput
-          id="firstName"
-          labelText="First name"
-          value={form.firstName}
-          onChange={(e) => updateField("firstName", e.target.value)}
-          required
-        />
-        <TextInput
-          id="lastName"
-          labelText="Last name"
-          value={form.lastName}
-          onChange={(e) => updateField("lastName", e.target.value)}
-          required
-        />
-        <TextInput
-          id="email"
-          labelText="Email"
-          type="email"
-          value={form.email}
-          onChange={(e) => updateField("email", e.target.value)}
-          required
-        />
-        <TextInput
-          id="password"
-          labelText="Password"
-          type="password"
-          value={form.password}
-          onChange={(e) => updateField("password", e.target.value)}
-          helperText="Minimum 8 characters"
-          required
-        />
-        <Select
-          id="userType"
-          labelText="Account type"
-          value={form.userType}
-          onChange={(e) => updateField("userType", e.target.value)}
-          required
-        >
-          <SelectItem value="bidder" text="Bidder" />
-          <SelectItem value="contractor" text="Contractor" />
-        </Select>
-        <div className="auth-action-row">
-          <Button
-            type="submit"
-            className="auth-form-actions"
-            disabled={submitting}
-          >
-            {submitting ? "Creating…" : "Create account"}
-          </Button>
-          <Button
-            kind="tertiary"
-            className="auth-inline-link"
-            onClick={() => navigate("/login")}
-            disabled={submitting}
-          >
-            Already have an account? Sign in
-          </Button>
+      </div>
+      <div className="auth-page-layout__form">
+        <div className="auth-form-card">
+          <Form className="auth-form" onSubmit={submit}>
+            <div className="auth-logo">
+              <img src="/Images/OpenBidLogo.svg" alt="OpenBid logo" />
+              <span>OpenBid</span>
+            </div>
+            <h2>Create your account</h2>
+            <TextInput
+              id="firstName"
+              labelText="First name"
+              value={form.firstName}
+              onChange={(e) => updateField("firstName", e.target.value)}
+              required
+            />
+            <TextInput
+              id="lastName"
+              labelText="Last name"
+              value={form.lastName}
+              onChange={(e) => updateField("lastName", e.target.value)}
+              required
+            />
+            <TextInput
+              id="email"
+              labelText="Email"
+              type="email"
+              value={form.email}
+              onChange={(e) => updateField("email", e.target.value)}
+              required
+            />
+            <TextInput
+              id="password"
+              labelText="Password"
+              type="password"
+              value={form.password}
+              onChange={(e) => updateField("password", e.target.value)}
+              helperText="Minimum 8 characters"
+              required
+            />
+            <Select
+              id="userType"
+              labelText="Account type"
+              value={form.userType}
+              onChange={(e) => updateField("userType", e.target.value)}
+              required
+            >
+              <SelectItem value="bidder" text="Bidder" />
+              <SelectItem value="contractor" text="Contractor" />
+            </Select>
+            <div className="auth-action-row">
+              <Button
+                type="submit"
+                className="auth-form-actions"
+                disabled={submitting}
+              >
+                {submitting ? "Creating…" : "Create account"}
+              </Button>
+              <Button
+                kind="tertiary"
+                className="auth-inline-link"
+                onClick={() => navigate("/login")}
+                disabled={submitting}
+              >
+                Already have an account? Sign in
+              </Button>
+            </div>
+            {error && (
+              <InlineNotification
+                title="Error"
+                subtitle={error}
+                kind="error"
+                lowContrast
+                className="auth-notification"
+              />
+            )}
+          </Form>
         </div>
-        {error && (
-          <InlineNotification
-            title="Error"
-            subtitle={error}
-            kind="error"
-            lowContrast
-            className="auth-notification"
-          />
-        )}
-      </Form>
+      </div>
     </div>
   );
 }
