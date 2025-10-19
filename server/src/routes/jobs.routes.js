@@ -9,6 +9,9 @@ const router = Router();
 const auth = config.prototype ? mockAuth : realAuth;
 const db = config.prototype ? mockDb : realDb;
 
+const isKycVerified = (value) =>
+  typeof value === "string" && value.trim().toLowerCase() === "verified";
+
 async function requireContractor(req, res) {
   const session = await auth.verify(req);
   if (!session) {
@@ -72,7 +75,7 @@ router.post("/", async (req, res, next) => {
   try {
     const context = await requireContractor(req, res);
     if (!context) return;
-    if (context.user.kycStatus !== "verified") {
+    if (!isKycVerified(context.user.kycStatus)) {
       return res.status(403).json({ error: "KYC required" });
     }
     const { title, description, budgetAmount, location } = req.body;
@@ -125,7 +128,7 @@ router.patch("/:jobId", async (req, res, next) => {
   try {
     const context = await requireContractor(req, res);
     if (!context) return;
-    if (context.user.kycStatus !== "verified") {
+    if (!isKycVerified(context.user.kycStatus)) {
       return res.status(403).json({ error: "KYC required" });
     }
     const jobId = req.params.jobId;
@@ -133,6 +136,9 @@ router.patch("/:jobId", async (req, res, next) => {
     if (!job) return res.status(404).json({ error: "not found" });
     if (job.posterId !== context.user.uid) {
       return res.status(403).json({ error: "forbidden" });
+    }
+    if (job.status && job.status !== "open") {
+      return res.status(409).json({ error: "job_locked" });
     }
     const fields = ["title", "description", "budgetAmount", "location", "status"];
     const patch = {};
@@ -153,7 +159,7 @@ router.delete("/:jobId", async (req, res, next) => {
   try {
     const context = await requireContractor(req, res);
     if (!context) return;
-    if (context.user.kycStatus !== "verified") {
+    if (!isKycVerified(context.user.kycStatus)) {
       return res.status(403).json({ error: "KYC required" });
     }
     const jobId = req.params.jobId;
@@ -161,6 +167,9 @@ router.delete("/:jobId", async (req, res, next) => {
     if (!job) return res.status(404).json({ error: "not found" });
     if (job.posterId !== context.user.uid) {
       return res.status(403).json({ error: "forbidden" });
+    }
+    if (job.status && job.status !== "open") {
+      return res.status(409).json({ error: "job_locked" });
     }
     const deleted = await db.job.delete(jobId);
     if (!deleted) return res.status(404).json({ error: "not found" });
