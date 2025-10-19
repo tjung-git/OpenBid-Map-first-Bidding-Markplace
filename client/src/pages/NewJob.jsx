@@ -63,6 +63,7 @@ export default function NewJob() {
     const numericBudget = cleanedBudget === "" ? null : Number(cleanedBudget);
     if (!Number.isFinite(numericBudget) || numericBudget === null || numericBudget <= 0) {
       setErr("Enter a valid budget amount greater than 0.");
+      setSubmitting(false);
       return;
     }
     try {
