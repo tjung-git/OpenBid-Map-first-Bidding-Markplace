@@ -5,9 +5,9 @@ import { cfg } from "../services/config";
 import { TextInput } from '@carbon/react';
 import { Text } from '@carbon/react/lib/components/Text';
 
-const LocationSearchInput = ({ 
+export default function SearchComplete({ 
     onSelectPlace,
-}) => {
+}){
   const [address, setAddress] = useState('');
   const [isLoaded, setIsloaded] = useState(false);
   const loaderRef = useRef(null); // Ref to store the loader instance
@@ -42,39 +42,37 @@ const LocationSearchInput = ({
       }
     };
 
-      return (
-        isLoaded && !cfg.prototype? <PlacesAutocomplete
-          value={address}
-          onChange={handleChange}
-          onSelect={handleSelect}
-        >
-          {({ getInputProps, suggestions, getSuggestionItemProps, loading }) => (
-            <div>
-              <TextInput
-                {...getInputProps({
-                  placeholder: 'Search for a location...',
-                  className: 'location-search-input',
-                })}
+    return (
+      isLoaded && !cfg.prototype? <PlacesAutocomplete
+      value={address}
+      onChange={handleChange}
+      onSelect={handleSelect}
+      >
+        {({ getInputProps, suggestions, getSuggestionItemProps, loading }) => (
+          <div>
+            <TextInput
+              {...getInputProps({
+                placeholder: 'Search for a location...',
+                className: 'location-search-input',
+              })}
                 id="SearchAutocompleteInput"
                 labelText="Location Search"
                 helperText="Map will be centered on the selected location."
               />
-              <Text>
-                {loading && <div>Loading...</div>}
-                {suggestions.map((suggestion) => {
-                  return (
-                    <div
-                      {...getSuggestionItemProps(suggestion)}
-                    >
-                      <span>{suggestion.description}</span>
-                    </div>
+            <Text>
+              {loading && <div>Loading...</div>}
+              {suggestions.map((suggestion) => {
+                return (
+                  <div
+                    {...getSuggestionItemProps(suggestion)}
+                  >
+                    <span>{suggestion.description}</span>
+                  </div>
                   );
                 })}
               </Text>
             </div>
-          )}
-        </PlacesAutocomplete> : <div></div>
-      );
-    };
-
-    export default LocationSearchInput;
+        )}
+      </PlacesAutocomplete> : <div></div>
+    );
+};

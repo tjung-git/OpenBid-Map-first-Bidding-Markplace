@@ -3,7 +3,7 @@ import { DataTable, Button, InlineNotification, FlexGrid, Column, TextInput, Row
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import MapView from "../components/MapView";
-import SearchAutocomplete from "../components/SearchAutcomplete"
+import SearchAutocomplete from "../components/SearchAutcomplete";
 import { Text } from "@carbon/react/lib/components/Text";
 
 export default function JobList() {
