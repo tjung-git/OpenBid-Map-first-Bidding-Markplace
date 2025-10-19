@@ -3,14 +3,15 @@ import { config } from "../config.js";
 import { auth as mockAuth } from "../adapters/auth.mock.js";
 import { auth as realAuth } from "../adapters/auth.real.js";
 import { kyc as mockKyc } from "../adapters/kyc.mock.js";
-import { kyc as realKyc } from "../adapters/kyc.real.js";
+import { createRealKyc } from "../adapters/kyc.real.js";
 import { db as mockDb } from "../adapters/db.mock.js";
 import { db as realDb } from "../adapters/db.real.js";
 
 const router = Router();
 const auth = config.prototype ? mockAuth : realAuth;
-const kyc = config.prototype ? mockKyc : realKyc;
 const db = config.prototype ? mockDb : realDb;
+// Use the factory function to create KYC with the appropriate database
+const kyc = config.prototype ? mockKyc : createRealKyc(db);
 
 router.post("/verification", async (req, res, next) => {
   try {

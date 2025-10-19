@@ -1,10 +1,18 @@
 import request from 'supertest';
 import express from 'express';
-import { config } from '../../config.js';
 import kycRoutes from '../kyc.routes.js';
 
-// Mock the config and adapters
-jest.mock('../../config.js');
+// Mock config to set PROTOTYPE = true
+jest.mock('../../config.js', () => ({
+  config: {
+    PROTOTYPE: true,
+    prototype: true,
+    stripe: {
+      secretKey: 'sk_test_mock',
+    },
+  },
+}));
+
 jest.mock('../../adapters/auth.mock.js');
 jest.mock('../../adapters/kyc.mock.js');
 jest.mock('../../adapters/db.mock.js');
@@ -13,7 +21,6 @@ const mockAuth = require('../../adapters/auth.mock.js');
 const mockKyc = require('../../adapters/kyc.mock.js');
 const mockDb = require('../../adapters/db.mock.js');
 
-// Create test app
 const app = express();
 app.use(express.json());
 app.use('/api/kyc', kycRoutes);
@@ -22,9 +29,7 @@ describe('KYC Routes', () => {
   beforeEach(() => {
     // Reset mocks
     jest.clearAllMocks();
-    config.prototype = true;
-
-    mockAuth.auth.verify.mockResolvedValue({ uid: 'test-user', uid: 'test-user', email: 'test@example.com' });
+    mockAuth.auth.verify.mockResolvedValue({ uid: 'test-user', email: 'test@example.com' });
 
     mockDb.db.user.get.mockResolvedValue({
       uid: 'test-user',
@@ -36,8 +41,7 @@ describe('KYC Routes', () => {
   });
 
   describe('POST /api/kyc/verification', () => {
-    it('should return verification URL and session ID in prototype mode', async () => {
-      config.prototype = true;
+    it('should return verification URL and session ID', async () => {
       mockKyc.kyc.verification.mockResolvedValueOnce({
         url: 'https://mock-kyc.local/session/mock_session_test-user_123456789',
         sessionId: 'mock_session_test-user_123456789'
@@ -86,9 +90,8 @@ describe('KYC Routes', () => {
     });
   });
 
-  describe('POST /api/kyc/force-pass (for prototype)', () => {
+  describe('POST /api/kyc/force-pass', () => {
     it('should allow force-pass', async () => {
-      config.prototype = true;
       mockKyc.kyc.forcePass.mockResolvedValue({ ok: true });
 
       const response = await request(app)
