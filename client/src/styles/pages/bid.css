@@ -1,0 +1,129 @@
+.bid-detail-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.bid-detail-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.bid-detail-subheader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bid-pagination {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.bid-pagination__status {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.bid-highlight-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.bid-highlight-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bid-detail-content {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.bid-detail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bid-detail-job-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bid-detail-label {
+  font-weight: 600;
+}
+
+.bid-detail-highest {
+  font-weight: 600;
+}
+
+.bid-detail-helper {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-top: -0.25rem;
+}
+
+.bid-detail-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bid-detail-submit {
+  align-self: flex-start;
+}
+
+.bid-list {
+  display: grid;
+  gap: 0.75rem;
+  padding-left: 0;
+  list-style: none;
+}
+
+.bid-list-item {
+  border: 1px solid var(--cds-border-subtle, #393939);
+  border-radius: 0.25rem;
+  padding: 0.75rem;
+}
+
+.bid-list-amount {
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.bid-list-meta {
+  opacity: 0.8;
+  font-size: 0.875rem;
+}
+
+.bid-list-note {
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+.bid-tag {
+  background: var(--cds-background-inverse, #525252);
+  color: var(--cds-text-inverse, #ffffff);
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+}
+
+.bid-tag--own {
+  background: var(--cds-support-success, #198038);
+}
