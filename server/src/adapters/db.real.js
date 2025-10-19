@@ -17,6 +17,10 @@ const toRecord = (doc, idKey = "id") => {
       data[key] = data[key].toDate().toISOString();
     }
   }
+  if (data.jobID && !data.jobId) {
+    data.jobId = data.jobID;
+  }
+  delete data.jobID;
   return { [idKey]: doc.id, ...data };
 };
 
@@ -179,7 +183,7 @@ export const db = {
         .get();
       return snapshot.docs
         .map((doc) => toRecord(doc))
-        .filter((bid) => bid.jobId === jobId || bid.jobID === jobId);
+        .filter((bid) => bid.jobId === jobId);
     },
     async listByUser(uid) {
       if (!uid) return [];
@@ -204,7 +208,6 @@ export const db = {
               {
                 status: "active",
                 jobId: data.jobId,
-                jobID: data.jobId,
                 bidCreatedAt:
                   data.bidCreatedAt || new Date().toISOString(),
                 ...data,

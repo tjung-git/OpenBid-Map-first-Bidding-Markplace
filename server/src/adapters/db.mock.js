@@ -76,17 +76,34 @@ export const db = {
   },
   bid: {
     get(bidId) {
-      return state.bids.get(bidId) || null;
+      const bid = state.bids.get(bidId) || null;
+      if (bid?.jobID && !bid.jobId) {
+        bid.jobId = bid.jobID;
+        delete bid.jobID;
+      }
+      return bid;
     },
     listByJob(jobId) {
-      return Array.from(state.bids.values()).filter(
-        (b) => b.jobId === jobId || b.jobID === jobId
-      );
+      return Array.from(state.bids.values())
+        .map((bid) => {
+          if (bid.jobID && !bid.jobId) {
+            bid.jobId = bid.jobID;
+            delete bid.jobID;
+          }
+          return bid;
+        })
+        .filter((b) => b.jobId === jobId);
     },
     listByUser(uid) {
-      return Array.from(state.bids.values()).filter(
-        (b) => b.providerId === uid
-      );
+      return Array.from(state.bids.values())
+        .map((bid) => {
+          if (bid.jobID && !bid.jobId) {
+            bid.jobId = bid.jobID;
+            delete bid.jobID;
+          }
+          return bid;
+        })
+        .filter((b) => b.providerId === uid);
     },
     create(data) {
       const bidId = id("bid");
@@ -95,7 +112,6 @@ export const db = {
         createdAt: Date.now(),
         status: "active",
         bidCreatedAt: new Date().toISOString(),
-        jobID: data.jobId,
         ...data,
       };
       state.bids.set(bidId, bid);
@@ -110,6 +126,10 @@ export const db = {
         updatedAt: Date.now(),
         bidUpdatedAt: new Date().toISOString(),
       };
+      if (updated.jobID && !updated.jobId) {
+        updated.jobId = updated.jobID;
+      }
+      delete updated.jobID;
       state.bids.set(bidId, updated);
       return updated;
     },
@@ -119,6 +139,11 @@ export const db = {
     deleteByJob(jobId) {
       let count = 0;
       for (const [bidId, bid] of Array.from(state.bids.entries())) {
+        if (bid.jobID && !bid.jobId) {
+          bid.jobId = bid.jobID;
+          delete bid.jobID;
+          state.bids.set(bidId, bid);
+        }
         if (bid.jobId === jobId) {
           state.bids.delete(bidId);
           count += 1;
