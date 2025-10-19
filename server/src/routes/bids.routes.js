@@ -9,6 +9,9 @@ const router = Router();
 const auth = config.prototype ? mockAuth : realAuth;
 const db = config.prototype ? mockDb : realDb;
 
+const isKycVerified = (value) =>
+  typeof value === "string" && value.trim().toLowerCase() === "verified";
+
 router.get("/myBids", async (req, res, next) => {
   try {
     const session = await auth.verify(req);
@@ -126,7 +129,7 @@ router.post("/:jobId", async (req, res, next) => {
     const s = await auth.verify(req);
     if (!s) return res.status(401).json({ error: "unauthorized" });
     const u = await db.user.get(s.uid);
-    if (u?.kycStatus !== "verified")
+    if (!isKycVerified(u?.kycStatus))
       return res.status(403).json({ error: "KYC required" });
     const { amount, note } = req.body;
     const numericAmount = Number(amount);
@@ -135,6 +138,9 @@ router.post("/:jobId", async (req, res, next) => {
     }
     const job = await db.job.get(req.params.jobId);
     if (!job) return res.status(404).json({ error: "job_not_found" });
+    if (job.status && job.status !== "open") {
+      return res.status(409).json({ error: "bidding_closed" });
+    }
     const budgetAmount = Number(job.budgetAmount);
     if (Number.isFinite(budgetAmount) && numericAmount < budgetAmount) {
       return res
@@ -181,6 +187,72 @@ router.post("/:jobId", async (req, res, next) => {
   }
 });
 
+router.post("/:jobId/:bidId/accept", async (req, res, next) => {
+  try {
+    const session = await auth.verify(req);
+    if (!session) return res.status(401).json({ error: "unauthorized" });
+
+    const { jobId, bidId } = req.params;
+    const job = await db.job.get(jobId);
+    if (!job) return res.status(404).json({ error: "job_not_found" });
+    if (job.posterId !== session.uid) {
+      return res.status(403).json({ error: "forbidden" });
+    }
+
+    const bids = await db.bid.listByJob(jobId);
+    if (!Array.isArray(bids) || bids.length === 0) {
+      return res.status(404).json({ error: "bid_not_found" });
+    }
+
+    const targetBid = bids.find((entry) => entry.id === bidId);
+    if (!targetBid) {
+      return res.status(404).json({ error: "bid_not_found" });
+    }
+
+    if (job.awardedBidId && job.awardedBidId !== bidId) {
+      return res.status(409).json({
+        error: "job_already_awarded",
+        awardedBidId: job.awardedBidId,
+      });
+    }
+
+    const decisionTime = new Date().toISOString();
+    const acceptedBid = await db.bid.update(bidId, {
+      status: "accepted",
+      statusNote: "Contractor accepted this bid.",
+      bidClosedAt: decisionTime,
+    });
+
+    const rejectionNote = "Contractor accepted another bid.";
+    const rejectedBids = await Promise.all(
+      bids
+        .filter((entry) => entry.id !== bidId)
+        .map((entry) =>
+          db.bid.update(entry.id, {
+            status: "rejected",
+            statusNote: rejectionNote,
+            bidClosedAt: decisionTime,
+          })
+        )
+    );
+
+    const jobUpdate = await db.job.update(jobId, {
+      status: "awarded",
+      awardedBidId: bidId,
+      awardedProviderId: acceptedBid?.providerId || targetBid.providerId,
+      awardedAt: decisionTime,
+    });
+
+    res.json({
+      acceptedBid,
+      rejectedBids: rejectedBids.filter(Boolean),
+      job: jobUpdate || job,
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 router.patch("/:jobId/:bidId", async (req, res, next) => {
   try {
     const s = await auth.verify(req);
@@ -193,6 +265,12 @@ router.patch("/:jobId/:bidId", async (req, res, next) => {
       return res.status(403).json({ error: "forbidden" });
     }
     const job = await db.job.get(req.params.jobId);
+    if (job?.status && job.status !== "open") {
+      return res.status(409).json({ error: "bidding_closed" });
+    }
+    if (bid.status && bid.status !== "active") {
+      return res.status(409).json({ error: "bid_closed" });
+    }
 
     const patch = {};
     if (req.body.amount !== undefined) {
