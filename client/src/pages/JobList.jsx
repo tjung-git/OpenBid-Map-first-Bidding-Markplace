@@ -21,9 +21,13 @@ export default function JobList() {
   //Using the top solution from https://stackoverflow.com/questions/27928/calculate-distance-between-two-latitude-longitude-points-haversine-formula
   //Calcultes the distance between 2 coordinates in km.
   function HaversineFormulaKm(lat1, lng1, lat2, lng2) {
+    //Returns a very large number if an input is not of type number.
+    if(typeof lat1 !== 'number' || typeof lat2 !== 'number' || typeof lng1 !== 'number' || typeof lng2 !== 'number'){
+      return Infinity;  
+    }
 
+    //Returns a very large number if an input isn't within a given range.
     if(lat1 > 90 || lat1 < -90 || lat2 > 90 || lat2 < -90 || lng1 > 180 || lng1 < -180 || lng2 > 180 || lng2 < -180){
-      //Returns a very large number if there is an invalid input
       return Infinity;
     }
 
