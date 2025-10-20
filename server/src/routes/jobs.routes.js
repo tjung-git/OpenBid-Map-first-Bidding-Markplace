@@ -62,9 +62,20 @@ router.get("/", async (req, res, next) => {
     }
 
     const jobs = await db.job.list();
-    const filtered = filterMine
-      ? jobs.filter((job) => job.posterId === uid)
-      : jobs;
+    let filtered;
+
+    if (filterMine) {
+      filtered = jobs.filter((job) => job.posterId === uid);
+    } else {
+      filtered = jobs.filter((job) => {
+        const status = (job.status || "open").toLowerCase();
+        if (status === "open") return true;
+        if (job.posterId && job.posterId === uid) return true;
+        if (job.awardedProviderId && job.awardedProviderId === uid) return true;
+        return false;
+      });
+    }
+
     res.json({ jobs: filtered });
   } catch (e) {
     next(e);
