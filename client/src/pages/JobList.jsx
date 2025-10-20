@@ -6,6 +6,7 @@ import MapView from "../components/MapView";
 import SearchAutocomplete from "../components/SearchAutcomplete";
 import { Text } from "@carbon/react/lib/components/Text";
 import { haversineFormulaKm } from "../util/locationHelpers";
+import { cfg } from "../services/config";
 
 export default function JobList() {
   const [jobs, setJobs] = useState([]);
@@ -56,7 +57,7 @@ export default function JobList() {
           lowContrast
         />
       )}
-      <FlexGrid>
+      {!cfg.prototype &&<FlexGrid>
         <Row>
           <Column>
             <SearchAutocomplete onSelectPlace={handlePlaceSelection}/>
@@ -80,7 +81,7 @@ export default function JobList() {
             />
           </Column>
         </Row>
-      </FlexGrid>
+      </FlexGrid>}
       <MapView
         markers={filteredJobs
           .map((j) => j.location)}
