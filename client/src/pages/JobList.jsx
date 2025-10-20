@@ -22,27 +22,27 @@ export default function JobList() {
   //Calcultes the distance between 2 coordinates in km.
   function HaversineFormulaKm(lat1, lng1, lat2, lng2) {
 
-  if(lat1 > 90 || lat1 < -90 || lat2 > 90 || lat2 < -90 || lng1 > 180 || lng1 < -180 || lng2 > 180 || lng2 < -180){
-    //Returns a very large number if there is an invalid input
-    return Infinity;
+    if(lat1 > 90 || lat1 < -90 || lat2 > 90 || lat2 < -90 || lng1 > 180 || lng1 < -180 || lng2 > 180 || lng2 < -180){
+      //Returns a very large number if there is an invalid input
+      return Infinity;
+    }
+
+    var R = 6371; // Radius of the earth in km
+    var dLat = deg2rad(lat2-lat1);  // deg2rad below
+    var dLon = deg2rad(lng2-lng1); 
+    var a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2)
+      ; 
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    var d = R * c; // Distance in km
+    return d;
   }
 
-  var R = 6371; // Radius of the earth in km
-  var dLat = deg2rad(lat2-lat1);  // deg2rad below
-  var dLon = deg2rad(lng2-lng1); 
-  var a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2)
-    ; 
-  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-  var d = R * c; // Distance in km
-  return d;
-}
-
-function deg2rad(deg) {
-  return deg * (Math.PI/180)
-}
+  function deg2rad(deg) {
+    return deg * (Math.PI/180)
+  }
 
   const handlePlaceSelection = (placeData) => {
     console.log('Selected Place:', placeData);
