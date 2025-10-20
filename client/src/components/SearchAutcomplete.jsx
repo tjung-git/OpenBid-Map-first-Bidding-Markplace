@@ -53,7 +53,7 @@ export default function SearchComplete({ onSelectPlace }){
                 placeholder: 'Search for a location...',
                 className: 'location-search-input',
               })}
-                id="SearchAutocompleteInput"
+                id="search-autocomplete-input"
                 labelText="Location Search"
                 helperText="Map will be centered on the selected location."
               />
