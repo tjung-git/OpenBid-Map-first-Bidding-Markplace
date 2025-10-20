@@ -58,8 +58,8 @@ export default function SearchComplete({ onSelectPlace }){
                 helperText="Map will be centered on the selected location."
               />
             <Text>
-              {loading && <div>Loading...</div>}
-              {suggestions.map((suggestion) => {
+              {loading ? <div>Loading...</div> : 
+                suggestions.map((suggestion) => {
                 return (
                   <div
                     {...getSuggestionItemProps(suggestion)}

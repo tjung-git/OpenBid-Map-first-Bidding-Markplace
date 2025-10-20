@@ -5,6 +5,7 @@ import { api } from "../services/api";
 import MapView from "../components/MapView";
 import SearchAutocomplete from "../components/SearchAutcomplete";
 import { Text } from "@carbon/react/lib/components/Text";
+import { haversineFormulaKm } from "../util/locationHelpers";
 
 export default function JobList() {
   const [jobs, setJobs] = useState([]);
@@ -16,37 +17,6 @@ export default function JobList() {
   const [selectedAddress, setSelectedAddress] = useState("Toronto, ON, Canada");
   const [radius, setRadius] = useState(1000000); //In metres
   const nav = useNavigate();
-
-  //The Haversine Formula
-  //Using the top solution from https://stackoverflow.com/questions/27928/calculate-distance-between-two-latitude-longitude-points-haversine-formula
-  //Calcultes the distance between 2 coordinates in km.
-  function HaversineFormulaKm(lat1, lng1, lat2, lng2) {
-    //Returns a very large number if an input is not of type number.
-    if(typeof lat1 !== 'number' || typeof lat2 !== 'number' || typeof lng1 !== 'number' || typeof lng2 !== 'number'){
-      return Infinity;  
-    }
-
-    //Returns a very large number if an input isn't within a given range.
-    if(lat1 > 90 || lat1 < -90 || lat2 > 90 || lat2 < -90 || lng1 > 180 || lng1 < -180 || lng2 > 180 || lng2 < -180){
-      return Infinity;
-    }
-
-    var R = 6371; // Radius of the earth in km
-    var dLat = deg2rad(lat2-lat1);  // deg2rad below
-    var dLon = deg2rad(lng2-lng1); 
-    var a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2)
-      ; 
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-    var d = R * c; // Distance in km
-    return d;
-  }
-
-  function deg2rad(deg) {
-    return deg * (Math.PI/180)
-  }
 
   const handlePlaceSelection = (placeData) => {
     console.log('Selected Place:', placeData);
@@ -66,7 +36,7 @@ export default function JobList() {
 
   useEffect(() => {
     setFilteredJobs(jobs.filter((j) => j.location?.lat && j.location?.lng && ((j.budgetAmount >= minBudget && j.budgetAmount <= maxBudget) || j.budgetAmount ==="-") 
-            && HaversineFormulaKm(center.lat, center.lng, j.location?.lat, j.location?.lng) <= radius));
+            && haversineFormulaKm(center.lat, center.lng, j.location?.lat, j.location?.lng) <= radius));
   }, [radius, minBudget, maxBudget, jobs, center]);
 
   const headers = [
