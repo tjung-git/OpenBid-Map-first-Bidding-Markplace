@@ -1,19 +1,23 @@
 //Verifies provided coordinates
 export const isValidCoords = (lat, lng) =>{
-    if(typeof lat !== 'number' || typeof lng !== 'number'){
-      return false;  
-    }
+  if(lat === undefined || lng === undefined){
+    return false;
+  }
 
-    if(lat > 90 || lat < -90 || lng > 180 || lng < -180){
-      return false;
-    }
+  if(typeof lat !== 'number' || typeof lng !== 'number'){
+    return false;  
+  }
 
-    return true;
+  if(lat > 90 || lat < -90 || lng > 180 || lng < -180){
+    return false;
+  }
+
+  return true;
 }
 
 //Converts a number in degrees to radians.
-function deg2rad(deg) {
-  return deg * (Math.PI/180);
+export function deg2rad(deg) {
+  return deg !== undefined && typeof deg === 'number'? deg * (Math.PI/180): Infinity;
 }
 
 //The Haversine Formula
