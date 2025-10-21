@@ -49,6 +49,18 @@ export const api = {
       localStorage.setItem("mockUid", data.user.uid);
     return data;
   },
+  async updateRole(role) {
+    const r = await fetch(`${base}/api/auth/role`, {
+      method: "PATCH",
+      headers: headers(),
+      body: JSON.stringify({ role }),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
   async me() {
     const r = await fetch(`${base}/api/auth/me`, { headers: headers() });
     return r.ok ? r.json() : null;
