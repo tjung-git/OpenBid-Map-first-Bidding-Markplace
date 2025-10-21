@@ -1,10 +1,10 @@
 import { Breadcrumb, BreadcrumbItem } from "@carbon/react";
 import { Link, useLocation } from "react-router-dom";
-import { getUser } from "../services/session";
+import { useSessionUser } from "../hooks/useSession";
 import "../styles/components/nav.css";
 export default function Nav() {
   const loc = useLocation();
-  const user = getUser();
+  const user = useSessionUser();
   const path = loc.pathname;
   const isContractor = user?.userType === "contractor";
   const showNewJob =
