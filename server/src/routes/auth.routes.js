@@ -152,7 +152,44 @@ router.post("/login", async (req, res, next) => {
       return res.status(404).json({ error: "user not found" });
     }
 
-    const passwordOk = await verifyPassword(password, user.passwordHash);
+    let passwordOk = await verifyPassword(password, user.passwordHash);
+    let firebaseSession = null;
+    if (!passwordOk && !config.prototype) {
+      try {
+        firebaseSession = await auth.signIn(user.email, password);
+        passwordOk = true;
+        const nowIso = new Date().toISOString();
+        const newHash = await hashPassword(password);
+        const updatedUser = await db.user.update(user.uid, {
+          passwordHash: newHash,
+          updatedAt: nowIso,
+        });
+        if (updatedUser) {
+          Object.assign(user, updatedUser);
+        } else {
+          user.passwordHash = newHash;
+          user.updatedAt = nowIso;
+        }
+      } catch (error) {
+        if (error instanceof FirebaseIdentityError) {
+          if (error.message === "INVALID_PASSWORD") {
+            return res.status(401).json({ error: "invalid credentials" });
+          }
+          if (error.message === "EMAIL_NOT_FOUND") {
+            return res.status(404).json({ error: "user not found" });
+          }
+          console.error(
+            "[auth] Firebase fallback error",
+            error.message,
+            error.status
+          );
+          return res.status(502).json({ error: "firebase_signin_failed" });
+        }
+        console.error("[auth] Firebase fallback failed", error);
+        return res.status(500).json({ error: "auth_session_failed" });
+      }
+    }
+
     if (!passwordOk) {
       return res.status(401).json({ error: "invalid credentials" });
     }
@@ -190,7 +227,8 @@ router.post("/login", async (req, res, next) => {
     let session = { uid: user.uid, email: user.email };
     if (!config.prototype) {
       try {
-        const authSession = await auth.signIn(user.email, password);
+        const authSession =
+          firebaseSession || (await auth.signIn(user.email, password));
         session = { ...authSession, uid: user.uid, email: user.email };
       } catch (error) {
         if (error instanceof FirebaseIdentityError) {

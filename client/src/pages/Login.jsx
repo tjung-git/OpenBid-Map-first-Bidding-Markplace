@@ -86,66 +86,67 @@ export default function Login() {
   }
 
   return (
-    <div className="container auth-container">
-      <Form onSubmit={submit}>
-        <div className="auth-logo">
-          <img src="/Images/OpenBidLogo.svg" alt="OpenBid logo" />
-          <span>OpenBid</span>
+    <div className="auth-screen">
+      <div className="auth-card login-card">
+        <div className="auth-card-header">
+          <div className="auth-logo">
+            <img src="/Images/OpenBidLogo.svg" alt="OpenBid logo" />
+            <span>OpenBid</span>
+          </div>
+          <h2>Sign in</h2>
         </div>
-        <h2>Sign in</h2>
-        <TextInput
-          id="email"
-          labelText="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <PasswordInput
-          id="password"
-          labelText="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <Select
-          id="role"
-          labelText="Sign in as"
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-        >
-          <SelectItem value="bidder" text="Bidder" />
-          <SelectItem value="contractor" text="Contractor" />
-        </Select>
-        <Button
-          type="submit"
-          className="auth-form-actions"
-          disabled={submitting}
-        >
-          {submitting ? "Signing in…" : "Sign in"}
-        </Button>
-        <div className="auth-inline-link">
-          <Link to="/signup">Need an account? Sign up</Link>
-        </div>
-        {error && (
-          <InlineNotification
-            title="Error"
-            subtitle={error}
-            kind="error"
-            lowContrast
-            className="auth-notification"
+        <Form className="auth-card-form" onSubmit={submit}>
+          <TextInput
+            id="email"
+            labelText="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
           />
-        )}
-        {info && (
-          <InlineNotification
-            title="Success"
-            subtitle={info}
-            kind="success"
-            lowContrast
-            className="auth-notification"
+          <PasswordInput
+            id="password"
+            labelText="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
           />
-        )}
-      </Form>
+          <Select
+            id="role"
+            labelText="Sign in as"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+          >
+            <SelectItem value="bidder" text="Bidder" />
+            <SelectItem value="contractor" text="Contractor" />
+          </Select>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Signing in…" : "Sign in"}
+          </Button>
+          <div className="auth-links-row">
+            <Link to="/signup">Need an account? Sign up</Link>
+            <Link to="/forgot-password">Forgot password?</Link>
+          </div>
+          {error && (
+            <InlineNotification
+              title="Error"
+              subtitle={error}
+              kind="error"
+              lowContrast
+              className="auth-notification"
+            />
+          )}
+          {info && (
+            <InlineNotification
+              title="Success"
+              subtitle={info}
+              kind="success"
+              lowContrast
+              className="auth-notification"
+            />
+          )}
+        </Form>
+      </div>
     </div>
   );
 }

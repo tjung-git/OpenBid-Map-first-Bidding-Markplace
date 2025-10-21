@@ -49,6 +49,18 @@ export const api = {
       localStorage.setItem("mockUid", data.user.uid);
     return data;
   },
+  async forgotPassword(email) {
+    const r = await fetch(`${base}/api/password/forgot`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
   async updateRole(role) {
     const r = await fetch(`${base}/api/auth/role`, {
       method: "PATCH",

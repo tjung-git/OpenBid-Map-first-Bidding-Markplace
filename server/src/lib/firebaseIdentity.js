@@ -79,6 +79,20 @@ export async function sendVerificationEmail(idToken) {
   await request("accounts:sendOobCode", payload);
 }
 
+export async function sendPasswordResetEmail(email) {
+  if (!email) {
+    throw new Error("email required to send password reset email");
+  }
+  const payload = {
+    requestType: "PASSWORD_RESET",
+    email,
+  };
+  if (config.passwordResetRedirect) {
+    payload.continueUrl = config.passwordResetRedirect;
+  }
+  await request("accounts:sendOobCode", payload);
+}
+
 export async function deleteAccount(idToken) {
   if (!idToken) return;
   try {

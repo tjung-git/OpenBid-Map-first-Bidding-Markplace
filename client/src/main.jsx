@@ -5,6 +5,7 @@ import "@carbon/styles/css/styles.css";
 import "./styles/global.scss";
 import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
 import KycGate from "./pages/KycGate.jsx";
 import JobList from "./pages/JobList.jsx";
 import NewJob from "./pages/NewJob.jsx";
@@ -20,6 +21,7 @@ createRoot(document.getElementById("root")).render(
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route element={<ProtectedApp />}>
           <Route index element={<Navigate to="/jobs" replace />} />
           <Route path="/kyc" element={<KycGate />} />
