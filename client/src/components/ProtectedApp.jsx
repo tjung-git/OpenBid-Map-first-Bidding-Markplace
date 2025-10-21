@@ -1,14 +1,11 @@
 import { useEffect } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import {
-  getSession,
-  startInactivityMonitor,
-  logout,
-} from "../services/session";
+import { startInactivityMonitor, logout } from "../services/session";
+import { useSession } from "../hooks/useSession";
 import App from "../App.jsx";
 
 export default function ProtectedApp() {
-  const session = getSession();
+  const session = useSession();
   const location = useLocation();
   const nav = useNavigate();
 
