@@ -8,7 +8,7 @@ import {
   InlineNotification,
 } from "@carbon/react";
 import { api } from "../services/api";
-import { getUser } from "../services/session";
+import { useSessionUser } from "../hooks/useSession";
 import MapView from "../components/MapView";
 import "../styles/pages/jobs.css";
 
@@ -23,7 +23,7 @@ export default function JobDetail() {
   const { jobId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const user = getUser();
+  const user = useSessionUser();
 
   const [job, setJob] = useState(null);
   const [bids, setBids] = useState([]);
@@ -90,6 +90,7 @@ export default function JobDetail() {
 
   const isContractor = user?.userType === "contractor";
   const isOwner = isContractor && job && job.posterId === user?.uid;
+  const isOwnJob = Boolean(job && user?.uid && job.posterId === user.uid);
   const jobStatus = (job?.status || "open").toLowerCase();
   const biddingClosed = jobStatus !== "open";
   const jobLocked = jobStatus !== "open";
@@ -108,6 +109,10 @@ export default function JobDetail() {
     e.preventDefault();
     setBidError("");
     setFlash("");
+    if (isOwnJob) {
+      setBidError("You posted this job. Switch to contractor view to manage it.");
+      return;
+    }
     if (biddingClosed) {
       setBidError("Bidding is closed for this job.");
       return;
@@ -353,7 +358,14 @@ export default function JobDetail() {
               ? `$${job.budgetAmount.toFixed(2)}`
               : job.budgetAmount ?? "-"}
           </p>
-          {biddingClosed ? (
+          {isOwnJob ? (
+            <InlineNotification
+              title="Bidding Restricted"
+              subtitle="You posted this job. Switch to contractor view to manage it."
+              kind="info"
+              lowContrast
+            />
+          ) : biddingClosed ? (
             <InlineNotification
               title="Bidding Closed"
               subtitle={
@@ -374,27 +386,33 @@ export default function JobDetail() {
                 />
               )}
               <Form onSubmit={placeBid}>
-            <NumberInput
-              id="bid-amount"
-              label="Amount"
-              value={bidAmount === "" ? "" : Number(bidAmount)}
-              allowEmpty
-              onChange={(_, { value }) => {
-                if (value === "" || value == null) {
-                  setBidAmount("");
-                } else {
-                  const sanitized = String(value).replace(/[^0-9.]/g, "");
-                  setBidAmount(sanitized);
-                }
-              }}
-            />
+                <NumberInput
+                  id="bid-amount"
+                  label="Amount"
+                  value={bidAmount === "" ? "" : Number(bidAmount)}
+                  allowEmpty
+                  onChange={(_, { value }) => {
+                    if (value === "" || value == null) {
+                      setBidAmount("");
+                    } else {
+                      const sanitized = String(value).replace(/[^0-9.]/g, "");
+                      setBidAmount(sanitized);
+                    }
+                  }}
+                  disabled={isOwnJob}
+                />
                 <TextInput
                   id="bid-note"
                   labelText="Note"
                   value={bidNote}
                   onChange={(e) => setBidNote(e.target.value)}
+                  disabled={isOwnJob}
                 />
-                <Button type="submit" className="job-bid-button">
+                <Button
+                  type="submit"
+                  className="job-bid-button"
+                  disabled={isOwnJob}
+                >
                   Submit Bid
                 </Button>
               </Form>
@@ -439,28 +457,28 @@ export default function JobDetail() {
             return (
               <li key={bid.id}>
                 <div className={itemClassNames.join(" ")}>
-                  <div className="job-bid-item__header">
+                  <div className="job-bid-header">
                     <span>${amountDisplay}</span>
                     <span>· {bid.bidderName || "Bidder"}</span>
                     <span className={statusClass}>
                       {statusLabel}
                     </span>
                   </div>
-                  <p className="job-bid-item__meta">
+                  <p className="job-bid-meta">
                     {createdAt
                       ? new Date(createdAt).toLocaleString()
                       : "Unknown time"}
                   </p>
                   {bid.note && (
-                    <p className="job-bid-item__note">“{bid.note}”</p>
+                    <p className="job-bid-note">“{bid.note}”</p>
                   )}
                   {bid.statusNote && (
-                    <p className="job-bid-item__status-note">
+                    <p className="job-bid-status-note">
                       {bid.statusNote}
                     </p>
                   )}
                   {canAccept && (
-                    <div className="job-bid-item__actions">
+                    <div className="job-bid-actions">
                       <Button
                         size="sm"
                         onClick={() => handleAccept(bid.id)}
