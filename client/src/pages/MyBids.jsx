@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button, InlineNotification } from "@carbon/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
-import { getUser } from "../services/session";
+import { useSessionUser } from "../hooks/useSession";
 import "../styles/pages/bid.css";
 
 export default function MyBids() {
@@ -12,7 +12,7 @@ export default function MyBids() {
   const [loading, setLoading] = useState(true);
   const nav = useNavigate();
   const location = useLocation();
-  const user = getUser();
+  const user = useSessionUser();
 
   useEffect(() => {
     if (user && user.userType !== "bidder") {
