@@ -9,7 +9,10 @@ import {
   Tile,
 } from "@carbon/react";
 import { api } from "../services/api";
-import { getRequirements, getUser } from "../services/session";
+import {
+  useSessionRequirements,
+  useSessionUser,
+} from "../hooks/useSession";
 import MapView from "../components/MapView";
 import "../styles/pages/bid.css";
 
@@ -34,8 +37,8 @@ export default function BidDetail() {
   const { jobId } = useParams();
   const nav = useNavigate();
   const location = useLocation();
-  const user = getUser();
-  const requirements = getRequirements();
+  const user = useSessionUser();
+  const requirements = useSessionRequirements();
 
   const locationNotice = location.state?.notice || "";
 
@@ -55,6 +58,7 @@ export default function BidDetail() {
 
   const isBidder = user?.userType === "bidder";
   const kycVerified = requirements.kycVerified;
+  const isOwnJob = Boolean(job?.posterId && user?.uid && job.posterId === user.uid);
   const contractorName = useMemo(() => {
     const name =
       [contractor?.firstName, contractor?.lastName].filter(Boolean).join(" ") ||
@@ -141,7 +145,7 @@ export default function BidDetail() {
   }, [loading, jobId]);
 
   useEffect(() => {
-    if (!loading && isBidder && job && !ownBidId) {
+    if (!loading && isBidder && job && !ownBidId && !isOwnJob) {
       const notice =
         locationNotice ||
         "Place a bid to view detailed status for this job.";
@@ -150,7 +154,7 @@ export default function BidDetail() {
         state: { notice },
       });
     }
-  }, [loading, isBidder, job, ownBidId, jobId, nav, locationNotice]);
+  }, [loading, isBidder, job, ownBidId, isOwnJob, jobId, nav, locationNotice]);
 
   function handleAmountChange(_, { value }) {
     const raw = value == null ? "" : String(value);
@@ -169,6 +173,10 @@ export default function BidDetail() {
     }
     if (biddingClosed) {
       setError("Bidding is closed for this job.");
+      return;
+    }
+    if (isOwnJob) {
+      setError("You posted this job. Switch to contractor view to manage it.");
       return;
     }
     if (!isBidder) {
@@ -207,6 +215,8 @@ export default function BidDetail() {
           const messages = {
             bidding_closed: "Bidding is closed for this job.",
             bid_closed: "This bid is closed and cannot be updated.",
+            own_job_bid:
+              "You posted this job. Switch to contractor view to manage it.",
           };
           setError(
             messages[resp.error] ||
@@ -223,6 +233,8 @@ export default function BidDetail() {
             bidding_closed: "Bidding is closed for this job.",
             bid_already_exists:
               "You have already placed a bid on this job.",
+            own_job_bid:
+              "You posted this job. Switch to contractor view to manage it.",
           };
           setError(
             messages[resp.error] ||
@@ -242,7 +254,7 @@ export default function BidDetail() {
   }
 
   async function handleDeleteBid() {
-    if (!ownBidId || deleting || ownBidFinalized) return;
+    if (!ownBidId || deleting || ownBidFinalized || isOwnJob) return;
     const confirmed = window.confirm(
       "Delete your bid? This cannot be undone."
     );
@@ -347,7 +359,7 @@ export default function BidDetail() {
     return sortedBids.slice(start, start + PAGE_SIZE);
   }, [sortedBids, page]);
 
-  const showCompetitiveSections = !ownBidFinalized;
+  const showCompetitiveSections = !ownBidFinalized && !isOwnJob;
 
   if (loading) {
     return (
@@ -448,6 +460,14 @@ export default function BidDetail() {
               Minimum bid (contractor budget): {budgetDisplay}
             </p>
           )}
+          {isOwnJob && (
+            <InlineNotification
+              title="Bidding Restricted"
+              subtitle="You posted this job. Switch to contractor view to manage it."
+              kind="info"
+              lowContrast
+            />
+          )}
           <Form onSubmit={submitBid} className="bid-detail-form">
             <NumberInput
               id="bid-amount"
@@ -457,7 +477,7 @@ export default function BidDetail() {
               allowEmpty
               min={budgetAmountNumber ?? 0}
               step={5}
-              disabled={submitting || biddingClosed || ownBidFinalized}
+              disabled={submitting || biddingClosed || ownBidFinalized || isOwnJob}
               helperText={
                 budgetDisplay
                   ? `Enter an amount of at least ${budgetDisplay}.`
@@ -469,11 +489,11 @@ export default function BidDetail() {
               labelText="Note (optional)"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              disabled={submitting || biddingClosed || ownBidFinalized}
+              disabled={submitting || biddingClosed || ownBidFinalized || isOwnJob}
             />
             <Button
               type="submit"
-              disabled={submitting || biddingClosed || ownBidFinalized}
+              disabled={submitting || biddingClosed || ownBidFinalized || isOwnJob}
               className="bid-detail-submit"
             >
               {ownBidId
@@ -489,7 +509,7 @@ export default function BidDetail() {
                 type="button"
                 kind="danger--ghost"
                 onClick={handleDeleteBid}
-                disabled={submitting || deleting || ownBidFinalized}
+                disabled={submitting || deleting || ownBidFinalized || isOwnJob}
               >
                 Delete Bid
               </Button>
@@ -572,7 +592,7 @@ export default function BidDetail() {
                   >
                     Previous
                   </Button>
-                  <span className="bid-pagination__status">
+                  <span className="bid-pagination-status">
                     Page {page} of {totalPages}
                   </span>
                   <Button
