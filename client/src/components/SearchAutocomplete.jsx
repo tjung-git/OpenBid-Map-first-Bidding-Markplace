@@ -66,10 +66,10 @@ export default function SearchAutocomplete({ onSelectPlace }){
                   >
                     <span>{suggestion.description}</span>
                   </div>
-                  );
-                })}
-              </Text>
-            </div>
+                );
+              })}
+            </Text>
+          </div>
         )}
       </PlacesAutocomplete> : <div></div>
     );
