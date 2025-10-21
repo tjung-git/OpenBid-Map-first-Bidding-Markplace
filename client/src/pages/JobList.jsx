@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { DataTable, Button, InlineNotification } from "@carbon/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
-import { getRequirements, getUser } from "../services/session";
+import {
+  useSessionRequirements,
+  useSessionUser,
+} from "../hooks/useSession";
 import MapView from "../components/MapView";
 import "../styles/pages/jobs.css";
 
@@ -12,8 +15,8 @@ export default function JobList() {
   const [success, setSuccess] = useState("");
   const nav = useNavigate();
   const location = useLocation();
-  const user = getUser();
-  const requirements = getRequirements();
+  const user = useSessionUser();
+  const requirements = useSessionRequirements();
 
   const isContractor = user?.userType === "contractor";
   const kycVerified = Boolean(requirements.kycVerified);
@@ -73,8 +76,7 @@ export default function JobList() {
   }, [jobs]);
 
   function handlePostClick() {
-    const latest = getRequirements();
-    if (!latest.kycVerified) {
+    if (!requirements.kycVerified) {
       nav("/kyc", {
         state: { notice: "Complete KYC before posting jobs." },
       });
@@ -165,36 +167,49 @@ export default function JobList() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} {...getRowProps({ row })}>
-                  {row.cells.map((cell) => (
-                    <td key={cell.id}>{cell.value}</td>
-                  ))}
-                  <td className="job-row-actions">
-                    <Button
-                      size="sm"
-                    onClick={() =>
-                      nav(
-                        isContractor
-                          ? `/jobs/${row.id}`
-                          : `/jobs/${row.id}/bid`
-                      )
-                    }
-                    >
-                      Open
-                    </Button>
-                    {isContractor && (
+              {rows.map((row) => {
+                const jobRecord = jobs.find((job) => job.id === row.id);
+                const jobStatus = (jobRecord?.status || "open").toLowerCase();
+                const jobLocked = jobStatus !== "open";
+                return (
+                  <tr key={row.id} {...getRowProps({ row })}>
+                    {row.cells.map((cell) => (
+                      <td key={cell.id}>{cell.value}</td>
+                    ))}
+                    <td className="job-row-actions">
                       <Button
                         size="sm"
-                        kind="danger--ghost"
-                        onClick={() => handleDelete(row.id)}
+                        onClick={() =>
+                          nav(
+                            isContractor
+                              ? `/jobs/${row.id}`
+                              : `/jobs/${row.id}/bid`
+                          )
+                        }
                       >
-                        Delete
+                        Open
                       </Button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                      {isContractor && (
+                        <div className="job-row-delete">
+                          <Button
+                            size="sm"
+                            kind="danger--ghost"
+                            onClick={() => handleDelete(row.id)}
+                            disabled={jobLocked}
+                          >
+                            Delete
+                          </Button>
+                          {jobLocked && (
+                            <span className="job-row-note">
+                              You can’t delete a job after accepting a bid.
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
