@@ -5,7 +5,7 @@ import { cfg } from "../services/config";
 import { TextInput } from '@carbon/react';
 import { Text } from '@carbon/react/lib/components/Text';
 
-export default function SearchComplete({ onSelectPlace }){
+export default function SearchAutocomplete({ onSelectPlace }){
   const [address, setAddress] = useState('');
   const [isLoaded, setIsloaded] = useState(false);
   const loaderRef = useRef(null); // Ref to store the loader instance
