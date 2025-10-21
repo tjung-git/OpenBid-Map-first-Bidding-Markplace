@@ -4,8 +4,27 @@ const INACTIVITY_LIMIT_MS = 2 * 60 * 1000; // 2 minutes
 let _session = null;
 let inactivityTimer = null;
 let removeInactivityListeners = null;
+const subscribers = new Set();
 
 const isBrowser = typeof window !== "undefined";
+
+function notifySubscribers() {
+  subscribers.forEach((listener) => {
+    try {
+      listener();
+    } catch (error) {
+      console.warn("[session] subscriber error", error);
+    }
+  });
+}
+
+export function subscribeSession(listener) {
+  if (typeof listener !== "function") return () => {};
+  subscribers.add(listener);
+  return () => {
+    subscribers.delete(listener);
+  };
+}
 
 function persistSession() {
   if (!isBrowser) return;
@@ -82,6 +101,7 @@ export function setSession(session) {
     }
   }
   persistSession();
+  notifySubscribers();
 }
 
 export function getSession() {
@@ -89,10 +109,19 @@ export function getSession() {
 }
 
 export function setUser(user, requirements) {
-  if (!_session) _session = { lastActive: Date.now() };
-  _session.user = user;
-  _session.requirements = requirements;
+  const base = _session || { lastActive: Date.now() };
+  const nextSession = {
+    ...base,
+    user,
+  };
+  if (requirements !== undefined) {
+    nextSession.requirements = requirements;
+  } else if (base.requirements !== undefined) {
+    nextSession.requirements = base.requirements;
+  }
+  _session = nextSession;
   persistSession();
+  notifySubscribers();
 }
 
 export function getUser() {
@@ -147,4 +176,5 @@ export function logout() {
   }
   _session = null;
   persistSession();
+  notifySubscribers();
 }
