@@ -7,8 +7,8 @@
   background: var(--cds-background, #161616);
 }
 
-.auth-page-layout__intro,
-.auth-page-layout__form {
+.auth-layout-intro,
+.auth-layout-form {
   display: flex;
   justify-content: center;
   align-items: center;
