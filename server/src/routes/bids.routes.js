@@ -138,6 +138,9 @@ router.post("/:jobId", async (req, res, next) => {
     }
     const job = await db.job.get(req.params.jobId);
     if (!job) return res.status(404).json({ error: "job_not_found" });
+    if (job.posterId && job.posterId === s.uid) {
+      return res.status(403).json({ error: "own_job_bid" });
+    }
     if (job.status && job.status !== "open") {
       return res.status(409).json({ error: "bidding_closed" });
     }
