@@ -7,7 +7,10 @@ import {
   InlineNotification,
 } from "@carbon/react";
 import { api } from "../services/api";
-import { getRequirements, getUser } from "../services/session";
+import {
+  useSessionRequirements,
+  useSessionUser,
+} from "../hooks/useSession";
 import { useNavigate } from "react-router-dom";
 import MapView from "../components/MapView";
 import "../styles/pages/jobs.css";
@@ -23,13 +26,13 @@ export default function NewJob() {
   const mapCenter = useMemo(() => ({ lat, lng }), [lat, lng]);
   const mapMarkers = useMemo(() => [{ lat, lng }], [lat, lng]);
   const nav = useNavigate();
-  const user = getUser();
+  const user = useSessionUser();
+  const requirements = useSessionRequirements();
   useEffect(() => {
     if (!user || user.userType !== "contractor") {
       nav("/jobs", { replace: true });
       return;
     }
-    const requirements = getRequirements();
     if (!requirements.kycVerified) {
       nav("/jobs", {
         replace: true,
@@ -38,19 +41,17 @@ export default function NewJob() {
         },
       });
     }
-  }, [nav, user]);
+  }, [nav, requirements.kycVerified, user]);
 
   async function submit(e) {
     e.preventDefault();
     setErr("");
     if (submitting) return;
-    const latestUser = getUser();
-    const latestRequirements = getRequirements();
-    if (latestUser?.userType !== "contractor") {
+    if (user?.userType !== "contractor") {
       setErr("Only contractors can post jobs.");
       return;
     }
-    if (!latestRequirements.kycVerified) {
+    if (!requirements.kycVerified) {
       nav("/kyc", {
         state: {
           notice: "Complete KYC before posting jobs.",
@@ -89,6 +90,11 @@ export default function NewJob() {
 
   return (
     <div className="container">
+      <div className="job-detail-header">
+        <Button kind="ghost" onClick={() => nav("/jobs")}>
+          Back to Job List
+        </Button>
+      </div>
       <h2>Post a Job</h2>
       {err && (
         <InlineNotification
