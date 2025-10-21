@@ -38,50 +38,51 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="container auth-container">
-      <Form onSubmit={submit}>
-        <div className="auth-logo">
-          <img src="/Images/OpenBidLogo.svg" alt="OpenBid logo" />
-          <span>OpenBid</span>
+    <div className="auth-screen">
+      <div className="auth-card login-card">
+        <div className="auth-card-header">
+          <div className="auth-logo">
+            <img src="/Images/OpenBidLogo.svg" alt="OpenBid logo" />
+            <span>OpenBid</span>
+          </div>
+          <h2>Reset password</h2>
         </div>
-        <h2>Reset your password</h2>
-        <TextInput
-          id="email"
-          labelText="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <Button
-          type="submit"
-          className="auth-form-actions"
-          disabled={submitting}
-        >
-          {submitting ? "Sending…" : "Send reset link"}
-        </Button>
-        <div className="auth-inline-link">
-          <Link to="/login">Back to login</Link>
-        </div>
-        {error && (
-          <InlineNotification
-            title="Error"
-            subtitle={error}
-            kind="error"
-            lowContrast
-            className="auth-notification"
+        <Form className="auth-card-form" onSubmit={submit}>
+          <TextInput
+            id="email"
+            labelText="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
           />
-        )}
-        {info && (
-          <InlineNotification
-            title="Check your email"
-            subtitle={info}
-            kind="success"
-            lowContrast
-            className="auth-notification"
-          />
-        )}
-      </Form>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Sending…" : "Send reset link"}
+          </Button>
+          <div className="auth-links-row">
+            <Link to="/login">Back to login</Link>
+            <Link to="/signup">Need an account?</Link>
+          </div>
+          {error && (
+            <InlineNotification
+              title="Error"
+              subtitle={error}
+              kind="error"
+              lowContrast
+              className="auth-notification"
+            />
+          )}
+          {info && (
+            <InlineNotification
+              title="Check your email"
+              subtitle={info}
+              kind="success"
+              lowContrast
+              className="auth-notification"
+            />
+          )}
+        </Form>
+      </div>
     </div>
   );
 }
