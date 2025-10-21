@@ -57,11 +57,15 @@ router.post("/signup", async (req, res, next) => {
         .json({ error: "password must be at least 8 characters" });
     }
 
-    const userTypeNormalized = userType?.toLowerCase();
-    if (!USER_TYPES.has(userTypeNormalized)) {
-      return res
-        .status(400)
-        .json({ error: "userType must be 'bidder' or 'contractor'" });
+    let userTypeNormalized = "bidder";
+    if (userType !== undefined && userType !== null) {
+      const candidate = String(userType).trim().toLowerCase();
+      if (!USER_TYPES.has(candidate)) {
+        return res
+          .status(400)
+          .json({ error: "userType must be 'bidder' or 'contractor'" });
+      }
+      userTypeNormalized = candidate;
     }
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -244,6 +248,63 @@ router.post("/login", async (req, res, next) => {
       session,
       prototype: config.prototype,
       requirements,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/role", async (req, res, next) => {
+  try {
+    const session = await auth.verify(req);
+    if (!session) {
+      return res.status(401).json({ error: "unauthorized" });
+    }
+
+    const requestedRole = String(req.body?.role || "")
+      .trim()
+      .toLowerCase();
+    if (!USER_TYPES.has(requestedRole)) {
+      return res.status(400).json({ error: "invalid_role" });
+    }
+
+    let user = null;
+    if (session.uid) {
+      user = await db.user.get(session.uid);
+    }
+    if (!user && session.email) {
+      user = await db.user.findByEmail(session.email.toLowerCase());
+    }
+    if (!user && req.header("x-user-id")) {
+      user = await db.user.get(req.header("x-user-id"));
+    }
+    if (!user) {
+      return res.status(404).json({ error: "user_not_found" });
+    }
+
+    if ((user.userType || "").toLowerCase() === requestedRole) {
+      return res.json({
+        user: sanitizeUser(user),
+        requirements: {
+          emailVerified: user.emailVerification === "verified",
+          kycVerified: isKycVerified(user.kycStatus),
+        },
+      });
+    }
+
+    const nowIso = new Date().toISOString();
+    const updated =
+      (await db.user.update(user.uid, {
+        userType: requestedRole,
+        updatedAt: nowIso,
+      })) || { ...user, userType: requestedRole, updatedAt: nowIso };
+
+    res.json({
+      user: sanitizeUser(updated),
+      requirements: {
+        emailVerified: updated.emailVerification === "verified",
+        kycVerified: isKycVerified(updated.kycStatus),
+      },
     });
   } catch (error) {
     next(error);
