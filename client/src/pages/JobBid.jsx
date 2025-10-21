@@ -9,7 +9,10 @@ import {
   Tile,
 } from "@carbon/react";
 import { api } from "../services/api";
-import { getRequirements, getUser } from "../services/session";
+import {
+  useSessionRequirements,
+  useSessionUser,
+} from "../hooks/useSession";
 import MapView from "../components/MapView";
 import "../styles/pages/bid.css";
 
@@ -34,8 +37,8 @@ export default function JobBid() {
   const { jobId } = useParams();
   const nav = useNavigate();
   const location = useLocation();
-  const user = getUser();
-  const requirements = getRequirements();
+  const user = useSessionUser();
+  const requirements = useSessionRequirements();
   const existingNotice = location.state?.notice || "";
 
   const [job, setJob] = useState(null);
@@ -54,7 +57,8 @@ export default function JobBid() {
 
   const isBidder = user?.userType === "bidder";
   const kycVerified = requirements.kycVerified;
-  const canBid = isBidder && kycVerified;
+  const isOwnJob = Boolean(job?.posterId && user?.uid && job.posterId === user.uid);
+  const canBid = isBidder && kycVerified && !isOwnJob;
 
   const mapMarkers = useMemo(() => {
     if (!job?.location?.lat || !job?.location?.lng) return [];
@@ -165,7 +169,7 @@ export default function JobBid() {
   }, [loading, refreshBids]);
 
   useEffect(() => {
-    if (!loading && isBidder && ownBidId) {
+    if (!loading && isBidder && ownBidId && !isOwnJob) {
       const notice =
         success ||
         existingNotice ||
@@ -175,7 +179,16 @@ export default function JobBid() {
         state: { notice },
       });
     }
-  }, [loading, isBidder, ownBidId, jobId, nav, success, existingNotice]);
+  }, [
+    loading,
+    isBidder,
+    ownBidId,
+    isOwnJob,
+    jobId,
+    nav,
+    success,
+    existingNotice,
+  ]);
 
   const sortedBids = useMemo(() => {
     return [...bids].sort((a, b) => {
@@ -280,6 +293,8 @@ export default function JobBid() {
         }.`;
       case "bid_already_exists":
         return "You already have a bid for this job. Update or delete it instead.";
+      case "own_job_bid":
+        return "You posted this job. Switch to contractor view to manage it.";
       case "invalid_amount":
         return "Enter a valid bid amount greater than zero.";
       case "no_update_fields":
@@ -318,18 +333,20 @@ export default function JobBid() {
     setError("");
     setSuccess("");
     const numericAmount = Number(amountInput);
-    if (!canBid) {
-      setError(
-        isBidder
-          ? "Complete KYC before bidding on jobs."
-          : "Only bidder accounts can place bids."
-      );
-      if (isBidder && !kycVerified) {
-        nav("/kyc", {
-          replace: true,
-          state: { notice: "Complete KYC before bidding on jobs." },
-        });
-      }
+    if (isOwnJob) {
+      setError("You posted this job. Switch to contractor view to manage it.");
+      return;
+    }
+    if (!isBidder) {
+      setError("Only bidder accounts can place bids.");
+      return;
+    }
+    if (!kycVerified) {
+      setError("Complete KYC before bidding on jobs.");
+      nav("/kyc", {
+        replace: true,
+        state: { notice: "Complete KYC before bidding on jobs." },
+      });
       return;
     }
     if (!Number.isFinite(numericAmount) || amountInput === "") {
@@ -520,7 +537,9 @@ export default function JobBid() {
             <InlineNotification
               title="Bidding Restricted"
               subtitle={
-                isBidder
+                isOwnJob
+                  ? "You posted this job. Switch to contractor view to manage it."
+                  : isBidder
                   ? "Complete KYC before you can place bids."
                   : "Switch to a bidder account to place bids."
               }
@@ -649,7 +668,7 @@ export default function JobBid() {
                 >
                   Previous
                 </Button>
-                <span className="bid-pagination__status">
+                <span className="bid-pagination-status">
                   Page {page} of {totalPages}
                 </span>
                 <Button
