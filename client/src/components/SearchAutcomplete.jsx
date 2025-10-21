@@ -11,14 +11,13 @@ export default function SearchComplete({ onSelectPlace }){
   const loaderRef = useRef(null); // Ref to store the loader instance
 
   useEffect(() => {
-  loaderRef.current = new Loader({
-    apiKey: cfg.mapsKey,
+    loaderRef.current = new Loader({
+      apiKey: cfg.mapsKey,
       version: 'weekly',
       libraries: ['places'],
     });
 
     loaderRef.current.load().then(() => {
-      console.log('Google Maps API loaded successfully!');
       setIsloaded(true);
     }).catch(e => {
       console.error('Error loading Google Maps API:', e);
@@ -41,10 +40,11 @@ export default function SearchComplete({ onSelectPlace }){
     };
 
     return (
-      isLoaded && !cfg.prototype? <PlacesAutocomplete
-      value={address}
-      onChange={handleChange}
-      onSelect={handleSelect}
+      isLoaded && !cfg.prototype? 
+      <PlacesAutocomplete
+        value={address}
+        onChange={handleChange}
+        onSelect={handleSelect}
       >
         {({ getInputProps, suggestions, getSuggestionItemProps, loading }) => (
           <div>
