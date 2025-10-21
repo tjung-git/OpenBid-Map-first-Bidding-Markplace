@@ -1,12 +1,5 @@
 import { useState } from "react";
-import {
-  Form,
-  TextInput,
-  Button,
-  Select,
-  SelectItem,
-  InlineNotification,
-} from "@carbon/react";
+import { Form, TextInput, Button, InlineNotification } from "@carbon/react";
 import { api } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import "../styles/pages/auth.css";
@@ -16,7 +9,6 @@ const INITIAL_FORM = {
   lastName: "",
   email: "",
   password: "",
-  userType: "bidder",
 };
 
 export default function Signup() {
@@ -35,7 +27,8 @@ export default function Signup() {
     setError("");
     setSubmitting(true);
     try {
-      await api.signup(form);
+      const { firstName, lastName, email, password } = form;
+      await api.signup({ firstName, lastName, email, password });
       const message =
         "Account created. Please verify your email before signing in.";
       navigate("/login", {
@@ -53,7 +46,7 @@ export default function Signup() {
 
   return (
     <div className="auth-page-layout">
-      <div className="auth-page-layout__intro">
+      <div className="auth-layout-intro">
         <div className="auth-intro-card">
           <div className="auth-intro-logo">
             <img src="/Images/OpenBidLogo.svg" alt="OpenBid logo" />
@@ -71,7 +64,7 @@ export default function Signup() {
           </ul>
         </div>
       </div>
-      <div className="auth-page-layout__form">
+      <div className="auth-layout-form">
         <div className="auth-form-card">
           <Form className="auth-form" onSubmit={submit}>
             <div className="auth-logo">
@@ -110,16 +103,6 @@ export default function Signup() {
               helperText="Minimum 8 characters"
               required
             />
-            <Select
-              id="userType"
-              labelText="Account type"
-              value={form.userType}
-              onChange={(e) => updateField("userType", e.target.value)}
-              required
-            >
-              <SelectItem value="bidder" text="Bidder" />
-              <SelectItem value="contractor" text="Contractor" />
-            </Select>
             <div className="auth-action-row">
               <Button
                 type="submit"
