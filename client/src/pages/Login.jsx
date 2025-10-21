@@ -5,10 +5,12 @@ import {
   Button,
   InlineNotification,
   PasswordInput,
+  Select,
+  SelectItem,
 } from "@carbon/react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
-import { setSession } from "../services/session";
+import { setSession, setUser } from "../services/session";
 import "../styles/pages/login.css";
 
 export default function Login() {
@@ -18,6 +20,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [role, setRole] = useState("bidder");
   const nav = useNavigate();
   const location = useLocation();
 
@@ -36,6 +39,21 @@ export default function Login() {
     try {
       const data = await api.login(email, password);
       setSession(data);
+      const selectedRole = role;
+      const currentRole = (data.user?.userType || "").toLowerCase();
+
+      if (currentRole !== selectedRole) {
+        try {
+          const roleResp = await api.updateRole(selectedRole);
+          setUser(roleResp.user, roleResp.requirements ?? data.requirements);
+        } catch (roleErr) {
+          console.error("[Login] role switch failed", roleErr);
+          setError("Unable to apply selected role. Please try again.");
+          return;
+        }
+      } else {
+        setUser(data.user, data.requirements);
+      }
 
       if (!data.requirements.emailVerified) {
         setError(
@@ -90,6 +108,15 @@ export default function Login() {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
+        <Select
+          id="role"
+          labelText="Sign in as"
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+        >
+          <SelectItem value="bidder" text="Bidder" />
+          <SelectItem value="contractor" text="Contractor" />
+        </Select>
         <Button
           type="submit"
           className="auth-form-actions"
