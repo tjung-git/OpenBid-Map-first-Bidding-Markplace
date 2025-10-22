@@ -2,6 +2,7 @@ import { Tile, InlineNotification } from "@carbon/react";
 import { cfg } from "../services/config";
 import { Loader } from "@googlemaps/js-api-loader";
 import { useEffect, useRef } from "react";
+import "../styles/components/map.css";
 
 export default function MapView({
   center = { lat: 43.6532, lng: -79.3832 },
@@ -27,7 +28,7 @@ export default function MapView({
 
   if (cfg.prototype) {
     return (
-      <Tile style={{ height: 320, display: "grid", placeItems: "center" }}>
+      <Tile className="map-tile">
         <InlineNotification
           title="Map Placeholder"
           subtitle="PROTOTYPE mode shows a stub map. Switch VITE_PROTOTYPE=FALSE to load Google Maps."
@@ -37,5 +38,5 @@ export default function MapView({
       </Tile>
     );
   }
-  return <div ref={divRef} style={{ height: 320, borderRadius: 8 }} />;
+  return <div ref={divRef} className="map-container" />;
 }

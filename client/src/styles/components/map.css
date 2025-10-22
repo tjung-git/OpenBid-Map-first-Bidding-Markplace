@@ -1,0 +1,10 @@
+.map-tile {
+  height: 320px;
+  display: grid;
+  place-items: center;
+}
+
+.map-container {
+  height: 320px;
+  border-radius: 8px;
+}
