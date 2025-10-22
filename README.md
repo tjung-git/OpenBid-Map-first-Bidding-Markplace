@@ -111,3 +111,86 @@ pdflatex main.tex
 cd "documentation/1.2 Detailed User Stories, Requirements, and Initial Prototype" 
 pdflatex main.tex
 ```
+
+## Application Setup
+
+These steps provision Firebase, configure the Node/React apps, and run the prototype.
+
+### 1. Firebase project, auth, and database
+
+1. Sign in at [https://console.firebase.google.com](https://console.firebase.google.com) with a Google account.
+2. From **Project Overview** click **Add app** → **Web**. Give it any nickname (no hosting required).
+3. Open **Build → Authentication → Sign-in method** and enable **Email/Password**.
+4. Open **Build → Firestore Database** and create a database in **Native mode**. Choose *Standard* rules (Enterprise requires a paid plan). Replace the default rules with:
+
+   ```javascript
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /{document=**} {
+         allow read, write: if request.auth != null && request.auth.uid != null;
+       }
+     }
+   }
+   ```
+
+   Collections such as `users`, `jobs`, and `bids` are created automatically by the backend when you exercise the routes.
+
+### 2. Populate `server/.env`
+
+1. Navigate to **Project settings → Service accounts** and click **Generate new private key**. Copy the `project_id`, `client_email`, and `private_key` values.
+2. In **Project settings → General**, locate the web app you added earlier and copy the `apiKey` from the config snippet.
+3. Update `server/.env` with your values (keep the private key newlines escaped as shown):
+
+   ```ini
+   PROTOTYPE=FALSE
+   PORT=4000
+   FIREBASE_PROJECT_ID=<project_id>
+   FIREBASE_CLIENT_EMAIL=<client_email>
+   FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+   FIREBASE_WEB_API_KEY=<firebase web api key>
+   APP_URL=http://localhost:5173
+   EMAIL_VERIFICATION_REDIRECT=http://localhost:5173/login
+   APP_NAME=OpenBid
+   ```
+
+   - `APP_URL` / `EMAIL_VERIFICATION_REDIRECT` should reference the client dev server; add the host to Firebase Auth’s authorized domains list.
+   - Leave other keys as-is unless you change ports.
+
+### 3. React client environment
+
+Create or edit `client/.env`:
+
+```ini
+VITE_PROTOTYPE=FALSE
+VITE_API_BASE=http://localhost:4000
+VITE_GOOGLE_MAPS_API_KEY=<optional>
+```
+
+The API key from step 2 is consumed on the server; the client only needs its backend URL (and optionally a Google Maps key).
+
+### 4. Email Verification Workflow
+
+- The server signs users up via Firebase Identity Toolkit. Firebase sends the verification email automatically.
+- During testing you can use a disposable inbox such as [temp-mail.org](https://temp-mail.org/en/) to receive the link.
+- Login is blocked until the email is verified. After clicking the link, log in again—our backend syncs Firestore with Firebase Auth.
+- **Temporary note:** KYC is not yet automated. After verifying email, set the new user’s `kycStatus` to `verified` manually in Firestore to simulate a passed KYC check. A Duo-based 2FA implementation will replace this step in a future iteration.
+
+### 5. Install & Run
+
+```bash
+# From repo root
+cd server && npm install
+cd ../client && npm install
+
+# Start backend (needs Firebase env vars set)
+cd ../server
+npm run dev
+
+# In a new terminal start the client
+cd ../client
+npm run dev
+```
+
+- With `PROTOTYPE=TRUE` the backend falls back to in-memory mocks (no Firebase, no email). Keep it `FALSE` for the real stack.
+- Visit `http://localhost:5173/` to access the login page.
