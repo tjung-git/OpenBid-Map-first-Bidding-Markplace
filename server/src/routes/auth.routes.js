@@ -22,6 +22,9 @@ const MIN_PASSWORD_LENGTH = 8;
 const validatePasswordStrength = (password) =>
   typeof password === "string" && password.length >= MIN_PASSWORD_LENGTH;
 
+const validateEmailFormat = (email) =>
+  typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
 const hashPassword = (password) => bcrypt.hash(password, 10);
 const verifyPassword = (password, hash) =>
   hash ? bcrypt.compare(password, hash) : false;
@@ -47,6 +50,11 @@ router.post("/signup", async (req, res, next) => {
       return res.status(400).json({ error: "email required" });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!validateEmailFormat(normalizedEmail)) {
+      return res.status(400).json({ error: "email must be a valid address" });
+    }
+
     if (!password) {
       return res.status(400).json({ error: "password required" });
     }
@@ -68,7 +76,6 @@ router.post("/signup", async (req, res, next) => {
       userTypeNormalized = candidate;
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
     const existing = await db.user.findByEmail(normalizedEmail);
     if (existing) {
       return res.status(409).json({ error: "email already registered" });
