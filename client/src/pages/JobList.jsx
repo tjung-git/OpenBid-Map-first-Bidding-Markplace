@@ -20,7 +20,6 @@ export default function JobList() {
   const nav = useNavigate();
 
   const handlePlaceSelection = (placeData) => {
-    console.log('Selected Place:', placeData);
     const {address, latLng} = placeData;
     setCenter(latLng);
     setSelectedAddress(address);
@@ -31,8 +30,6 @@ export default function JobList() {
       .jobsList()
       .then((d) => setJobs(d.jobs || []))
       .catch(() => setErr("Failed to load jobs"));
-    
-    setFilteredJobs(jobs);
   }, []);
 
   useEffect(() => {

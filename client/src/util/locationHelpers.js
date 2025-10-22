@@ -16,7 +16,7 @@ export const isValidCoords = (lat, lng) =>{
 }
 
 //Converts a number in degrees to radians.
-export function deg2rad(deg) {
+export const deg2rad = (deg) => {
   return deg !== undefined && typeof deg === 'number'? deg * (Math.PI/180): Infinity;
 }
 
