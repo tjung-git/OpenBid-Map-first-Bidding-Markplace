@@ -214,13 +214,6 @@ export default function JobList() {
           </Column>
         </Row>
       </FlexGrid>
-      <DataTable rows={filteredJobs
-        .map((j) => ({
-          id: j.id,
-          title: j.title,
-          budgetAmount: j.budgetAmount ?? "-",
-          status: j.status,
-        }))} headers={headers}>
 
       {isContractor && !kycVerified && (
         <InlineNotification
@@ -244,6 +237,13 @@ export default function JobList() {
           <Button onClick={() => nav("/jobs/myBids")}>My Bids</Button>
         </div>
       )}
+      <DataTable rows={filteredJobs
+        .map((j) => ({
+          id: j.id,
+          title: j.title,
+          budgetAmount: j.budgetAmount ?? "-",
+          status: j.status,
+        }))} headers={headers}>
 
         {({ rows, headers, getHeaderProps, getRowProps }) => (
           <table className="cds--data-table cds--data-table--zebra job-table">
