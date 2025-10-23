@@ -10,6 +10,7 @@ import {
 import { api } from "../services/api";
 import { useSessionUser } from "../hooks/useSession";
 import MapView from "../components/MapView";
+import SearchAutocomplete from "../components/SearchAutocomplete";
 import "../styles/pages/jobs.css";
 
 const sortBidsByCreated = (list) =>
@@ -321,7 +322,7 @@ export default function JobDetail() {
                 value={editLat}
                 disabled={jobLocked}
                 onChange={(_, { value }) =>
-                  setEditLat((prev) => toNumber(value, prev))
+                  setEditLat(toNumber(value))
                 }
               />
               <NumberInput
@@ -330,7 +331,7 @@ export default function JobDetail() {
                 value={editLng}
                 disabled={jobLocked}
                 onChange={(_, { value }) =>
-                  setEditLng((prev) => toNumber(value, prev))
+                  setEditLng(toNumber(value))
                 }
               />
             </div>

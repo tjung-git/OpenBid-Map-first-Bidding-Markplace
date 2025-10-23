@@ -14,6 +14,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import MapView from "../components/MapView";
 import "../styles/pages/jobs.css";
+import { cfg } from "../services/config";
+import SearchAutocomplete from "../components/SearchAutocomplete";
 
 export default function NewJob() {
   const [title, setTitle] = useState("");
@@ -28,6 +30,8 @@ export default function NewJob() {
   const nav = useNavigate();
   const user = useSessionUser();
   const requirements = useSessionRequirements();
+  const [address, setAddress] = useState("Toronto, ON, Canada");
+
   useEffect(() => {
     if (!user || user.userType !== "contractor") {
       nav("/jobs", { replace: true });
@@ -42,6 +46,13 @@ export default function NewJob() {
       });
     }
   }, [nav, requirements.kycVerified, user]);
+
+  const handlePlaceSelection = (placeData) => {
+    const {address, latLng} = placeData;
+    setAddress(address);
+    setLat(latLng.lat);
+    setLng(latLng.lng);
+  };
 
   async function submit(e) {
     e.preventDefault();
@@ -72,7 +83,7 @@ export default function NewJob() {
         title,
         description: desc,
         budgetAmount: numericBudget,
-        location: { lat, lng, address: "Mock Address" },
+        location: { lat, lng, address: cfg.prototype? "Mock Address": address },
       });
       if (r.error) {
         setErr(r.error);
@@ -130,20 +141,26 @@ export default function NewJob() {
             setBudgetInput(normalized);
           }}
         />
-        <div className="job-form-grid">
-          <NumberInput
-            id="lat"
-            label="Latitude"
-            value={lat}
-            onChange={(_, { value }) => setLat(Number(value))}
-          />
-          <NumberInput
-            id="lng"
-            label="Longitude"
-            value={lng}
-            onChange={(_, { value }) => setLng(Number(value))}
-          />
-        </div>
+        {cfg.prototype ? 
+          <div className="job-form-grid">
+            <NumberInput
+              id="lat"
+              label="Latitude"
+              value={lat}
+              onChange={(_, { value }) => setLat(Number(value))}
+            />
+            <NumberInput
+              id="lng"
+              label="Longitude"
+              value={lng}
+              onChange={(_, { value }) => setLng(Number(value))}
+            />
+            </div> :
+            <div className="job-location-search-container">
+              <SearchAutocomplete onSelectPlace={handlePlaceSelection}/>
+              <div>Selected location: {address}</div>
+            </div>
+            }
         <MapView center={mapCenter} markers={mapMarkers} />
         {/* TODO: Wire MapView interactions so the marker can drive lat/lng updates automatically. */}
         <Button type="submit" className="job-submit" disabled={submitting}>

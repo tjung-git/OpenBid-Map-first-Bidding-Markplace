@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import PlacesAutocomplete, { geocodeByAddress, getLatLng } from 'react-places-autocomplete';
 import { cfg } from "../services/config";
-import { TextInput } from '@carbon/react';
+import { Column, FlexGrid, Row, Search } from '@carbon/react';
 import { Text } from '@carbon/react/lib/components/Text';
+import "../styles/components/search.css";
 
 export default function SearchAutocomplete({ onSelectPlace }){
   const [address, setAddress] = useState('');
@@ -50,28 +51,31 @@ const handleError = (_, clearSuggestions) => {
     >
       {({ getInputProps, suggestions, getSuggestionItemProps, loading }) => (
         <div>
-          <TextInput
+          <Search
             {...getInputProps({
-              placeholder: 'Search for a location...',
-              className: 'location-search-input',
+              placeholder: 'Search for a location...'
             })}
               id="search-autocomplete-input"
               labelText="Location Search"
-              helperText="Map will be centered on the selected location."
             />
-          <Text>
-            {loading ? <div>Loading...</div> : 
-              suggestions.map((suggestion) => {
-              return (
-                <div
-                  {...getSuggestionItemProps(suggestion)}
-                  key={suggestion.description}
-                >
-                  <span>{suggestion.description}</span>
-                </div>
-              );
-            })}
-          </Text>
+          <div id="suggestions-grid-container">
+            <FlexGrid id="suggestions-grid" >
+              <Column id="suggestions-grid-column">
+              {loading ? <div>Loading...</div> : 
+                suggestions.map((suggestion) => {
+                return (
+                  <Row
+                    {...getSuggestionItemProps(suggestion)}
+                    className='suggestion'
+                    key={suggestion.description}
+                  >
+                    <Text>{suggestion.description}</Text>
+                  </Row>
+                );
+              })}
+              </Column>
+            </FlexGrid>
+          </div>
         </div>
       )}
     </PlacesAutocomplete> : <div></div>

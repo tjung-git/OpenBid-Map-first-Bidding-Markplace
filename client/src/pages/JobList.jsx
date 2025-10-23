@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { DataTable, Button, InlineNotification, FlexGrid, Column, TextInput, Row, NumberInput } from "@carbon/react";
+import { DataTable, Button, InlineNotification, FlexGrid, Column, TextInput, Row, NumberInput, Heading } from "@carbon/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import {
@@ -57,12 +57,6 @@ export default function JobList() {
       .then((d) => setJobs(d.jobs || []))
       .catch(() => setErr("Failed to load jobs"));
   }, [user, isContractor]);
-
-  const markers = useMemo(() => {
-    return jobs
-      .filter((job) => job.location?.lat && job.location?.lng)
-      .map((job) => job.location);
-  }, [jobs]);
 
   useEffect(() => {
     setFilteredJobs(jobs.filter((j) => j.location?.lat && j.location?.lng && ((j.budgetAmount >= minBudget && j.budgetAmount <= maxBudget) || j.budgetAmount ==="-") 
@@ -153,7 +147,7 @@ export default function JobList() {
           <Column>
             <SearchAutocomplete onSelectPlace={handlePlaceSelection}/>
           </Column>
-          <Column>
+          <Column className="filter-selection">
             <Text>Current Location: {selectedAddress}</Text>
           </Column>
         </Row>
@@ -171,6 +165,9 @@ export default function JobList() {
               helperText="Radius is set to 1000000 by default, radius should be altered after the location is selected to limit results."
             />
           </Column>
+          <Column className="filter-selection">
+              <Text>Current Radius: {radius} km</Text>
+          </Column>
         </Row>
       </FlexGrid>}
       <MapView
@@ -178,9 +175,6 @@ export default function JobList() {
           .map((j) => j.location)}
         center={center}
       />
-      <div style={{ marginTop: 16 }}>
-        <Button onClick={() => nav("/new-job")}>Post a Job</Button>
-      </div>
       <FlexGrid style={{marginTop: 16}}>
         <Row>
           <Column>
