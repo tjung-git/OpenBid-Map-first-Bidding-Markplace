@@ -2,13 +2,24 @@ import { useEffect, useState } from "react";
 import { Button, InlineNotification } from "@carbon/react";
 import { api } from "../services/api";
 import { cfg } from "../services/config";
-import { useNavigate } from "react-router-dom";
+import { getSession } from "../services/session";
+import { useLocation, useNavigate } from "react-router-dom";
+import "../styles/pages/auth.css";
 
 export default function KycGate() {
+  // Guides users through KYC, prefilling status from the stored session when available.
+  const session = getSession();
+  const isContractor = session?.user?.userType === "contractor";
   const [status, setStatus] = useState("pending");
+  const [notice, setNotice] = useState("");
   const nav = useNavigate();
+  const location = useLocation();
 
   async function refresh() {
+    if (session?.requirements?.kycVerified) {
+      setStatus("verified");
+      return;
+    }
     const r = await api.kycStatus();
     setStatus(r.status || "pending");
   }
@@ -16,6 +27,12 @@ export default function KycGate() {
   useEffect(() => {
     refresh();
   }, []);
+
+  useEffect(() => {
+    if (location.state?.notice) {
+      setNotice(location.state.notice);
+    }
+  }, [location.state]);
 
   async function start() {
     const r = await api.kycVerification();
@@ -35,12 +52,24 @@ export default function KycGate() {
   return (
     <div className="container">
       <h2>KYC Verification</h2>
-      <p>
-        Status: <b>{status}</b>
-      </p>
-      <Button onClick={start}>Start KYC</Button>
-      {cfg.prototype && (
-        <Button kind="tertiary" onClick={forcePass} style={{ marginLeft: 8 }}>
+      {notice && (
+        <InlineNotification
+          title="Action required"
+          subtitle={notice}
+          kind="info"
+          lowContrast
+          className="auth-notification"
+        />
+      )}
+      {isContractor && (
+        <Button onClick={start}>Start KYC</Button>
+      )}
+      {cfg.prototype && isContractor && (
+        <Button
+          kind="tertiary"
+          onClick={forcePass}
+          className="kyc-action"
+        >
           Prototype: Mark as Verified
         </Button>
       )}
@@ -52,7 +81,7 @@ export default function KycGate() {
           lowContrast
         />
       )}
-      <div style={{ marginTop: 16 }}>
+      <div className="kyc-actions">
         <Button kind="secondary" onClick={() => nav("/jobs")}>
           Go to Jobs
         </Button>

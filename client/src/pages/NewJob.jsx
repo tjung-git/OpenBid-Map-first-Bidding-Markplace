@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Form,
   TextInput,
@@ -7,32 +7,94 @@ import {
   InlineNotification,
 } from "@carbon/react";
 import { api } from "../services/api";
+import {
+  useSessionRequirements,
+  useSessionUser,
+} from "../hooks/useSession";
 import { useNavigate } from "react-router-dom";
+import MapView from "../components/MapView";
+import "../styles/pages/jobs.css";
 
 export default function NewJob() {
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
-  const [budget, setBudget] = useState(100);
+  const [budgetInput, setBudgetInput] = useState("");
   const [lat, setLat] = useState(43.6532);
   const [lng, setLng] = useState(-79.3832);
   const [err, setErr] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const mapCenter = useMemo(() => ({ lat, lng }), [lat, lng]);
+  const mapMarkers = useMemo(() => [{ lat, lng }], [lat, lng]);
   const nav = useNavigate();
+  const user = useSessionUser();
+  const requirements = useSessionRequirements();
+  useEffect(() => {
+    if (!user || user.userType !== "contractor") {
+      nav("/jobs", { replace: true });
+      return;
+    }
+    if (!requirements.kycVerified) {
+      nav("/jobs", {
+        replace: true,
+        state: {
+          notice: "Complete KYC before posting jobs.",
+        },
+      });
+    }
+  }, [nav, requirements.kycVerified, user]);
 
   async function submit(e) {
     e.preventDefault();
     setErr("");
-    const r = await api.jobCreate({
-      title,
-      description: desc,
-      budgetAmount: budget,
-      location: { lat, lng, address: "Mock Address" },
-    });
-    if (r.error) setErr(r.error);
-    else nav(`/jobs/${r.job.id}`);
+    if (submitting) return;
+    if (user?.userType !== "contractor") {
+      setErr("Only contractors can post jobs.");
+      return;
+    }
+    if (!requirements.kycVerified) {
+      nav("/kyc", {
+        state: {
+          notice: "Complete KYC before posting jobs.",
+        },
+      });
+      return;
+    }
+    setSubmitting(true);
+    const cleanedBudget = budgetInput.replace(/[^0-9.]/g, "");
+    const numericBudget = cleanedBudget === "" ? null : Number(cleanedBudget);
+    if (!Number.isFinite(numericBudget) || numericBudget === null || numericBudget <= 0) {
+      setErr("Enter a valid budget amount greater than 0.");
+      setSubmitting(false);
+      return;
+    }
+    try {
+      const r = await api.jobCreate({
+        title,
+        description: desc,
+        budgetAmount: numericBudget,
+        location: { lat, lng, address: "Mock Address" },
+      });
+      if (r.error) {
+        setErr(r.error);
+      } else {
+        nav(`/jobs/${r.job.id}`, {
+          state: { notice: `${title} job posted.` },
+        });
+      }
+    } catch {
+      setErr("Unable to create job. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
     <div className="container">
+      <div className="job-detail-header">
+        <Button kind="ghost" onClick={() => nav("/jobs")}>
+          Back to Job List
+        </Button>
+      </div>
       <h2>Post a Job</h2>
       {err && (
         <InlineNotification
@@ -45,30 +107,30 @@ export default function NewJob() {
       <Form onSubmit={submit}>
         <TextInput
           id="title"
-          labelText="Title"
+          labelText="Job Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
         />
         <TextInput
           id="desc"
-          labelText="Description"
+          labelText="Job Description"
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
         />
         <NumberInput
           id="budget"
-          label="Budget"
-          value={budget}
-          onChange={(_, { value }) => setBudget(Number(value))}
-        />
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "1rem",
+          label="Job Budget"
+          allowEmpty
+          value={budgetInput === "" ? "" : Number(budgetInput)}
+          onChange={(_, { value }) => {
+            const raw = value == null ? "" : String(value);
+            const cleaned = raw.replace(/[^0-9.]/g, "");
+            const normalized = cleaned.replace(/^0+(?=\d)/, "");
+            setBudgetInput(normalized);
           }}
-        >
+        />
+        <div className="job-form-grid">
           <NumberInput
             id="lat"
             label="Latitude"
@@ -82,7 +144,9 @@ export default function NewJob() {
             onChange={(_, { value }) => setLng(Number(value))}
           />
         </div>
-        <Button type="submit" style={{ marginTop: "1rem" }}>
+        <MapView center={mapCenter} markers={mapMarkers} />
+        {/* TODO: Wire MapView interactions so the marker can drive lat/lng updates automatically. */}
+        <Button type="submit" className="job-submit" disabled={submitting}>
           Create
         </Button>
       </Form>
