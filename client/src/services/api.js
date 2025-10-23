@@ -173,4 +173,30 @@ export const api = {
     });
     return r.json();
   },
+  async uploadAvatar(file) {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const session = getSession();
+    const authToken = session?.session?.token || session?.session?.idToken;
+    const h = {};
+    if (authToken) {
+      h.Authorization = `Bearer ${authToken}`;
+    }
+    if (session?.user?.uid) {
+      h["x-user-id"] = session.user.uid;
+    }
+    if (cfg.prototype && session?.user?.uid) {
+      h["x-mock-uid"] = session.user.uid;
+    }
+    const r = await fetch(`${base}/api/upload/avatar`, {
+      method: "POST",
+      headers: h,
+      body: formData,
+    });
+    if (!r.ok) {
+      const data = await r.json().catch(() => ({}));
+      throw { status: r.status, data };
+    }
+    return r.json();
+  },
 };
