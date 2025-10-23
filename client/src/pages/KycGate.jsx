@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button, InlineNotification } from "@carbon/react";
 import { api } from "../services/api";
 import { cfg } from "../services/config";
-import { getSession } from "../services/session";
+import { getSession, setUser } from "../services/session";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../styles/pages/auth.css";
 
@@ -35,18 +35,33 @@ export default function KycGate() {
   }, [location.state]);
 
   async function start() {
-    const r = await api.kycVerification();
-    if (cfg.prototype) {
-      // in PROTOTYPE, just inform the user KYC session would start
-      // or allow "force pass"
-    } else if (r.url) {
-      window.location.href = r.url;
+    try {
+      const r = await api.kycVerification();
+      console.log('KYC verification response:', r);
+      if (cfg.prototype) {
+        setNotice("Prototype mode: In production, you would be redirected to Stripe Identity for verification. Use 'Mark as Verified' button below to simulate completion.");
+      } else if (r.url) {
+        window.location.href = r.url;
+      } else {
+        setNotice(`Error: No verification URL returned. ${r.error || 'Check server logs for details.'}`);
+      }
+    } catch (error) {
+      console.error('KYC verification failed:', error);
+      setNotice(`Failed to start KYC verification: ${error.message || 'Unknown error'}`);
     }
   }
 
   async function forcePass() {
     await api.kycForcePass();
     await refresh();
+    // Update session requirements
+    const currentSession = getSession();
+    if (currentSession?.user) {
+      setUser(currentSession.user, { 
+        ...currentSession.requirements, 
+        kycVerified: true 
+      });
+    }
   }
 
   return (
