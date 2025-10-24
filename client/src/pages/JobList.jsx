@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { DataTable, Button, InlineNotification, FlexGrid, Column, TextInput, Row, NumberInput, Heading } from "@carbon/react";
+import { DataTable, Button, InlineNotification, FlexGrid, Column, Row, NumberInput } from "@carbon/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import {
@@ -8,7 +8,6 @@ import {
 } from "../hooks/useSession";
 import MapView from "../components/MapView";
 import SearchAutocomplete from "../components/SearchAutocomplete";
-import { Text } from "@carbon/react/lib/components/Text";
 import { haversineFormulaKm } from "../util/locationHelpers";
 import { cfg } from "../services/config";
 import "../styles/pages/jobs.css";
@@ -148,7 +147,7 @@ export default function JobList() {
             <SearchAutocomplete onSelectPlace={handlePlaceSelection}/>
           </Column>
           <Column className="filter-selection">
-            <Text>Current Location: {selectedAddress}</Text>
+            <span>Current Location: {selectedAddress}</span>
           </Column>
         </Row>
         <Row style={{marginTop: 16}}>
@@ -166,7 +165,7 @@ export default function JobList() {
             />
           </Column>
           <Column className="filter-selection">
-              <Text>Current Radius: {radius} km</Text>
+              <span>Current Radius: {radius} km</span>
           </Column>
         </Row>
       </FlexGrid>}
@@ -178,7 +177,7 @@ export default function JobList() {
       <FlexGrid style={{marginTop: 16}}>
         <Row>
           <Column>
-            <Text>Budget Filter</Text>
+            <span>Budget Filter</span>
           </Column>
         </Row>
         <Row>
