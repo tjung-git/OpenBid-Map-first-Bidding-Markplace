@@ -86,10 +86,11 @@ Tables below map each requirement to the test cases that validate it. Coverage s
 FR-001 & System shall allow authenticated users to \textbf{post jobs} with title, description, budget, photos, and location. & TC-001, TC-002 & Partially Covered \\
 FR-002 & System shall allow providers to \textbf{browse jobs on a map} with basic filters (radius, category). & TC-003, TC-004 & Partially Covered \\
 FR-003 & System shall allow providers to \textbf{place bids} on open jobs; posters can view and accept a bid. & TC-005, TC-006 & Partially Covered \\
-FR-004 & System shall enforce \textbf{KYC for all users} before posting or bidding. & TC-007, TC-008a--f & Partially Covered \\
+FR-004 & System shall enforce \textbf{KYC for all users} before posting or bidding. & TC-007, TC-008a--f, TC-009a--b, TC-010a--b, TC-011a--b, TC-012, TC-018a--f & Covered \\
 FR-005 & System shall support \textbf{user authentication} with \textbf{Duo 2FA} for sensitive actions. & TC-008 & Partially Covered \\
 FR-006 & System shall provide \textbf{in-thread messaging} per job after acceptance. & TC-009 & Planned \\
 FR-007 & System shall record \textbf{ratings and reviews} after job completion. & TC-010 & Planned \\
+FR-008 & System shall allow users to \textbf{manage their profile} including avatar upload and personal information. & TC-019a--d & Covered \\
 \bottomrule
 \end{longtable}
 
@@ -389,6 +390,219 @@ For brevity we include the highest-priority cases now; the full catalog will liv
 \textbf{Requirement:} NFR-003 \\
 \textbf{Expected Result:} Tabbing reaches filters, list items, and primary actions; visible focus outlines present. \\
 \textbf{Status:} Planned \quad \textbf{Priority:} Low
+
+\subsection*{TC-018a}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-018a \\ \hline
+\textbf{Title} & Profile Page - Display KYC Pending Status \\ \hline
+\textbf{Requirement} & FR-004 \\ \hline
+\textbf{Preconditions} & User authenticated, KYC status = \texttt{pending}. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Navigate to \texttt{/profile}.
+  \item Profile component renders and displays account status section.
+  \item System retrieves user KYC status from session.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & KYC status displays "Pending" tag with appropriate styling. \\ \hline
+\textbf{Actual Result} & Passed - Profile page correctly displays pending status. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-018b}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-018b \\ \hline
+\textbf{Title} & Profile Page - Display KYC Verified Status \\ \hline
+\textbf{Requirement} & FR-004 \\ \hline
+\textbf{Preconditions} & User authenticated, KYC status = \texttt{verified}. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Navigate to \texttt{/profile}.
+  \item Profile component renders with verified KYC status.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & KYC status displays "Verified" tag; no action buttons shown. \\ \hline
+\textbf{Actual Result} & Passed - Profile page displays verified status correctly. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-018c}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-018c \\ \hline
+\textbf{Title} & Profile Page - Complete KYC Button Displayed \\ \hline
+\textbf{Requirement} & FR-004 \\ \hline
+\textbf{Preconditions} & User authenticated, KYC status = \texttt{pending}. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Navigate to \texttt{/profile}.
+  \item System checks KYC status is not verified.
+  \item Profile component renders action buttons.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & "Complete KYC" and "Refresh Status" buttons are visible. \\ \hline
+\textbf{Actual Result} & Passed - Action buttons displayed for pending status. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-018d}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-018d \\ \hline
+\textbf{Title} & Profile Page - Initiate KYC Verification \\ \hline
+\textbf{Requirement} & FR-004 \\ \hline
+\textbf{Preconditions} & User authenticated, KYC pending, production mode. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item User clicks "Complete KYC" button.
+  \item System calls \texttt{/api/kyc/verification} endpoint.
+  \item System receives Stripe verification URL.
+  \item System opens URL in new browser tab.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Stripe Identity verification opens in new tab; notification displayed. \\ \hline
+\textbf{Actual Result} & Passed - Verification URL opened correctly. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-018e}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-018e \\ \hline
+\textbf{Title} & Profile Page - Prototype KYC Force Pass \\ \hline
+\textbf{Requirement} & FR-004 (Prototype Mode) \\ \hline
+\textbf{Preconditions} & \texttt{Prototype = TRUE}, user authenticated, KYC pending. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item User clicks "Complete KYC" button.
+  \item System detects prototype mode.
+  \item System calls \texttt{/api/kyc/force-pass} endpoint.
+  \item System updates user session with verified status.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & KYC status immediately updated to \texttt{verified}; session updated. \\ \hline
+\textbf{Actual Result} & Passed - Force pass works correctly in prototype mode. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & Medium \\ \hline
+\end{tabularx}
+
+\subsection*{TC-018f}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-018f \\ \hline
+\textbf{Title} & Profile Page - Refresh KYC Status \\ \hline
+\textbf{Requirement} & FR-004 \\ \hline
+\textbf{Preconditions} & User authenticated, KYC pending. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item User clicks "Refresh Status" button.
+  \item System calls \texttt{/api/kyc/status} endpoint.
+  \item System receives updated status.
+  \item System updates UI and session with new status.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & KYC status refreshed; UI updated with current status. \\ \hline
+\textbf{Actual Result} & Passed - Status refresh works correctly. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-019a}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-019a \\ \hline
+\textbf{Title} & Profile Page - Upload Avatar Successfully \\ \hline
+\textbf{Requirement} & FR-008 (User Profile Management) \\ \hline
+\textbf{Preconditions} & User authenticated. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item User clicks "Change Avatar" button.
+  \item User selects valid image file (PNG, < 5MB).
+  \item System uploads file to storage.
+  \item System updates user profile with avatar URL.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Avatar uploaded; preview displayed; success notification shown. \\ \hline
+\textbf{Actual Result} & Passed - Avatar upload successful. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & Medium \\ \hline
+\end{tabularx}
+
+\subsection*{TC-019b}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-019b \\ \hline
+\textbf{Title} & Profile Page - Reject Large Avatar Files \\ \hline
+\textbf{Requirement} & FR-008, NFR-002 (Security) \\ \hline
+\textbf{Preconditions} & User authenticated. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item User clicks "Change Avatar" button.
+  \item User selects image file larger than 5MB.
+  \item System validates file size before upload.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Upload rejected; error message "Image must be smaller than 5MB" displayed. \\ \hline
+\textbf{Actual Result} & Passed - Large files rejected correctly. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & Medium \\ \hline
+\end{tabularx}
+
+\subsection*{TC-019c}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-019c \\ \hline
+\textbf{Title} & Profile Page - Handle Avatar Upload Error \\ \hline
+\textbf{Requirement} & FR-008 \\ \hline
+\textbf{Preconditions} & User authenticated; network/server error occurs. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item User selects valid image file.
+  \item System attempts upload to \texttt{/api/avatar/upload}.
+  \item Server returns error response.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & User-friendly error message displayed; no profile update. \\ \hline
+\textbf{Actual Result} & Passed - Error handled gracefully. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & Medium \\ \hline
+\end{tabularx}
+
+\subsection*{TC-019d}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-019d \\ \hline
+\textbf{Title} & Profile Page - Display Existing Avatar \\ \hline
+\textbf{Requirement} & FR-008 \\ \hline
+\textbf{Preconditions} & User authenticated; avatar URL exists in profile. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Navigate to \texttt{/profile}.
+  \item System retrieves user avatar URL from database.
+  \item Profile component renders avatar image.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & User's avatar displayed in profile header. \\ \hline
+\textbf{Actual Result} & Passed - Existing avatar displayed correctly. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & Low \\ \hline
+\end{tabularx}
 
 % ===================== 5. Code Repository and Branching Strategy =====================
 \section{Code Repository and Branching Strategy}
