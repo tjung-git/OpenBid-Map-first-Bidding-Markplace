@@ -10,7 +10,6 @@ import { db as realDb } from "../adapters/db.real.js";
 const router = Router();
 const auth = config.prototype ? mockAuth : realAuth;
 const db = config.prototype ? mockDb : realDb;
-// Use the factory function to create KYC with the appropriate database
 const kyc = config.prototype ? mockKyc : createRealKyc(db);
 
 router.post("/verification", async (req, res, next) => {
