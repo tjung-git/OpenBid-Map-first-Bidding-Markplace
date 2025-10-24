@@ -6,7 +6,6 @@ import "./styles/global.scss";
 import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
-import KycGate from "./pages/KycGate.jsx";
 import Profile from "./pages/Profile.jsx";
 import JobList from "./pages/JobList.jsx";
 import NewJob from "./pages/NewJob.jsx";
@@ -25,7 +24,6 @@ createRoot(document.getElementById("root")).render(
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route element={<ProtectedApp />}>
           <Route index element={<Navigate to="/jobs" replace />} />
-          <Route path="/kyc" element={<KycGate />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/jobs" element={<JobList />} />
           <Route path="/jobs/:jobId" element={<JobDetail />} />
