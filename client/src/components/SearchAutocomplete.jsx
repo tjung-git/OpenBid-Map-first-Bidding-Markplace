@@ -3,7 +3,6 @@ import { Loader } from '@googlemaps/js-api-loader';
 import PlacesAutocomplete, { geocodeByAddress, getLatLng } from 'react-places-autocomplete';
 import { cfg } from "../services/config";
 import { Column, FlexGrid, Row, Search } from '@carbon/react';
-import { Text } from '@carbon/react/lib/components/Text';
 import "../styles/components/search.css";
 
 export default function SearchAutocomplete({ onSelectPlace }){
@@ -69,7 +68,7 @@ const handleError = (_, clearSuggestions) => {
                     className='suggestion'
                     key={suggestion.description}
                   >
-                    <Text>{suggestion.description}</Text>
+                    <span>{suggestion.description}</span>
                   </Row>
                 );
               })}
