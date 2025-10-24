@@ -12,6 +12,7 @@ import { useSessionUser } from "../hooks/useSession";
 import MapView from "../components/MapView";
 import SearchAutocomplete from "../components/SearchAutocomplete";
 import "../styles/pages/jobs.css";
+import { cfg } from "../services/config";
 
 const sortBidsByCreated = (list) =>
   [...list].sort((a, b) => {
@@ -36,6 +37,7 @@ export default function JobDetail() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [acceptingBidId, setAcceptingBidId] = useState(null);
+  const [address, setAddress] = useState("Toronto, ON, Canada");
 
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
@@ -46,6 +48,15 @@ export default function JobDetail() {
   const toNumber = (value, fallback) => {
     const num = Number(value);
     return Number.isFinite(num) ? num : fallback;
+  };
+
+  const handlePlaceSelection = (placeData) => {
+    const {address, latLng} = placeData;
+    console.log(address);
+    console.log(latLng);
+    setAddress(address);
+    setEditLat(latLng.lat);
+    setEditLng(latLng.lng);
   };
 
   useEffect(() => {
@@ -87,6 +98,7 @@ export default function JobDetail() {
     setEditBudget(cleaned);
     setEditLat(job.location?.lat ?? 43.6532);
     setEditLng(job.location?.lng ?? -79.3832);
+    setAddress(job.location?.address ?? "Toronto, ON, Canada");
   }, [job]);
 
   const isContractor = user?.userType === "contractor";
@@ -163,6 +175,7 @@ export default function JobDetail() {
           ...(job?.location || {}),
           lat: editLat,
           lng: editLng,
+          address: address
         },
       };
       const result = await api.jobUpdate(jobId, payload);
@@ -315,26 +328,28 @@ export default function JobDetail() {
               placeholder="Enter budget"
               disabled={jobLocked}
             />
-            <div className="job-form-grid">
-              <NumberInput
-                id="job-lat"
-                label="Latitude"
-                value={editLat}
-                disabled={jobLocked}
-                onChange={(_, { value }) =>
-                  setEditLat(toNumber(value))
-                }
-              />
-              <NumberInput
-                id="job-lng"
-                label="Longitude"
-                value={editLng}
-                disabled={jobLocked}
-                onChange={(_, { value }) =>
-                  setEditLng(toNumber(value))
-                }
-              />
-            </div>
+            {cfg.prototype ? 
+              <div className="job-form-grid">
+                <NumberInput
+                  key={`lat-${editLat}`}
+                  id="lat"
+                  label="Latitude"
+                  value={editLat}
+                  onChange={(_, { value }) => setEditLat(Number(value))}
+                />
+                <NumberInput
+                  key={`lng-${editLng}`}
+                  id="lng"
+                  label="Longitude"
+                  value={editLng}
+                  onChange={(_, { value }) => setEditLng(Number(value))}
+                />
+                </div> :
+                <div className="job-location-search-container">
+                  <SearchAutocomplete onSelectPlace={handlePlaceSelection}/>
+                <div>Selected location: {address}</div>
+              </div>
+            }
             <div className="job-detail-actions">
               <Button type="submit" disabled={saving || jobLocked}>
                 {saving ? "Updating…" : "Update Job"}
