@@ -165,29 +165,6 @@ describe('Profile - KYC Integration', () => {
       windowOpenSpy.mockRestore();
     });
 
-    it('uses force pass in prototype mode', async () => {
-      config.cfg = { prototype: true };
-      api.api.kycVerification.mockResolvedValue({ url: 'https://stripe.com/verify' });
-      api.api.kycForcePass.mockResolvedValue({});
-      const user = userEvent.setup();
-      
-      render(<Profile />);
-      
-      await waitFor(() => {
-        expect(screen.getByText('Complete KYC')).toBeInTheDocument();
-      });
-      
-      await user.click(screen.getByText('Complete KYC'));
-      
-      await waitFor(() => {
-        expect(api.api.kycForcePass).toHaveBeenCalled();
-        expect(session.setUser).toHaveBeenCalledWith(
-          expect.objectContaining({ kycStatus: 'verified' }),
-          expect.objectContaining({ kycVerified: true })
-        );
-      });
-    });
-
     it('handles verification error gracefully', async () => {
       api.api.kycVerification.mockRejectedValue(new Error('Network error'));
       const user = userEvent.setup();

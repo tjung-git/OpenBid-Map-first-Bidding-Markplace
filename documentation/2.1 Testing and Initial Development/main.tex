@@ -263,138 +263,40 @@ For brevity we include the highest-priority cases now; the full catalog will liv
 \textbf{Priority} & High \\ \hline
 \end{tabularx}
 
-\subsection*{TC-010a}
-\begin{tabularx}{\linewidth}{|l|L|}
-\hline
-\textbf{Test Case ID} & TC-010a \\ \hline
-\textbf{Title} & Mock KYC Verification \\ \hline
-\textbf{Requirement} & FR-004 \\ \hline
-\textbf{Preconditions} & \texttt{Prototype = TRUE} enabled, and user authenticated. \\ \hline
-\textbf{Steps} & 
-\begin{minipage}[t]{\linewidth}
-\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item Send POST request to \texttt{/api/kyc/verification} with mock auth header.
-  \item System returns mock verification URL instead of calling Stripe.
-\end{enumerate}
-\end{minipage} \\ \hline
-\textbf{Expected Result} & Returns mock KYC URL (https://mock-kyc.local/session/*) and mock session ID. \\ \hline
-\textbf{Actual Result} & Passed - Returns mock URL without Stripe API call. \\ \hline
-\textbf{Status} & \textcolor{green}{Passed} \\ \hline
-\textbf{Priority} & Medium \\ \hline
-\end{tabularx}
-
-\subsection*{TC-010b}
-\begin{tabularx}{\linewidth}{|l|L|}
-\hline
-\textbf{Test Case ID} & TC-010b \\ \hline
-\textbf{Title} & Mock KYC Verification - Unauthorized \\ \hline
-\textbf{Requirement} & FR-004, NFR-002 \\ \hline
-\textbf{Preconditions} & \texttt{Prototype = TRUE} enabled, no authentication. \\ \hline
-\textbf{Steps} & 
-\begin{minipage}[t]{\linewidth}
-\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item Send POST request to \texttt{/api/kyc/verification} without mock auth header (x-mock-uid).
-\end{enumerate}
-\end{minipage} \\ \hline
-\textbf{Expected Result} & Returns 401 Unauthorized. \\ \hline
-\textbf{Actual Result} & Passed - Returns 401 error. \\ \hline
-\textbf{Status} & \textcolor{green}{Passed} \\ \hline
-\textbf{Priority} & Medium \\ \hline
-\end{tabularx}
-
-\subsection*{TC-011a}
-\begin{tabularx}{\linewidth}{|l|L|}
-\hline
-\textbf{Test Case ID} & TC-011a \\ \hline
-\textbf{Title} & Mock KYC Status Check \\ \hline
-\textbf{Requirement} & FR-004 \\ \hline
-\textbf{Preconditions} & \texttt{Prototype = TRUE} enabled, and user authenticated with mock auth header. \\ \hline
-\textbf{Steps} & 
-\begin{minipage}[t]{\linewidth}
-\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item Send GET request to \texttt{/api/kyc/status} with mock auth header (x-mock-uid).
-  \item System retrieves KYC status from mock database without calling Stripe.
-\end{enumerate}
-\end{minipage} \\ \hline
-\textbf{Expected Result} & Returns KYC status (\texttt{verified} or \texttt{pending}) from mock database. \\ \hline
-\textbf{Actual Result} & Passed - Returns status without external API calls. \\ \hline
-\textbf{Status} & \textcolor{green}{Passed} \\ \hline
-\textbf{Priority} & Medium \\ \hline
-\end{tabularx}
-
-\subsection*{TC-011b}
-\begin{tabularx}{\linewidth}{|l|L|}
-\hline
-\textbf{Test Case ID} & TC-011b \\ \hline
-\textbf{Title} & Mock KYC Status Check - Unauthorized \\ \hline
-\textbf{Requirement} & FR-004, NFR-002 \\ \hline
-\textbf{Preconditions} & \texttt{Prototype = TRUE} enabled, no authentication. \\ \hline
-\textbf{Steps} & 
-\begin{minipage}[t]{\linewidth}
-\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item Send GET request to \texttt{/api/kyc/status} without mock auth header.
-\end{enumerate}
-\end{minipage} \\ \hline
-\textbf{Expected Result} & Returns 401 Unauthorized. \\ \hline
-\textbf{Actual Result} & Passed - Returns 401 error. \\ \hline
-\textbf{Status} & \textcolor{green}{Passed} \\ \hline
-\textbf{Priority} & Medium \\ \hline
-\end{tabularx}
-
-\subsection*{TC-012}
-\begin{tabularx}{\linewidth}{|l|L|}
-\hline
-\textbf{Test Case ID} & TC-012 \\ \hline
-\textbf{Title} & Mock KYC Force Pass \\ \hline
-\textbf{Requirement} & FR-004 (Prototype Mode) \\ \hline
-\textbf{Preconditions} & \texttt{Prototype = TRUE} enabled, and user authenticated. \\ \hline
-\textbf{Steps} & 
-\begin{minipage}[t]{\linewidth}
-\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item Send POST request to \texttt{/api/kyc/force-pass}.
-  \item System immediately marks user as KYC verified without Stripe.
-\end{enumerate}
-\end{minipage} \\ \hline
-\textbf{Expected Result} & User KYC status updated to \texttt{verified}, returns success. \\ \hline
-\textbf{Actual Result} & Passed - KYC status updated in mock database. \\ \hline
-\textbf{Status} & \textcolor{green}{Passed} \\ \hline
-\textbf{Priority} & Low \\ \hline
-\end{tabularx}
-
-\subsection*{TC-013}
+\subsection*{TC-010}
 \textbf{Title:} Messaging After Acceptance \\
 \textbf{Requirement:} FR-006 \\
 \textbf{Expected Result:} Parties can exchange messages in job thread; messages persist in Firestore. \\
 \textbf{Status:} Planned \quad \textbf{Priority:} Medium
 
-\subsection*{TC-014}
+\subsection*{TC-011}
 \textbf{Title:} Submit Review on Completion \\
 \textbf{Requirement:} FR-007 \\
 \textbf{Expected Result:} Review saved and visible on profile; duplicate review blocked. \\
 \textbf{Status:} Planned \quad \textbf{Priority:} Medium
 
-\subsection*{TC-015}
+\subsection*{TC-012}
 \textbf{Title:} Performance P95 - Map Query \\
 \textbf{Requirement:} NFR-001 \\
 \textbf{Expected Result:} P95 end-to-end from filter change to results render \(\leq 800\,\)ms on stub dataset. \\
 \textbf{Status:} Planned \quad \textbf{Priority:} Low
 
-\subsection*{TC-016}
+\subsection*{TC-013}
 \textbf{Title:} Ruleset Audit - No Write Without Claims \\
 \textbf{Requirement:} NFR-002 \\
 \textbf{Expected Result:} Firestore rules reject writes missing \texttt{kycVerified == true}. \\
 \textbf{Status:} Pending \quad \textbf{Priority:} High
 
-\subsection*{TC-017}
+\subsection*{TC-014}
 \textbf{Title:} Accessibility - Keyboard Nav on Map/List \\
 \textbf{Requirement:} NFR-003 \\
 \textbf{Expected Result:} Tabbing reaches filters, list items, and primary actions; visible focus outlines present. \\
 \textbf{Status:} Planned \quad \textbf{Priority:} Low
 
-\subsection*{TC-018a}
+\subsection*{TC-015a}
 \begin{tabularx}{\linewidth}{|l|L|}
 \hline
-\textbf{Test Case ID} & TC-018a \\ \hline
+\textbf{Test Case ID} & TC-015a \\ \hline
 \textbf{Title} & Profile Page - Display KYC Pending Status \\ \hline
 \textbf{Requirement} & FR-004 \\ \hline
 \textbf{Preconditions} & User authenticated, KYC status = \texttt{pending}. \\ \hline
@@ -412,10 +314,10 @@ For brevity we include the highest-priority cases now; the full catalog will liv
 \textbf{Priority} & High \\ \hline
 \end{tabularx}
 
-\subsection*{TC-018b}
+\subsection*{TC-015b}
 \begin{tabularx}{\linewidth}{|l|L|}
 \hline
-\textbf{Test Case ID} & TC-018b \\ \hline
+\textbf{Test Case ID} & TC-015b \\ \hline
 \textbf{Title} & Profile Page - Display KYC Verified Status \\ \hline
 \textbf{Requirement} & FR-004 \\ \hline
 \textbf{Preconditions} & User authenticated, KYC status = \texttt{verified}. \\ \hline
@@ -432,10 +334,10 @@ For brevity we include the highest-priority cases now; the full catalog will liv
 \textbf{Priority} & High \\ \hline
 \end{tabularx}
 
-\subsection*{TC-018c}
+\subsection*{TC-015c}
 \begin{tabularx}{\linewidth}{|l|L|}
 \hline
-\textbf{Test Case ID} & TC-018c \\ \hline
+\textbf{Test Case ID} & TC-015c \\ \hline
 \textbf{Title} & Profile Page - Complete KYC Button Displayed \\ \hline
 \textbf{Requirement} & FR-004 \\ \hline
 \textbf{Preconditions} & User authenticated, KYC status = \texttt{pending}. \\ \hline
@@ -453,10 +355,10 @@ For brevity we include the highest-priority cases now; the full catalog will liv
 \textbf{Priority} & High \\ \hline
 \end{tabularx}
 
-\subsection*{TC-018d}
+\subsection*{TC-015d}
 \begin{tabularx}{\linewidth}{|l|L|}
 \hline
-\textbf{Test Case ID} & TC-018d \\ \hline
+\textbf{Test Case ID} & TC-015d \\ \hline
 \textbf{Title} & Profile Page - Initiate KYC Verification \\ \hline
 \textbf{Requirement} & FR-004 \\ \hline
 \textbf{Preconditions} & User authenticated, KYC pending, production mode. \\ \hline
@@ -475,32 +377,10 @@ For brevity we include the highest-priority cases now; the full catalog will liv
 \textbf{Priority} & High \\ \hline
 \end{tabularx}
 
-\subsection*{TC-018e}
+\subsection*{TC-015e}
 \begin{tabularx}{\linewidth}{|l|L|}
 \hline
-\textbf{Test Case ID} & TC-018e \\ \hline
-\textbf{Title} & Profile Page - Prototype KYC Force Pass \\ \hline
-\textbf{Requirement} & FR-004 (Prototype Mode) \\ \hline
-\textbf{Preconditions} & \texttt{Prototype = TRUE}, user authenticated, KYC pending. \\ \hline
-\textbf{Steps} & 
-\begin{minipage}[t]{\linewidth}
-\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item User clicks "Complete KYC" button.
-  \item System detects prototype mode.
-  \item System calls \texttt{/api/kyc/force-pass} endpoint.
-  \item System updates user session with verified status.
-\end{enumerate}
-\end{minipage} \\ \hline
-\textbf{Expected Result} & KYC status immediately updated to \texttt{verified}; session updated. \\ \hline
-\textbf{Actual Result} & Passed - Force pass works correctly in prototype mode. \\ \hline
-\textbf{Status} & \textcolor{green}{Passed} \\ \hline
-\textbf{Priority} & Medium \\ \hline
-\end{tabularx}
-
-\subsection*{TC-018f}
-\begin{tabularx}{\linewidth}{|l|L|}
-\hline
-\textbf{Test Case ID} & TC-018f \\ \hline
+\textbf{Test Case ID} & TC-015e \\ \hline
 \textbf{Title} & Profile Page - Refresh KYC Status \\ \hline
 \textbf{Requirement} & FR-004 \\ \hline
 \textbf{Preconditions} & User authenticated, KYC pending. \\ \hline
@@ -519,10 +399,10 @@ For brevity we include the highest-priority cases now; the full catalog will liv
 \textbf{Priority} & High \\ \hline
 \end{tabularx}
 
-\subsection*{TC-019a}
+\subsection*{TC-016a}
 \begin{tabularx}{\linewidth}{|l|L|}
 \hline
-\textbf{Test Case ID} & TC-019a \\ \hline
+\textbf{Test Case ID} & TC-016a\\ \hline
 \textbf{Title} & Profile Page - Upload Avatar Successfully \\ \hline
 \textbf{Requirement} & FR-008 (User Profile Management) \\ \hline
 \textbf{Preconditions} & User authenticated. \\ \hline
@@ -541,10 +421,10 @@ For brevity we include the highest-priority cases now; the full catalog will liv
 \textbf{Priority} & Medium \\ \hline
 \end{tabularx}
 
-\subsection*{TC-019b}
+\subsection*{TC-016b}
 \begin{tabularx}{\linewidth}{|l|L|}
 \hline
-\textbf{Test Case ID} & TC-019b \\ \hline
+\textbf{Test Case ID} & TC-016b \\ \hline
 \textbf{Title} & Profile Page - Reject Large Avatar Files \\ \hline
 \textbf{Requirement} & FR-008, NFR-002 (Security) \\ \hline
 \textbf{Preconditions} & User authenticated. \\ \hline
@@ -562,10 +442,10 @@ For brevity we include the highest-priority cases now; the full catalog will liv
 \textbf{Priority} & Medium \\ \hline
 \end{tabularx}
 
-\subsection*{TC-019c}
+\subsection*{TC-016c}
 \begin{tabularx}{\linewidth}{|l|L|}
 \hline
-\textbf{Test Case ID} & TC-019c \\ \hline
+\textbf{Test Case ID} & TC-016c \\ \hline
 \textbf{Title} & Profile Page - Handle Avatar Upload Error \\ \hline
 \textbf{Requirement} & FR-008 \\ \hline
 \textbf{Preconditions} & User authenticated; network/server error occurs. \\ \hline
@@ -583,10 +463,10 @@ For brevity we include the highest-priority cases now; the full catalog will liv
 \textbf{Priority} & Medium \\ \hline
 \end{tabularx}
 
-\subsection*{TC-019d}
+\subsection*{TC-016d}
 \begin{tabularx}{\linewidth}{|l|L|}
 \hline
-\textbf{Test Case ID} & TC-019d \\ \hline
+\textbf{Test Case ID} & TC-016d \\ \hline
 \textbf{Title} & Profile Page - Display Existing Avatar \\ \hline
 \textbf{Requirement} & FR-008 \\ \hline
 \textbf{Preconditions} & User authenticated; avatar URL exists in profile. \\ \hline
