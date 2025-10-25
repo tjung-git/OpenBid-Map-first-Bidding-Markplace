@@ -69,7 +69,6 @@ export default function Profile() {
   }
 
   const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
-  const userType = user.userType ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1) : "User";
   const kycStatus = user.kycStatus || "pending"; // "verified", "pending", or "failed"
   const emailVerified = requirements.emailVerified;
 
@@ -199,7 +198,6 @@ export default function Profile() {
         <div className="profile-info">
           <h2>{displayName}</h2>
           <p className="profile-email">{user.email}</p>
-          <Tag type="blue">{userType}</Tag>
         </div>
       </div>
 
@@ -265,14 +263,6 @@ export default function Profile() {
           <div className="info-item">
             <span className="info-label">Last Name</span>
             <span className="info-value">{user.lastName || "—"}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">User ID</span>
-            <span className="info-value info-value-mono">{user.uid}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Account Type</span>
-            <span className="info-value">{userType}</span>
           </div>
         </div>
       </div>
