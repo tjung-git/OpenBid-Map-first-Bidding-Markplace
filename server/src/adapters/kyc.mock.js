@@ -1,10 +1,13 @@
 const kycStatus = new Map(); // uid -> 'pending'|'verified'|'failed'
 
 export const kyc = {
-  async start(uid) {
+  async verification(uid) {
+    const sessionId = `mock_session_${uid}_${Date.now()}`;
     kycStatus.set(uid, "pending");
-    // return a pretend URL the client would "visit"
-    return { url: `https://mock-kyc.local/session/${uid}` };
+    return {
+      url: `https://mock-kyc.local/session/${sessionId}`,
+      sessionId: sessionId
+    };
   },
   async status(uid) {
     return { status: kycStatus.get(uid) || "pending" };
