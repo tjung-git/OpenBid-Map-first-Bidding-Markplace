@@ -12,6 +12,10 @@ import {
   sendVerificationEmail,
   signUpWithEmailPassword,
 } from "../lib/firebaseIdentity.js";
+
+import crypto from "crypto";
+import { putWithTTL } from "../lib/duoState.js";
+
 const router = Router();
 const auth = config.prototype ? mockAuth : realAuth;
 const db = config.prototype ? mockDb : realDb;
@@ -42,14 +46,8 @@ router.post("/signup", async (req, res, next) => {
     if (!firstName || !lastName) {
       return res.status(400).json({ error: "firstName and lastName required" });
     }
-
-    if (!email) {
-      return res.status(400).json({ error: "email required" });
-    }
-
-    if (!password) {
-      return res.status(400).json({ error: "password required" });
-    }
+    if (!email) return res.status(400).json({ error: "email required" });
+    if (!password) return res.status(400).json({ error: "password required" });
 
     if (!validatePasswordStrength(password)) {
       return res
@@ -82,8 +80,10 @@ router.post("/signup", async (req, res, next) => {
 
     if (!config.prototype) {
       try {
-        // Use Firebase Identity Toolkit so Firebase sends its own verification email.
-        createdAccount = await signUpWithEmailPassword(normalizedEmail, password);
+        createdAccount = await signUpWithEmailPassword(
+          normalizedEmail,
+          password
+        );
         uid = createdAccount.uid;
         firebaseIdToken = createdAccount.idToken;
         await sendVerificationEmail(createdAccount.idToken);
@@ -93,9 +93,7 @@ router.post("/signup", async (req, res, next) => {
         }
         if (error instanceof FirebaseIdentityError) {
           if (error.message === "EMAIL_EXISTS") {
-            return res
-              .status(409)
-              .json({ error: "email already registered" });
+            return res.status(409).json({ error: "email already registered" });
           }
           console.error("[auth] Firebase identity error:", error.message);
           return res.status(500).json({ error: "firebase_identity_error" });
@@ -141,9 +139,7 @@ router.post("/login", async (req, res, next) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ error: "email and password are required" });
+      return res.status(400).json({ error: "email and password are required" });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -154,10 +150,12 @@ router.post("/login", async (req, res, next) => {
 
     let passwordOk = await verifyPassword(password, user.passwordHash);
     let firebaseSession = null;
+
     if (!passwordOk && !config.prototype) {
       try {
         firebaseSession = await auth.signIn(user.email, password);
         passwordOk = true;
+
         const nowIso = new Date().toISOString();
         const newHash = await hashPassword(password);
         const updatedUser = await db.user.update(user.uid, {
@@ -194,15 +192,12 @@ router.post("/login", async (req, res, next) => {
       return res.status(401).json({ error: "invalid credentials" });
     }
 
+    // Pull latest verification from Firebase if using real backends
     if (!config.prototype) {
       try {
-        // Pull latest verification state from Firebase Auth so Firestore stays in sync.
         const firebaseAuth = getAuthClient();
         const authUser = await firebaseAuth.getUser(user.uid);
-        if (
-          authUser?.emailVerified &&
-          user.emailVerification !== "verified"
-        ) {
+        if (authUser?.emailVerified && user.emailVerification !== "verified") {
           await db.user.update(user.uid, {
             emailVerification: "verified",
             updatedAt: new Date().toISOString(),
@@ -276,16 +271,35 @@ router.post("/login", async (req, res, next) => {
     }
 
     const requirements = {
-      // Let callers know why access might be blocked without exposing internals.
       emailVerified: user.emailVerification === "verified",
       kycVerified: isKycVerified(user.kycStatus),
     };
 
-    res.json({
+    const sessionPayload = {
       user: sanitizeUser(user),
       session,
       prototype: config.prototype,
       requirements,
+    };
+
+    const state = crypto.randomBytes(16).toString("hex");
+
+    putWithTTL(
+      state,
+      {
+        uid: user.uid,
+        email: user.email,
+        sessionPayload,
+      },
+      5 * 60 * 1000
+    );
+
+    return res.status(202).json({
+      mfa: {
+        provider: "duo",
+        required: true,
+        startUrl: `/api/auth/duo/start?state=${state}`,
+      },
     });
   } catch (error) {
     next(error);
@@ -331,11 +345,10 @@ router.patch("/role", async (req, res, next) => {
     }
 
     const nowIso = new Date().toISOString();
-    const updated =
-      (await db.user.update(user.uid, {
-        userType: requestedRole,
-        updatedAt: nowIso,
-      })) || { ...user, userType: requestedRole, updatedAt: nowIso };
+    const updated = (await db.user.update(user.uid, {
+      userType: requestedRole,
+      updatedAt: nowIso,
+    })) || { ...user, userType: requestedRole, updatedAt: nowIso };
 
     res.json({
       user: sanitizeUser(updated),
