@@ -184,9 +184,9 @@ export default function BidDetail() {
       return;
     }
     if (!kycVerified) {
-      nav("/kyc", {
-        replace: true,
-        state: { notice: "Complete KYC before bidding on jobs." },
+      nav("/profile", {
+      replace: true,
+      state: { notice: "Complete KYC verification in your profile to bid on jobs." },
       });
       return;
     }

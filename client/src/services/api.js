@@ -77,8 +77,8 @@ export const api = {
     const r = await fetch(`${base}/api/auth/me`, { headers: headers() });
     return r.ok ? r.json() : null;
   },
-  async kycStart() {
-    const r = await fetch(`${base}/api/kyc/start`, {
+  async kycVerification() {
+    const r = await fetch(`${base}/api/kyc/verification`, {
       method: "POST",
       headers: headers(),
     });
@@ -171,6 +171,32 @@ export const api = {
       headers: headers(),
       body: JSON.stringify(payload),
     });
+    return r.json();
+  },
+  async uploadAvatar(file) {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const session = getSession();
+    const authToken = session?.session?.token || session?.session?.idToken;
+    const h = {};
+    if (authToken) {
+      h.Authorization = `Bearer ${authToken}`;
+    }
+    if (session?.user?.uid) {
+      h["x-user-id"] = session.user.uid;
+    }
+    if (cfg.prototype && session?.user?.uid) {
+      h["x-mock-uid"] = session.user.uid;
+    }
+    const r = await fetch(`${base}/api/upload/avatar`, {
+      method: "POST",
+      headers: h,
+      body: formData,
+    });
+    if (!r.ok) {
+      const data = await r.json().catch(() => ({}));
+      throw { status: r.status, data };
+    }
     return r.json();
   },
 };

@@ -1,6 +1,13 @@
 // in-memory store
 const state = {
-  users: new Map(), // key: uid -> user { uid, email, name, kycStatus }
+  users: new Map([
+    ['u_testexamplec', { 
+      uid: 'u_testexamplec', 
+      email: 'test@example.com', 
+      kycStatus: 'pending',
+      kycSessionId: null
+    }]
+  ]), // key: uid -> user { uid, email, name, kycStatus, kycSessionId }
   jobs: new Map(), // jobId -> job
   bids: new Map(), // bidId -> bid
 };

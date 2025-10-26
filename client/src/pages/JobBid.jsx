@@ -343,9 +343,9 @@ export default function JobBid() {
     }
     if (!kycVerified) {
       setError("Complete KYC before bidding on jobs.");
-      nav("/kyc", {
-        replace: true,
-        state: { notice: "Complete KYC before bidding on jobs." },
+      nav("/profile", {
+      replace: true,
+      state: { notice: "Complete KYC verification in your profile to bid on jobs." },
       });
       return;
     }
