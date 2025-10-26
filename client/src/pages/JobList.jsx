@@ -91,8 +91,8 @@ export default function JobList() {
 
   function handlePostClick() {
     if (!requirements.kycVerified) {
-      nav("/kyc", {
-        state: { notice: "Complete KYC before posting jobs." },
+      nav("/profile", {
+        state: { notice: "Complete KYC verification in your profile to post jobs." },
       });
       return;
     }
@@ -211,7 +211,7 @@ export default function JobList() {
       {isContractor && !kycVerified && (
         <InlineNotification
           title="KYC Required"
-          subtitle="Complete KYC to post or edit your jobs. You can still view the jobs you have created."
+          subtitle="Complete KYC verification in your profile to post jobs."
           kind="info"
           lowContrast
         />
@@ -220,7 +220,7 @@ export default function JobList() {
       {isContractor && (
         <div className="job-list-actions">
           <Button onClick={handlePostClick}>
-            {kycVerified ? "Post a Job" : "Complete KYC"}
+            {kycVerified ? "Post a Job" : "Go to Profile"}
           </Button>
         </div>
       )}

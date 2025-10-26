@@ -63,9 +63,9 @@ export default function NewJob() {
       return;
     }
     if (!requirements.kycVerified) {
-      nav("/kyc", {
+      nav("/profile", {
         state: {
-          notice: "Complete KYC before posting jobs.",
+          notice: "Complete KYC verification in your profile to post jobs.",
         },
       });
       return;

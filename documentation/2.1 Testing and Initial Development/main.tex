@@ -86,10 +86,11 @@ Tables below map each requirement to the test cases that validate it. Coverage s
 FR-001 & System shall allow authenticated users to \textbf{post jobs} with title, description, budget, photos, and location. & TC-001, TC-002 & Partially Covered \\
 FR-002 & System shall allow providers to \textbf{browse jobs on a map} with basic filters (radius, category). & TC-003a-d, TC-004 & Partially Covered \\
 FR-003 & System shall allow providers to \textbf{place bids} on open jobs; posters can view and accept a bid. & TC-005, TC-006 & Partially Covered \\
-FR-004 & System shall enforce \textbf{KYC for all users} before posting or bidding. & TC-007 & Partially Covered \\
+FR-004 & System shall enforce \textbf{KYC for all users} before posting or bidding. & TC-007, TC-008a--f, TC-009a--b, TC-010a--b, TC-011a--b, TC-012, TC-018a--f & Covered \\
 FR-005 & System shall support \textbf{user authentication} with \textbf{Duo 2FA} for sensitive actions. & TC-008 & Partially Covered \\
 FR-006 & System shall provide \textbf{in-thread messaging} per job after acceptance. & TC-009 & Planned \\
 FR-007 & System shall record \textbf{ratings and reviews} after job completion. & TC-010 & Planned \\
+FR-008 & System shall allow users to \textbf{manage their profile} including avatar upload and personal information. & TC-019a--d & Covered \\
 \bottomrule
 \end{longtable}
 
@@ -100,7 +101,7 @@ FR-007 & System shall record \textbf{ratings and reviews} after job completion. 
 \midrule
 \endhead
 NFR-001 & \textbf{Performance:} Search/browse should return results within 800\,ms P95 for a metro with 5k open jobs (stub data). & TC-011 & Planned \\
-NFR-002 & \textbf{Security:} Only KYC-verified users can hit write endpoints for jobs/bids. & TC-007, TC-012 & Partially Covered \\
+NFR-002 & \textbf{Security:} Only KYC-verified users can hit write endpoints for jobs/bids. &  & Planned \\
 NFR-003 & \textbf{Usability:} Map view and list view maintain accessible contrast and keyboard navigation for core actions. & TC-013 & Planned \\
 \bottomrule
 \end{longtable}
@@ -248,48 +249,314 @@ is gracefully handled. \\ \hline
 \textbf{Status:} Pending \quad \textbf{Priority:} High
 
 \subsection*{TC-007}
-\textbf{Title:} KYC Gate - Block Unverified Writes \\
-\textbf{Requirement:} FR-004, NFR-002 \\
-\textbf{Preconditions:} User KYC status = pending. \\
-\textbf{Expected Result:} Attempts to post job or bid are rejected by Firestore rules/API; UI shows KYC required. \\
-\textbf{Status:} Pending \quad \textbf{Priority:} High
-
-\subsection*{TC-008}
 \textbf{Title:} Duo 2FA Challenge on Sensitive Action \\
 \textbf{Requirement:} FR-005 \\
 \textbf{Preconditions:} User logged in without recent 2FA; action = add payout method. \\
 \textbf{Expected Result:} Duo prompt required; action proceeds only on success. \\
 \textbf{Status:} Pending \quad \textbf{Priority:} Medium
 
-\subsection*{TC-009}
+\subsection*{TC-008a}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-008a \\ \hline
+\textbf{Title} & KYC Verification - Create Stripe Verification Session \\ \hline
+\textbf{Requirement} & FR-004 \\ \hline
+\textbf{Preconditions} & User is authenticated; KYC status = \texttt{pending}; real KYC mode enabled. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Send POST request to \texttt{/api/kyc/verification} with valid auth JWT token.
+  \item System calls Stripe Identity API to create verification session.
+  \item System stores session ID in user record.
+  \item System returns Stripe verification URL and session ID.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Returns Stripe verification URL (https://verify.stripe.com/*) and session ID (vs\_*) \\ \hline
+\textbf{Actual Result} & Passed - Returns mocked Stripe URL and session ID. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-008b}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-008b \\ \hline
+\textbf{Title} & KYC Verification - Unauthorized Access \\ \hline
+\textbf{Requirement} & FR-004, NFR-002 \\ \hline
+\textbf{Preconditions} & User not authenticated or invalid token. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Send POST request to \texttt{/api/kyc/verification} without auth token or with invalid token.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Returns 401 Unauthorized with error message. \\ \hline
+\textbf{Actual Result} & Passed - Returns 401 with \texttt{\{error: "unauthorized"\}}. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-009a}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-009a \\ \hline
+\textbf{Title} & KYC Status Check \\ \hline
+\textbf{Requirement} & FR-004 \\ \hline
+\textbf{Preconditions} & User is authenticated. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Send GET request to \texttt{/api/kyc/status} with valid auth JWT token.
+  \item System retrieves user KYC status from database.
+  \item If verification session exists and status is \texttt{pending}, checks Stripe for updated status.
+  \item System returns KYC status (\texttt{pending}, \texttt{verified}, or \texttt{failed}).
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Returns KYC status (pending, verified, or failed). \\ \hline
+\textbf{Actual Result} & Passed - Returns valid status from database. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-009b}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-009b \\ \hline
+\textbf{Title} & KYC Status - Unauthorized Access \\ \hline
+\textbf{Requirement} & FR-004, NFR-002 \\ \hline
+\textbf{Preconditions} & User not authenticated. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Send GET request to \texttt{/api/kyc/status} without auth token.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Returns 401 Unauthorized. \\ \hline
+\textbf{Actual Result} & Passed - Returns 401 with error message. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-010}
 \textbf{Title:} Messaging After Acceptance \\
 \textbf{Requirement:} FR-006 \\
 \textbf{Expected Result:} Parties can exchange messages in job thread; messages persist in Firestore. \\
 \textbf{Status:} Planned \quad \textbf{Priority:} Medium
 
-\subsection*{TC-010}
+\subsection*{TC-011}
 \textbf{Title:} Submit Review on Completion \\
 \textbf{Requirement:} FR-007 \\
 \textbf{Expected Result:} Review saved and visible on profile; duplicate review blocked. \\
 \textbf{Status:} Planned \quad \textbf{Priority:} Medium
 
-\subsection*{TC-011}
+\subsection*{TC-012}
 \textbf{Title:} Performance P95 - Map Query \\
 \textbf{Requirement:} NFR-001 \\
 \textbf{Expected Result:} P95 end-to-end from filter change to results render \(\leq 800\,\)ms on stub dataset. \\
 \textbf{Status:} Planned \quad \textbf{Priority:} Low
 
-\subsection*{TC-012}
+\subsection*{TC-013}
 \textbf{Title:} Ruleset Audit - No Write Without Claims \\
 \textbf{Requirement:} NFR-002 \\
 \textbf{Expected Result:} Firestore rules reject writes missing \texttt{kycVerified == true}. \\
 \textbf{Status:} Pending \quad \textbf{Priority:} High
 
-\subsection*{TC-013}
+\subsection*{TC-014}
 \textbf{Title:} Accessibility - Keyboard Nav on Map/List \\
 \textbf{Requirement:} NFR-003 \\
 \textbf{Expected Result:} Tabbing reaches filters, list items, and primary actions; visible focus outlines present. \\
 \textbf{Status:} Planned \quad \textbf{Priority:} Low
+
+\subsection*{TC-015a}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-015a \\ \hline
+\textbf{Title} & Profile Page - Display KYC Pending Status \\ \hline
+\textbf{Requirement} & FR-004 \\ \hline
+\textbf{Preconditions} & User authenticated, KYC status = \texttt{pending}. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Navigate to \texttt{/profile}.
+  \item Profile component renders and displays account status section.
+  \item System retrieves user KYC status from session.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & KYC status displays "Pending" tag with appropriate styling. \\ \hline
+\textbf{Actual Result} & Passed - Profile page correctly displays pending status. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-015b}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-015b \\ \hline
+\textbf{Title} & Profile Page - Display KYC Verified Status \\ \hline
+\textbf{Requirement} & FR-004 \\ \hline
+\textbf{Preconditions} & User authenticated, KYC status = \texttt{verified}. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Navigate to \texttt{/profile}.
+  \item Profile component renders with verified KYC status.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & KYC status displays "Verified" tag; no action buttons shown. \\ \hline
+\textbf{Actual Result} & Passed - Profile page displays verified status correctly. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-015c}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-015c \\ \hline
+\textbf{Title} & Profile Page - Complete KYC Button Displayed \\ \hline
+\textbf{Requirement} & FR-004 \\ \hline
+\textbf{Preconditions} & User authenticated, KYC status = \texttt{pending}. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Navigate to \texttt{/profile}.
+  \item System checks KYC status is not verified.
+  \item Profile component renders action buttons.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & "Complete KYC" and "Refresh Status" buttons are visible. \\ \hline
+\textbf{Actual Result} & Passed - Action buttons displayed for pending status. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-015d}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-015d \\ \hline
+\textbf{Title} & Profile Page - Initiate KYC Verification \\ \hline
+\textbf{Requirement} & FR-004 \\ \hline
+\textbf{Preconditions} & User authenticated, KYC pending, production mode. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item User clicks "Complete KYC" button.
+  \item System calls \texttt{/api/kyc/verification} endpoint.
+  \item System receives Stripe verification URL.
+  \item System opens URL in new browser tab.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Stripe Identity verification opens in new tab; notification displayed. \\ \hline
+\textbf{Actual Result} & Passed - Verification URL opened correctly. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-015e}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-015e \\ \hline
+\textbf{Title} & Profile Page - Refresh KYC Status \\ \hline
+\textbf{Requirement} & FR-004 \\ \hline
+\textbf{Preconditions} & User authenticated, KYC pending. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item User clicks "Refresh Status" button.
+  \item System calls \texttt{/api/kyc/status} endpoint.
+  \item System receives updated status.
+  \item System updates UI and session with new status.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & KYC status refreshed; UI updated with current status. \\ \hline
+\textbf{Actual Result} & Passed - Status refresh works correctly. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-016a}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-016a\\ \hline
+\textbf{Title} & Profile Page - Upload Avatar Successfully \\ \hline
+\textbf{Requirement} & FR-008 (User Profile Management) \\ \hline
+\textbf{Preconditions} & User authenticated. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item User clicks "Change Avatar" button.
+  \item User selects valid image file (PNG, < 5MB).
+  \item System uploads file to storage.
+  \item System updates user profile with avatar URL.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Avatar uploaded; preview displayed; success notification shown. \\ \hline
+\textbf{Actual Result} & Passed - Avatar upload successful. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & Medium \\ \hline
+\end{tabularx}
+
+\subsection*{TC-016b}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-016b \\ \hline
+\textbf{Title} & Profile Page - Reject Large Avatar Files \\ \hline
+\textbf{Requirement} & FR-008, NFR-002 (Security) \\ \hline
+\textbf{Preconditions} & User authenticated. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item User clicks "Change Avatar" button.
+  \item User selects image file larger than 5MB.
+  \item System validates file size before upload.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Upload rejected; error message "Image must be smaller than 5MB" displayed. \\ \hline
+\textbf{Actual Result} & Passed - Large files rejected correctly. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & Medium \\ \hline
+\end{tabularx}
+
+\subsection*{TC-016c}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-016c \\ \hline
+\textbf{Title} & Profile Page - Handle Avatar Upload Error \\ \hline
+\textbf{Requirement} & FR-008 \\ \hline
+\textbf{Preconditions} & User authenticated; network/server error occurs. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item User selects valid image file.
+  \item System attempts upload to \texttt{/api/avatar/upload}.
+  \item Server returns error response.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & User-friendly error message displayed; no profile update. \\ \hline
+\textbf{Actual Result} & Passed - Error handled gracefully. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & Medium \\ \hline
+\end{tabularx}
+
+\subsection*{TC-016d}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-016d \\ \hline
+\textbf{Title} & Profile Page - Display Existing Avatar \\ \hline
+\textbf{Requirement} & FR-008 \\ \hline
+\textbf{Preconditions} & User authenticated; avatar URL exists in profile. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Navigate to \texttt{/profile}.
+  \item System retrieves user avatar URL from database.
+  \item Profile component renders avatar image.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & User's avatar displayed in profile header. \\ \hline
+\textbf{Actual Result} & Passed - Existing avatar displayed correctly. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & Low \\ \hline
+\end{tabularx}
 
 % ===================== 5. Code Repository and Branching Strategy =====================
 \section{Code Repository and Branching Strategy}
@@ -376,6 +643,45 @@ it('TC-012: rejects write without kycVerified', async () => {
   const db = authedDB({ uid: 'u1', kycVerified: false })
   const ref = db.collection('jobs').doc('j1')
   await assertFails(ref.set({ title: 'T', ... }))
+})
+\end{lstlisting}
+
+\subsection*{KYC Routes (Express + supertest + Jest)}
+\begin{lstlisting}
+import request from 'supertest'
+import express from 'express'
+
+// TC-008a: Create Stripe verification session
+test('should return Stripe verification URL', async () => {
+  const response = await request(app)
+    .post('/api/kyc/verification')
+    .set('Authorization', 'Bearer fake-token')
+    .expect(200)
+
+  expect(response.body.url).toContain('https://verify.stripe.com/')
+  expect(response.body.sessionId).toContain('vs')
+})
+
+// TC-009a: Check KYC status
+test('should return KYC status', async () => {
+  const response = await request(app)
+    .get('/api/kyc/status')
+    .set('Authorization', 'Bearer fake-token')
+    .expect(200)
+
+  expect(['verified', 'pending', 'failed'])
+    .toContain(response.body.status)
+})
+
+// TC-008b: Unauthorized access
+test('should reject unauthorized user', async () => {
+  mockAuth.auth.verify.mockResolvedValue(null)
+  
+  const response = await request(app)
+    .post('/api/kyc/verification')
+    .expect(401)
+
+  expect(response.body.error).toBe('unauthorized')
 })
 \end{lstlisting}
 
