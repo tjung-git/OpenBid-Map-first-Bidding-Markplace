@@ -40,7 +40,14 @@ const isKycVerified = (value) =>
 
 router.post("/signup", async (req, res, next) => {
   try {
-    const { firstName, lastName, email, password, userType } = req.body;
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      confirmPassword,
+      userType,
+    } = req.body;
 
     if (!firstName || !lastName) {
       return res.status(400).json({ error: "firstName and lastName required" });
@@ -63,6 +70,14 @@ router.post("/signup", async (req, res, next) => {
       return res
         .status(400)
         .json({ error: "password must be at least 8 characters" });
+    }
+
+    if (confirmPassword === undefined || confirmPassword === null) {
+      return res.status(400).json({ error: "confirmPassword required" });
+    }
+
+    if (String(confirmPassword) !== password) {
+      return res.status(400).json({ error: "passwords must match" });
     }
 
     let userTypeNormalized = "bidder";

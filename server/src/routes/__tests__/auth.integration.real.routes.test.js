@@ -18,6 +18,7 @@ describe("auth routes (real adapters)", () => {
       lastName: "Doe",
       email: "jane.doe@example.com",
       password: "password123",
+      confirmPassword: "password123",
     });
 
     expect(response.status).toBe(201);
@@ -50,6 +51,7 @@ describe("auth routes (real adapters)", () => {
       lastName: "Doe",
       email: "jane.doe-at-example.com",
       password: "password123",
+      confirmPassword: "password123",
     });
 
     expect(response.status).toBe(400);
@@ -66,12 +68,30 @@ describe("auth routes (real adapters)", () => {
       lastName: "Doe",
       email: "jane.doe@example.com",
       password: "short",
+      confirmPassword: "short",
     });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({
       error: "password must be at least 8 characters",
     });
+    expect(mocks.signUpWithEmailPasswordMock).not.toHaveBeenCalled();
+  });
+
+  test("POST /api/auth/signup requires matching password confirmation", async () => {
+    // When confirmPassword does not match we return 400 before hitting Firebase.
+    const { app, mocks } = await createRealApp({ auth: true });
+
+    const response = await request(app).post("/api/auth/signup").send({
+      firstName: "Jane",
+      lastName: "Doe",
+      email: "jane.doe@example.com",
+      password: "password123",
+      confirmPassword: "password124",
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: "passwords must match" });
     expect(mocks.signUpWithEmailPasswordMock).not.toHaveBeenCalled();
   });
 
@@ -83,6 +103,7 @@ describe("auth routes (real adapters)", () => {
       firstName: "Jane",
       email: "jane.doe@example.com",
       password: "password123",
+      confirmPassword: "password123",
     });
 
     expect(response.status).toBe(400);
@@ -184,6 +205,7 @@ describe("auth routes (real adapters)", () => {
       lastName: "Doe",
       email: "jane.doe@example.com",
       password: "password123",
+      confirmPassword: "password123",
     });
 
     expect(response.status).toBe(409);

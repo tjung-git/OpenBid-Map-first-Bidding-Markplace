@@ -360,6 +360,7 @@ export async function setupJaneDoe({
     lastName: "Doe",
     email,
     password,
+    confirmPassword: password,
   };
 
   const response = await request(app).post("/api/auth/signup").send(signupPayload);
