@@ -53,7 +53,6 @@
 \textbf{Instructor:} Dr.\ May Haidar
 \end{center}
 
-\tableofcontents
 \newpage
 
 % ===================== 1. Introduction =====================
@@ -84,7 +83,7 @@ Tables below map each requirement to the test cases that validate it. Coverage s
 \midrule
 \endhead
 FR-001 & System shall allow authenticated users to \textbf{post jobs} with title, description, budget, photos, and location. & TC-001, TC-002 & Partially Covered \\
-FR-002 & System shall allow providers to \textbf{browse jobs on a map} with basic filters (radius, category). & TC-003, TC-004 & Partially Covered \\
+FR-002 & System shall allow providers to \textbf{browse jobs on a map} with basic filters (radius, category). & TC-003a-d, TC-004 & Partially Covered \\
 FR-003 & System shall allow providers to \textbf{place bids} on open jobs; posters can view and accept a bid. & TC-005, TC-006 & Partially Covered \\
 FR-004 & System shall enforce \textbf{KYC for all users} before posting or bidding. & TC-007 & Partially Covered \\
 FR-005 & System shall support \textbf{user authentication} with \textbf{Duo 2FA} for sensitive actions. & TC-008 & Partially Covered \\
@@ -147,17 +146,91 @@ For brevity we include the highest-priority cases now; the full catalog will liv
 \textbf{Expected Result:} Client-side validation shows error; no write occurs. \\
 \textbf{Status:} Pending \quad \textbf{Priority:} High
 
-\subsection*{TC-003}
-\textbf{Title:} Map Browse - Within Radius \\
-\textbf{Requirement:} FR-002 \\
-\textbf{Preconditions:} Seeded jobs exist within 10\,km. \\
-\textbf{Steps:}
-\begin{enumerate}[leftmargin=1.4em]
-  \item Open \texttt{/jobs}.
-  \item Set radius filter = 10\,km.
+\subsection*{TC-003a}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-003a \\ \hline
+\textbf{Title} & The haversineFormulakm function accurately calcuates distance between 2 coordinates. \\ \hline
+\textbf{Requirement} & FR-002 \\ \hline
+\textbf{Preconditions} & Valid coordinates are input. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Coordinates are input into the function.
+  \item Function calculates the distance between the coordinates.
+  \item Function returns the distance between the coordinates. \vspace{1em}
 \end{enumerate}
-\textbf{Expected Result:} Pins and list only include jobs within 10\,km. \\
-\textbf{Status:} Pending \quad \textbf{Priority:} High
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Returns distance in km of the 2 coordinates, returns infinity when there is invalid input. \\ \hline
+\textbf{Actual Result} & Passed - Returns distance accurately within a specific tolerance. Coordinates tested are up to 250km apart. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-003b}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-003b \\ \hline
+\textbf{Title} & The isValidCoords formula accurately determines whether the given inputs are valid latitude and longitude values. \\ \hline
+\textbf{Requirement} & FR-002 \\ \hline
+\textbf{Preconditions} & None. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Coordinates are input into the function.
+  \item Function checks input for validity then checks whether the input values are valid coordinates.
+  \item Function returns whether the coordinates are valid. \vspace{1em}
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Returns true or false to depending on whether the input is valid coordinates. \\ \hline
+\textbf{Actual Result} & Passed - accurately surmises whether the input coordinates are valid. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-003c}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-003c \\ \hline
+\textbf{Title} & The degToRad function accurately converts a number in degrees to radians. \\ \hline
+\textbf{Requirement} & FR-002 \\ \hline
+\textbf{Preconditions} & Input should be a number. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item a number in degrees is input into the function.
+  \item Function checks input for validity then returns the input value in radians. \vspace{1em}
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Returns the input number converted into radians if the input is valid, returns infinity otherwise. \\ \hline
+\textbf{Actual Result} & Passed - accurately converts a valid input to radians and returns infinity otherwise. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-003d}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-003c \\ \hline
+\textbf{Title} & The createMap function loads a google map. (uses api mocking)\\ \hline
+\textbf{Requirement} & FR-002 \\ \hline
+\textbf{Preconditions} & The lat, lng, ref, and apikey inputs are valid. The lat and lng and tested for validness before the function call and the logic outside
+the function affirms that apiKey and ref are valid. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item The google maps api loader is initialized.
+  \item The markers array input is filtered for valid markers or is set to an empty array if the markers input is bad.
+  \item The google maps api loader is used to load the api.
+  \item A new google map is created and valid markers are atached to the map. \vspace{1em}
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Creates a map with valid markers attached to it. \\ \hline
+\textbf{Actual Result} & Passed - creates a map with valid markers attached to it, invalid markers are discarded and a bad markers input
+is gracefully handled. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
 
 \subsection*{TC-004}
 \textbf{Title:} Map Browse - Category Filter \\
