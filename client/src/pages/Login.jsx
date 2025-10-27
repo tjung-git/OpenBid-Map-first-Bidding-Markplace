@@ -5,8 +5,6 @@ import {
   Button,
   InlineNotification,
   PasswordInput,
-  Select,
-  SelectItem,
 } from "@carbon/react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
@@ -20,7 +18,6 @@ export default function Login() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [role, setRole] = useState("bidder");
   const nav = useNavigate();
   const location = useLocation();
 
@@ -39,7 +36,7 @@ export default function Login() {
     try {
       const data = await api.login(email, password);
       setSession(data);
-      const selectedRole = role;
+      const selectedRole = "bidder";
       const currentRole = (data.user?.userType || "").toLowerCase();
 
       if (currentRole !== selectedRole) {
@@ -111,15 +108,6 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <Select
-            id="role"
-            labelText="Sign in as"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-          >
-            <SelectItem value="bidder" text="Bidder" />
-            <SelectItem value="contractor" text="Contractor" />
-          </Select>
           <Button type="submit" disabled={submitting}>
             {submitting ? "Signing in…" : "Sign in"}
           </Button>

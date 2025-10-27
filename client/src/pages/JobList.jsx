@@ -1,27 +1,39 @@
 import { useEffect, useMemo, useState } from "react";
-import { DataTable, Button, InlineNotification, FlexGrid, Column, Row, NumberInput } from "@carbon/react";
+import { DataTable, Button, InlineNotification } from "@carbon/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import {
   useSessionRequirements,
   useSessionUser,
 } from "../hooks/useSession";
+import { setUser } from "../services/session";
 import MapView from "../components/MapView";
-import SearchAutocomplete from "../components/SearchAutocomplete";
-import { haversineFormulaKm } from "../util/locationHelpers";
-import { cfg } from "../services/config";
 import "../styles/pages/jobs.css";
+import "../styles/components/role-choice.css";
+
+const ROLE_OPTIONS = [
+  {
+    role: "contractor",
+    headline: "I want to post jobs",
+    label: "Contractor",
+    copy: "Create opportunities, invite bids, and manage awards.",
+  },
+  {
+    role: "bidder",
+    headline: "I want to bid on jobs",
+    label: "Bidder",
+    copy: "Browse open projects, review details, and submit bids.",
+  },
+];
 
 export default function JobList() {
   const [jobs, setJobs] = useState([]);
-  const [filteredJobs, setFilteredJobs] = useState([]);
   const [err, setErr] = useState("");
-  const [minBudget, setMinBudget] = useState(0);
-  const [maxBudget, setMaxBudget] = useState(1000000);
-  const [center, setCenter] = useState({ lat: 43.6532, lng: -79.3832 });
-  const [selectedAddress, setSelectedAddress] = useState("Toronto, ON, Canada");
-  const [radius, setRadius] = useState(1000000); //In metres
   const [success, setSuccess] = useState("");
+  const [roleNotice, setRoleNotice] = useState("");
+  const [roleError, setRoleError] = useState("");
+  const [rolePending, setRolePending] = useState("");
+  const [roleActivated, setRoleActivated] = useState(false);
   const nav = useNavigate();
   const location = useLocation();
   const user = useSessionUser();
@@ -29,20 +41,30 @@ export default function JobList() {
 
   const isContractor = user?.userType === "contractor";
   const kycVerified = Boolean(requirements.kycVerified);
+  const activeRole = isContractor ? "contractor" : "bidder";
 
   useEffect(() => {
     if (location.state?.notice) {
       setSuccess(location.state.notice);
       setErr("");
-      nav(location.pathname, { replace: true, state: {} });
+      nav(location.pathname + location.search, { replace: true });
     }
-  }, [location.state, location.pathname, nav]);
+  }, [location.state, location.pathname, location.search, nav]);
 
-  const handlePlaceSelection = (placeData) => {
-    const {address, latLng} = placeData;
-    setCenter(latLng);
-    setSelectedAddress(address);
-  };
+  useEffect(() => {
+    if (!location.state?.roleActivated) return;
+    setRoleActivated(true);
+    if (location.state.roleMessage) {
+      setRoleNotice(location.state.roleMessage);
+    }
+    const { roleActivated: _roleActivated, roleMessage, ...rest } =
+      location.state;
+    const hasRemainingState = Object.keys(rest).length > 0;
+    nav(location.pathname + location.search, {
+      replace: true,
+      state: hasRemainingState ? rest : undefined,
+    });
+  }, [location.state, location.pathname, location.search, nav]);
 
   useEffect(() => {
     if (!user) return;
@@ -57,10 +79,11 @@ export default function JobList() {
       .catch(() => setErr("Failed to load jobs"));
   }, [user, isContractor]);
 
-  useEffect(() => {
-    setFilteredJobs(jobs.filter((j) => j.location?.lat && j.location?.lng && ((j.budgetAmount >= minBudget && j.budgetAmount <= maxBudget) || j.budgetAmount ==="-") 
-            && haversineFormulaKm(center.lat, center.lng, j.location?.lat, j.location?.lng) <= radius));
-  }, [radius, minBudget, maxBudget, jobs, center]);
+  const markers = useMemo(() => {
+    return jobs
+      .filter((job) => job.location?.lat && job.location?.lng)
+      .map((job) => job.location);
+  }, [jobs]);
 
   const headers = [
     { key: "title", header: "Title" },
@@ -88,6 +111,46 @@ export default function JobList() {
         : "-",
     }));
   }, [jobs]);
+
+  async function handleRoleChoice(targetRole) {
+    if (!user) return;
+    const normalizedCurrent = (user.userType || "bidder").toLowerCase();
+    const destination =
+      targetRole === "contractor" ? "/jobs?mine=true" : "/jobs";
+    const activationMessage =
+      targetRole === "contractor"
+        ? "Contractor workspace activated. Post and manage your jobs."
+        : "Bidder workspace activated. Browse open work and submit bids.";
+    if (normalizedCurrent === targetRole) {
+      nav(destination, {
+        replace: true,
+        state: { roleActivated: true, roleMessage: activationMessage },
+      });
+      return;
+    }
+    setRoleError("");
+    setRoleNotice("");
+    setRolePending(targetRole);
+    try {
+      const resp = await api.updateRole(targetRole);
+      if (!resp?.user) {
+        throw new Error("role switch failed");
+      }
+      setUser(resp.user, resp.requirements ?? requirements);
+      nav(destination, {
+        replace: true,
+        state: { roleActivated: true, roleMessage: activationMessage },
+      });
+    } catch (switchErr) {
+      const message =
+        switchErr?.data?.error === "invalid_role"
+          ? "This account is not allowed to use that workspace."
+          : "Unable to switch workspaces right now. Please try again.";
+      setRoleError(message);
+    } finally {
+      setRolePending("");
+    }
+  }
 
   function handlePostClick() {
     if (!requirements.kycVerified) {
@@ -141,72 +204,6 @@ export default function JobList() {
           lowContrast
         />
       )}
-      {!cfg.prototype &&<FlexGrid>
-        <Row>
-          <Column>
-            <SearchAutocomplete onSelectPlace={handlePlaceSelection}/>
-          </Column>
-          <Column className="filter-selection">
-            <span>Current Location: {selectedAddress}</span>
-          </Column>
-        </Row>
-        <Row style={{marginTop: 16}}>
-          <Column>
-            <NumberInput 
-              size="md"
-              id="radius" 
-              label="Radius (km)" 
-              min={5} 
-              max={1000000} 
-              onChange={(event) => setRadius(Number(event.target.value))} 
-              value={radius}
-              hideSteppers
-              helperText="Radius is set to 1000000 by default, radius should be altered after the location is selected to limit results."
-            />
-          </Column>
-          <Column className="filter-selection">
-              <span>Current Radius: {radius} km</span>
-          </Column>
-        </Row>
-      </FlexGrid>}
-      <MapView
-        markers={filteredJobs
-          .map((j) => j.location)}
-        center={center}
-      />
-      <FlexGrid style={{marginTop: 16}}>
-        <Row>
-          <Column>
-            <span>Budget Filter</span>
-          </Column>
-        </Row>
-        <Row>
-          <Column>
-            <NumberInput 
-              size="md"
-              id="minBudget" label="Min budget" 
-              min={0} 
-              max={1000000} 
-              onChange={(event) => setMinBudget(Number(event.target.value))} 
-              value={minBudget}
-              hideSteppers
-            >
-            </NumberInput>
-          </Column>
-          <Column>
-            <NumberInput
-              size="md" 
-              id="maxBudget" 
-              label="Max budget" 
-              min={0} max={1000000} 
-              onChange={(event) => setMaxBudget(Number(event.target.value))} 
-              value={maxBudget}
-              hideSteppers
-            >
-            </NumberInput>
-          </Column>
-        </Row>
-      </FlexGrid>
 
       {isContractor && !kycVerified && (
         <InlineNotification
@@ -217,7 +214,75 @@ export default function JobList() {
         />
       )}
 
-      {isContractor && (
+      <MapView markers={markers} />
+
+      <section className="role-choice-panel" aria-label="Select workspace">
+        <div className="role-choice-header">
+          <p className="role-choice-eyebrow">Choose your workspace</p>
+          <h3>How would you like to use OpenBid today?</h3>
+          <p>Switch between bidder and contractor views whenever you need.</p>
+        </div>
+        <div className="role-choice-options">
+          {ROLE_OPTIONS.map((option) => {
+            const isActive = activeRole === option.role;
+            const isLoading = rolePending === option.role;
+            const classes = ["role-choice-card"];
+            if (isActive) classes.push("role-choice-card--active");
+            if (isLoading) classes.push("role-choice-card--loading");
+            return (
+              <button
+                key={option.role}
+                type="button"
+                className={classes.join(" ")}
+                onClick={() => handleRoleChoice(option.role)}
+                disabled={Boolean(rolePending) && !isLoading}
+              >
+                <span className="role-choice-label">{option.headline}</span>
+                <span className="role-choice-role">{option.label}</span>
+                <p className="role-choice-copy">{option.copy}</p>
+                <span className="role-choice-cta">
+                  {isLoading
+                    ? "Updating…"
+                    : isActive
+                    ? "Current view"
+                    : "Switch now"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {(roleError || roleNotice) && (
+        <div className="role-choice-messages">
+          {roleError && (
+            <InlineNotification
+              title="Workspace"
+              subtitle={roleError}
+              kind="error"
+              lowContrast
+              onClose={() => setRoleError("")}
+            />
+          )}
+          {roleNotice && (
+            <InlineNotification
+              title="Workspace"
+              subtitle={roleNotice}
+              kind="success"
+              lowContrast
+              onClose={() => setRoleNotice("")}
+            />
+          )}
+        </div>
+      )}
+
+      {!roleActivated && (
+        <div className="role-choice-hint">
+          Select a workspace above to manage posts or bids.
+        </div>
+      )}
+
+      {roleActivated && isContractor && (
         <div className="job-list-actions">
           <Button onClick={handlePostClick}>
             {kycVerified ? "Post a Job" : "Go to Profile"}
@@ -225,19 +290,13 @@ export default function JobList() {
         </div>
       )}
 
-      {!isContractor && (
+      {roleActivated && !isContractor && (
         <div className="job-list-actions">
           <Button onClick={() => nav("/jobs/myBids")}>My Bids</Button>
         </div>
       )}
-      <DataTable rows={filteredJobs
-        .map((j) => ({
-          id: j.id,
-          title: j.title,
-          budgetAmount: j.budgetAmount ?? "-",
-          status: j.status,
-        }))} headers={headers}>
 
+      <DataTable rows={rows} headers={headers}>
         {({ rows, headers, getHeaderProps, getRowProps }) => (
           <table className="cds--data-table cds--data-table--zebra job-table">
             <thead>
