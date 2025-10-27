@@ -7,7 +7,7 @@ import { createMap } from "../util/mapHelpers";
 import "../styles/components/map.css";
 
 export default function MapView({
-  center,
+  center = {},
   markers,
 }) {
 
