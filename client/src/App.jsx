@@ -6,7 +6,7 @@ import {
   HeaderGlobalBar,
   HeaderGlobalAction,
 } from "@carbon/react";
-import { Logout, Map } from "@carbon/icons-react";
+import { Logout, Map, UserAvatar } from "@carbon/icons-react";
 import { logout } from "./services/session";
 import { useSessionUser } from "./hooks/useSession";
 import Nav from "./components/Nav";
@@ -60,6 +60,9 @@ export default function App() {
           </div>
           <HeaderGlobalAction aria-label="Map" onClick={() => nav("/jobs")}>
             <Map />
+          </HeaderGlobalAction>
+          <HeaderGlobalAction aria-label="Profile" onClick={() => nav("/profile")}>
+            <UserAvatar />
           </HeaderGlobalAction>
           <HeaderGlobalAction
             aria-label="Logout"

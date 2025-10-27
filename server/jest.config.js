@@ -7,4 +7,8 @@ export default {
   transformIgnorePatterns: [
     'node_modules/(?!(supertest|@jest/globals)/)',
   ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    'testUtils.js',
+  ],
 };
