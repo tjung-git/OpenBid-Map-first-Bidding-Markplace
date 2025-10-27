@@ -7,9 +7,7 @@ export default function Nav() {
   const user = useSessionUser();
   const path = loc.pathname;
   const isContractor = user?.userType === "contractor";
-  const showNewJob =
-    isContractor && (path.startsWith("/new-job") || path.startsWith("/kyc"));
-  const showKyc = isContractor && path.startsWith("/kyc");
+  const showNewJob = isContractor && path.startsWith("/new-job");
   const isJobBid = /^\/jobs\/[^/]+\/bid$/.test(path);
   const isMyBids = path === "/jobs/myBids";
   const inMyBidsSection = path.startsWith("/jobs/myBids/");
@@ -27,14 +25,9 @@ export default function Nav() {
         <BreadcrumbItem isCurrentPage={loc.pathname === "/jobs"}>
           <Link to="/jobs">Jobs</Link>
         </BreadcrumbItem>
-        {(showNewJob || showKyc) && (
+        {showNewJob && (
           <BreadcrumbItem isCurrentPage={loc.pathname === "/new-job"}>
             <Link to="/new-job">New Job</Link>
-          </BreadcrumbItem>
-        )}
-        {showKyc && (
-          <BreadcrumbItem isCurrentPage={loc.pathname === "/kyc"}>
-            <Link to="/kyc">KYC</Link>
           </BreadcrumbItem>
         )}
         {inMyBidsSection && (
