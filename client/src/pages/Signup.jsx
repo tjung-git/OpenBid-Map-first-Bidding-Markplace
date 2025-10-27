@@ -9,6 +9,7 @@ const INITIAL_FORM = {
   lastName: "",
   email: "",
   password: "",
+  confirmPassword: "",
 };
 
 export default function Signup() {
@@ -22,13 +23,26 @@ export default function Signup() {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
+  const passwordsMatch =
+    form.password.length > 0 && form.password === form.confirmPassword;
+
   async function submit(e) {
     e.preventDefault();
     setError("");
+    if (!passwordsMatch) {
+      setError("Passwords must match.");
+      return;
+    }
     setSubmitting(true);
     try {
-      const { firstName, lastName, email, password } = form;
-      await api.signup({ firstName, lastName, email, password });
+      const { firstName, lastName, email, password, confirmPassword } = form;
+      await api.signup({
+        firstName,
+        lastName,
+        email,
+        password,
+        confirmPassword,
+      });
       const message =
         "Account created. Please verify your email before signing in.";
       navigate("/login", {
@@ -103,11 +117,25 @@ export default function Signup() {
               helperText="Minimum 8 characters"
               required
             />
+            <TextInput
+              id="confirmPassword"
+              labelText="Confirm password"
+              type="password"
+              value={form.confirmPassword}
+              onChange={(e) => updateField("confirmPassword", e.target.value)}
+              invalid={
+                form.confirmPassword.length > 0 && !passwordsMatch
+              }
+              invalidText="Passwords must match"
+              required
+            />
             <div className="auth-action-row">
               <Button
                 type="submit"
                 className="auth-form-actions"
-                disabled={submitting}
+                disabled={
+                  submitting || (form.confirmPassword && !passwordsMatch)
+                }
               >
                 {submitting ? "Creating…" : "Create account"}
               </Button>

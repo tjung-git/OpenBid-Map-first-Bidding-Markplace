@@ -26,6 +26,9 @@ const MIN_PASSWORD_LENGTH = 8;
 const validatePasswordStrength = (password) =>
   typeof password === "string" && password.length >= MIN_PASSWORD_LENGTH;
 
+const validateEmailFormat = (email) =>
+  typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
 const hashPassword = (password) => bcrypt.hash(password, 10);
 const verifyPassword = (password, hash) =>
   hash ? bcrypt.compare(password, hash) : false;
@@ -41,18 +44,44 @@ const isKycVerified = (value) =>
 
 router.post("/signup", async (req, res, next) => {
   try {
-    const { firstName, lastName, email, password, userType } = req.body;
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      confirmPassword,
+      userType,
+    } = req.body;
 
     if (!firstName || !lastName) {
       return res.status(400).json({ error: "firstName and lastName required" });
     }
-    if (!email) return res.status(400).json({ error: "email required" });
-    if (!password) return res.status(400).json({ error: "password required" });
+
+    if (!email) {
+      return res.status(400).json({ error: "email required" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!validateEmailFormat(normalizedEmail)) {
+      return res.status(400).json({ error: "email must be a valid address" });
+    }
+
+    if (!password) {
+      return res.status(400).json({ error: "password required" });
+    }
 
     if (!validatePasswordStrength(password)) {
       return res
         .status(400)
         .json({ error: "password must be at least 8 characters" });
+    }
+
+    if (confirmPassword === undefined || confirmPassword === null) {
+      return res.status(400).json({ error: "confirmPassword required" });
+    }
+
+    if (String(confirmPassword) !== password) {
+      return res.status(400).json({ error: "passwords must match" });
     }
 
     let userTypeNormalized = "bidder";
@@ -66,7 +95,6 @@ router.post("/signup", async (req, res, next) => {
       userTypeNormalized = candidate;
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
     const existing = await db.user.findByEmail(normalizedEmail);
     if (existing) {
       return res.status(409).json({ error: "email already registered" });
@@ -192,7 +220,6 @@ router.post("/login", async (req, res, next) => {
       return res.status(401).json({ error: "invalid credentials" });
     }
 
-    // Pull latest verification from Firebase if using real backends
     if (!config.prototype) {
       try {
         const firebaseAuth = getAuthClient();

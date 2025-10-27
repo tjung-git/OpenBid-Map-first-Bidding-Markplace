@@ -6,13 +6,34 @@ import {
   useSessionRequirements,
   useSessionUser,
 } from "../hooks/useSession";
+import { setUser } from "../services/session";
 import MapView from "../components/MapView";
 import "../styles/pages/jobs.css";
+import "../styles/components/role-choice.css";
+
+const ROLE_OPTIONS = [
+  {
+    role: "contractor",
+    headline: "I want to post jobs",
+    label: "Contractor",
+    copy: "Create opportunities, invite bids, and manage awards.",
+  },
+  {
+    role: "bidder",
+    headline: "I want to bid on jobs",
+    label: "Bidder",
+    copy: "Browse open projects, review details, and submit bids.",
+  },
+];
 
 export default function JobList() {
   const [jobs, setJobs] = useState([]);
   const [err, setErr] = useState("");
   const [success, setSuccess] = useState("");
+  const [roleNotice, setRoleNotice] = useState("");
+  const [roleError, setRoleError] = useState("");
+  const [rolePending, setRolePending] = useState("");
+  const [roleActivated, setRoleActivated] = useState(false);
   const nav = useNavigate();
   const location = useLocation();
   const user = useSessionUser();
@@ -20,14 +41,30 @@ export default function JobList() {
 
   const isContractor = user?.userType === "contractor";
   const kycVerified = Boolean(requirements.kycVerified);
+  const activeRole = isContractor ? "contractor" : "bidder";
 
   useEffect(() => {
     if (location.state?.notice) {
       setSuccess(location.state.notice);
       setErr("");
-      nav(location.pathname, { replace: true, state: {} });
+      nav(location.pathname + location.search, { replace: true });
     }
-  }, [location.state, location.pathname, nav]);
+  }, [location.state, location.pathname, location.search, nav]);
+
+  useEffect(() => {
+    if (!location.state?.roleActivated) return;
+    setRoleActivated(true);
+    if (location.state.roleMessage) {
+      setRoleNotice(location.state.roleMessage);
+    }
+    const { roleActivated: _roleActivated, roleMessage, ...rest } =
+      location.state;
+    const hasRemainingState = Object.keys(rest).length > 0;
+    nav(location.pathname + location.search, {
+      replace: true,
+      state: hasRemainingState ? rest : undefined,
+    });
+  }, [location.state, location.pathname, location.search, nav]);
 
   useEffect(() => {
     if (!user) return;
@@ -74,6 +111,46 @@ export default function JobList() {
         : "-",
     }));
   }, [jobs]);
+
+  async function handleRoleChoice(targetRole) {
+    if (!user) return;
+    const normalizedCurrent = (user.userType || "bidder").toLowerCase();
+    const destination =
+      targetRole === "contractor" ? "/jobs?mine=true" : "/jobs";
+    const activationMessage =
+      targetRole === "contractor"
+        ? "Contractor workspace activated. Post and manage your jobs."
+        : "Bidder workspace activated. Browse open work and submit bids.";
+    if (normalizedCurrent === targetRole) {
+      nav(destination, {
+        replace: true,
+        state: { roleActivated: true, roleMessage: activationMessage },
+      });
+      return;
+    }
+    setRoleError("");
+    setRoleNotice("");
+    setRolePending(targetRole);
+    try {
+      const resp = await api.updateRole(targetRole);
+      if (!resp?.user) {
+        throw new Error("role switch failed");
+      }
+      setUser(resp.user, resp.requirements ?? requirements);
+      nav(destination, {
+        replace: true,
+        state: { roleActivated: true, roleMessage: activationMessage },
+      });
+    } catch (switchErr) {
+      const message =
+        switchErr?.data?.error === "invalid_role"
+          ? "This account is not allowed to use that workspace."
+          : "Unable to switch workspaces right now. Please try again.";
+      setRoleError(message);
+    } finally {
+      setRolePending("");
+    }
+  }
 
   function handlePostClick() {
     if (!requirements.kycVerified) {
@@ -139,7 +216,73 @@ export default function JobList() {
 
       <MapView markers={markers} />
 
-      {isContractor && (
+      <section className="role-choice-panel" aria-label="Select workspace">
+        <div className="role-choice-header">
+          <p className="role-choice-eyebrow">Choose your workspace</p>
+          <h3>How would you like to use OpenBid today?</h3>
+          <p>Switch between bidder and contractor views whenever you need.</p>
+        </div>
+        <div className="role-choice-options">
+          {ROLE_OPTIONS.map((option) => {
+            const isActive = activeRole === option.role;
+            const isLoading = rolePending === option.role;
+            const classes = ["role-choice-card"];
+            if (isActive) classes.push("role-choice-card--active");
+            if (isLoading) classes.push("role-choice-card--loading");
+            return (
+              <button
+                key={option.role}
+                type="button"
+                className={classes.join(" ")}
+                onClick={() => handleRoleChoice(option.role)}
+                disabled={Boolean(rolePending) && !isLoading}
+              >
+                <span className="role-choice-label">{option.headline}</span>
+                <span className="role-choice-role">{option.label}</span>
+                <p className="role-choice-copy">{option.copy}</p>
+                <span className="role-choice-cta">
+                  {isLoading
+                    ? "Updating…"
+                    : isActive
+                    ? "Current view"
+                    : "Switch now"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {(roleError || roleNotice) && (
+        <div className="role-choice-messages">
+          {roleError && (
+            <InlineNotification
+              title="Workspace"
+              subtitle={roleError}
+              kind="error"
+              lowContrast
+              onClose={() => setRoleError("")}
+            />
+          )}
+          {roleNotice && (
+            <InlineNotification
+              title="Workspace"
+              subtitle={roleNotice}
+              kind="success"
+              lowContrast
+              onClose={() => setRoleNotice("")}
+            />
+          )}
+        </div>
+      )}
+
+      {!roleActivated && (
+        <div className="role-choice-hint">
+          Select a workspace above to manage posts or bids.
+        </div>
+      )}
+
+      {roleActivated && isContractor && (
         <div className="job-list-actions">
           <Button onClick={handlePostClick}>
             {kycVerified ? "Post a Job" : "Go to Profile"}
@@ -147,7 +290,7 @@ export default function JobList() {
         </div>
       )}
 
-      {!isContractor && (
+      {roleActivated && !isContractor && (
         <div className="job-list-actions">
           <Button onClick={() => nav("/jobs/myBids")}>My Bids</Button>
         </div>

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import {
   Header,
@@ -6,19 +6,15 @@ import {
   HeaderGlobalBar,
   HeaderGlobalAction,
 } from "@carbon/react";
-import { Logout, Map, Switcher, UserAvatar } from "@carbon/icons-react";
-import { logout, setUser } from "./services/session";
-import { api } from "./services/api";
-import { useSessionRequirements, useSessionUser } from "./hooks/useSession";
+import { Logout, Map, UserAvatar } from "@carbon/icons-react";
+import { logout } from "./services/session";
+import { useSessionUser } from "./hooks/useSession";
 import Nav from "./components/Nav";
 import "./styles/components/header.css";
 
 export default function App() {
   const nav = useNavigate();
   const user = useSessionUser();
-  const requirements = useSessionRequirements();
-  const [roleSwitching, setRoleSwitching] = useState(false);
-  const [roleError, setRoleError] = useState("");
 
   const greetingName = user?.firstName || user?.name || "Guest";
   const fullName = user
@@ -27,9 +23,6 @@ export default function App() {
   const userType = user?.userType
     ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1)
     : null;
-  const currentRole = (user?.userType || "bidder").toLowerCase();
-  const nextRole = currentRole === "contractor" ? "bidder" : "contractor";
-  const nextRoleLabel = nextRole.charAt(0).toUpperCase() + nextRole.slice(1);
 
   const handleBrandNavigation = useCallback(() => {
     if (!user) {
@@ -38,32 +31,6 @@ export default function App() {
     }
     nav("/jobs");
   }, [nav, user]);
-
-  const handleRoleToggle = useCallback(async () => {
-    if (!user) return;
-    const roleToApply = user.userType === "contractor" ? "bidder" : "contractor";
-    setRoleError("");
-    setRoleSwitching(true);
-    try {
-      const resp = await api.updateRole(roleToApply);
-      if (resp?.error || !resp?.user) {
-        setRoleError("Unable to switch role. Please try again.");
-        return;
-      }
-      setUser(resp.user, resp.requirements ?? requirements);
-      const destination =
-        roleToApply === "contractor" ? "/jobs?mine=true" : "/jobs";
-      nav(destination);
-    } catch (error) {
-      const message =
-        error?.data?.error === "invalid_role"
-          ? "Unable to switch role. Please refresh and try again."
-          : "Unable to switch role. Please try again.";
-      setRoleError(message);
-    } finally {
-      setRoleSwitching(false);
-    }
-  }, [user, requirements, nav]);
 
   return (
     <>
@@ -90,11 +57,6 @@ export default function App() {
                 {userType ? ` (${userType})` : ""}
               </span>
             )}
-            {roleError && (
-              <span className="header-user-status header-user-status-warning">
-                {roleError}
-              </span>
-            )}
           </div>
           <HeaderGlobalAction aria-label="Map" onClick={() => nav("/jobs")}>
             <Map />
@@ -102,24 +64,6 @@ export default function App() {
           <HeaderGlobalAction aria-label="Profile" onClick={() => nav("/profile")}>
             <UserAvatar />
           </HeaderGlobalAction>
-          {user && (
-            <button
-              type="button"
-              className="header-role-switch"
-              onClick={handleRoleToggle}
-              disabled={roleSwitching}
-              aria-label={
-                roleSwitching
-                  ? "Switching role"
-                  : `Switch to ${nextRoleLabel} view`
-              }
-            >
-              <Switcher size={16} />
-              <span>
-                {roleSwitching ? "Switching…" : `Switch to ${nextRoleLabel}`}
-              </span>
-            </button>
-          )}
           <HeaderGlobalAction
             aria-label="Logout"
             onClick={() => {

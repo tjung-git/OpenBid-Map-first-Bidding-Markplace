@@ -53,7 +53,6 @@
 \textbf{Instructor:} Dr.\ May Haidar
 \end{center}
 
-\tableofcontents
 \newpage
 
 % ===================== 1. Introduction =====================
@@ -84,13 +83,17 @@ Tables below map each requirement to the test cases that validate it. Coverage s
 \midrule
 \endhead
 FR-001 & System shall allow authenticated users to \textbf{post jobs} with title, description, budget, photos, and location. & TC-001, TC-002 & Partially Covered \\
-FR-002 & System shall allow providers to \textbf{browse jobs on a map} with basic filters (radius, category). & TC-003, TC-004 & Partially Covered \\
+FR-002 & System shall allow providers to \textbf{browse jobs on a map} with basic filters (radius, category). & TC-003a-d, TC-004 & Partially Covered \\
 FR-003 & System shall allow providers to \textbf{place bids} on open jobs; posters can view and accept a bid. & TC-005, TC-006 & Partially Covered \\
-FR-004 & System shall enforce \textbf{KYC for all users} before posting or bidding. & TC-007, TC-008a--f, TC-009a--b, TC-010a--b, TC-011a--b, TC-012, TC-018a--f & Covered \\
+FR-004 & System shall enforce \textbf{KYC for all users} before posting or bidding. & TC-007 & Partially Covered \\
 FR-005 & System shall support \textbf{user authentication} with \textbf{Duo 2FA} for sensitive actions. & TC-008 & Partially Covered \\
 FR-006 & System shall provide \textbf{in-thread messaging} per job after acceptance. & TC-009 & Planned \\
 FR-007 & System shall record \textbf{ratings and reviews} after job completion. & TC-010 & Planned \\
-FR-008 & System shall allow users to \textbf{manage their profile} including avatar upload and personal information. & TC-019a--d & Covered \\
+FR-008 & System must create Firebase accounts and keep users out until they click the email verification link. & TC-014a--d & Covered \\
+FR-009 & System must let a signed-in person switch between bidder and contractor and keep their requirement flags accurate. & TC-015a--b & Covered \\
+FR-010 & System must save the session in local storage and log the user out after two minutes with no activity. & TC-016a--c & Covered \\
+FR-011 & Only KYC-approved contractors can create, edit, or delete their own jobs in Firestore. & TC-017a--i & Covered \\
+FR-012 & System must block self-bids and lock both the job and bids once a contractor accepts an offer. & TC-018a--b & Covered \\
 \bottomrule
 \end{longtable}
 
@@ -101,7 +104,7 @@ FR-008 & System shall allow users to \textbf{manage their profile} including ava
 \midrule
 \endhead
 NFR-001 & \textbf{Performance:} Search/browse should return results within 800\,ms P95 for a metro with 5k open jobs (stub data). & TC-011 & Planned \\
-NFR-002 & \textbf{Security:} Only KYC-verified users can hit write endpoints for jobs/bids. &  & Planned \\
+NFR-002 & \textbf{Security:} Only KYC-verified users can hit write endpoints for jobs/bids. & TC-007, TC-012 & Partially Covered \\
 NFR-003 & \textbf{Usability:} Map view and list view maintain accessible contrast and keyboard navigation for core actions. & TC-013 & Planned \\
 \bottomrule
 \end{longtable}
@@ -123,8 +126,8 @@ For brevity we include the highest-priority cases now; the full catalog will liv
 \textbf{Steps:}
 \begin{enumerate}[leftmargin=1.4em]
   \item Navigate to \texttt{/new-job}.
-  \item Enter valid title, description, budget, and pick a map location (mocked Google Maps).
-  \item Upload a photo (mock file).
+  \item Enter valid title, description, budget, and pick a map location (Google Maps widget).
+  \item Upload a photo (sample file).
   \item Click \texttt{Post}.
 \end{enumerate}
 \textbf{Expected Result:} Job document is created in Firestore; UI redirects to Job Detail. \\
@@ -143,17 +146,91 @@ For brevity we include the highest-priority cases now; the full catalog will liv
 \textbf{Expected Result:} Client-side validation shows error; no write occurs. \\
 \textbf{Status:} Pending \quad \textbf{Priority:} High
 
-\subsection*{TC-003}
-\textbf{Title:} Map Browse - Within Radius \\
-\textbf{Requirement:} FR-002 \\
-\textbf{Preconditions:} Seeded jobs exist within 10\,km. \\
-\textbf{Steps:}
-\begin{enumerate}[leftmargin=1.4em]
-  \item Open \texttt{/jobs}.
-  \item Set radius filter = 10\,km.
+\subsection*{TC-003a}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-003a \\ \hline
+\textbf{Title} & The haversineFormulakm function accurately calcuates distance between 2 coordinates. \\ \hline
+\textbf{Requirement} & FR-002 \\ \hline
+\textbf{Preconditions} & Valid coordinates are input. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Coordinates are input into the function.
+  \item Function calculates the distance between the coordinates.
+  \item Function returns the distance between the coordinates. \vspace{1em}
 \end{enumerate}
-\textbf{Expected Result:} Pins and list only include jobs within 10\,km. \\
-\textbf{Status:} Pending \quad \textbf{Priority:} High
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Returns distance in km of the 2 coordinates, returns infinity when there is invalid input. \\ \hline
+\textbf{Actual Result} & Passed - Returns distance accurately within a specific tolerance. Coordinates tested are up to 250km apart. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-003b}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-003b \\ \hline
+\textbf{Title} & The isValidCoords formula accurately determines whether the given inputs are valid latitude and longitude values. \\ \hline
+\textbf{Requirement} & FR-002 \\ \hline
+\textbf{Preconditions} & None. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Coordinates are input into the function.
+  \item Function checks input for validity then checks whether the input values are valid coordinates.
+  \item Function returns whether the coordinates are valid. \vspace{1em}
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Returns true or false to depending on whether the input is valid coordinates. \\ \hline
+\textbf{Actual Result} & Passed - accurately surmises whether the input coordinates are valid. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-003c}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-003c \\ \hline
+\textbf{Title} & The degToRad function accurately converts a number in degrees to radians. \\ \hline
+\textbf{Requirement} & FR-002 \\ \hline
+\textbf{Preconditions} & Input should be a number. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item a number in degrees is input into the function.
+  \item Function checks input for validity then returns the input value in radians. \vspace{1em}
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Returns the input number converted into radians if the input is valid, returns infinity otherwise. \\ \hline
+\textbf{Actual Result} & Passed - accurately converts a valid input to radians and returns infinity otherwise. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-003d}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-003c \\ \hline
+\textbf{Title} & The createMap function loads a google map. (uses api mocking)\\ \hline
+\textbf{Requirement} & FR-002 \\ \hline
+\textbf{Preconditions} & The lat, lng, ref, and apikey inputs are valid. The lat and lng and tested for validness before the function call and the logic outside
+the function affirms that apiKey and ref are valid. \\ \hline
+\textbf{Steps} & 
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item The google maps api loader is initialized.
+  \item The markers array input is filtered for valid markers or is set to an empty array if the markers input is bad.
+  \item The google maps api loader is used to load the api.
+  \item A new google map is created and valid markers are atached to the map. \vspace{1em}
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Creates a map with valid markers attached to it. \\ \hline
+\textbf{Actual Result} & Passed - creates a map with valid markers attached to it, invalid markers are discarded and a bad markers input
+is gracefully handled. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
 
 \subsection*{TC-004}
 \textbf{Title:} Map Browse - Category Filter \\
@@ -175,248 +252,187 @@ For brevity we include the highest-priority cases now; the full catalog will liv
 \textbf{Status:} Pending \quad \textbf{Priority:} High
 
 \subsection*{TC-007}
+\textbf{Title:} KYC Gate - Block Unverified Writes \\
+\textbf{Requirement:} FR-004, NFR-002 \\
+\textbf{Preconditions:} User KYC status = pending. \\
+\textbf{Expected Result:} Attempts to post job or bid are rejected by Firestore rules/API; UI shows KYC required. \\
+\textbf{Status:} Pending \quad \textbf{Priority:} High
+
+\subsection*{TC-008}
 \textbf{Title:} Duo 2FA Challenge on Sensitive Action \\
 \textbf{Requirement:} FR-005 \\
 \textbf{Preconditions:} User logged in without recent 2FA; action = add payout method. \\
 \textbf{Expected Result:} Duo prompt required; action proceeds only on success. \\
 \textbf{Status:} Pending \quad \textbf{Priority:} Medium
 
-\subsection*{TC-008a}
-\begin{tabularx}{\linewidth}{|l|L|}
-\hline
-\textbf{Test Case ID} & TC-008a \\ \hline
-\textbf{Title} & KYC Verification - Create Stripe Verification Session \\ \hline
-\textbf{Requirement} & FR-004 \\ \hline
-\textbf{Preconditions} & User is authenticated; KYC status = \texttt{pending}; real KYC mode enabled. \\ \hline
-\textbf{Steps} & 
-\begin{minipage}[t]{\linewidth}
-\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item Send POST request to \texttt{/api/kyc/verification} with valid auth JWT token.
-  \item System calls Stripe Identity API to create verification session.
-  \item System stores session ID in user record.
-  \item System returns Stripe verification URL and session ID.
-\end{enumerate}
-\end{minipage} \\ \hline
-\textbf{Expected Result} & Returns Stripe verification URL (https://verify.stripe.com/*) and session ID (vs\_*) \\ \hline
-\textbf{Actual Result} & Passed - Returns mocked Stripe URL and session ID. \\ \hline
-\textbf{Status} & \textcolor{green}{Passed} \\ \hline
-\textbf{Priority} & High \\ \hline
-\end{tabularx}
-
-\subsection*{TC-008b}
-\begin{tabularx}{\linewidth}{|l|L|}
-\hline
-\textbf{Test Case ID} & TC-008b \\ \hline
-\textbf{Title} & KYC Verification - Unauthorized Access \\ \hline
-\textbf{Requirement} & FR-004, NFR-002 \\ \hline
-\textbf{Preconditions} & User not authenticated or invalid token. \\ \hline
-\textbf{Steps} & 
-\begin{minipage}[t]{\linewidth}
-\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item Send POST request to \texttt{/api/kyc/verification} without auth token or with invalid token.
-\end{enumerate}
-\end{minipage} \\ \hline
-\textbf{Expected Result} & Returns 401 Unauthorized with error message. \\ \hline
-\textbf{Actual Result} & Passed - Returns 401 with \texttt{\{error: "unauthorized"\}}. \\ \hline
-\textbf{Status} & \textcolor{green}{Passed} \\ \hline
-\textbf{Priority} & High \\ \hline
-\end{tabularx}
-
-\subsection*{TC-009a}
-\begin{tabularx}{\linewidth}{|l|L|}
-\hline
-\textbf{Test Case ID} & TC-009a \\ \hline
-\textbf{Title} & KYC Status Check \\ \hline
-\textbf{Requirement} & FR-004 \\ \hline
-\textbf{Preconditions} & User is authenticated. \\ \hline
-\textbf{Steps} & 
-\begin{minipage}[t]{\linewidth}
-\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item Send GET request to \texttt{/api/kyc/status} with valid auth JWT token.
-  \item System retrieves user KYC status from database.
-  \item If verification session exists and status is \texttt{pending}, checks Stripe for updated status.
-  \item System returns KYC status (\texttt{pending}, \texttt{verified}, or \texttt{failed}).
-\end{enumerate}
-\end{minipage} \\ \hline
-\textbf{Expected Result} & Returns KYC status (pending, verified, or failed). \\ \hline
-\textbf{Actual Result} & Passed - Returns valid status from database. \\ \hline
-\textbf{Status} & \textcolor{green}{Passed} \\ \hline
-\textbf{Priority} & High \\ \hline
-\end{tabularx}
-
-\subsection*{TC-009b}
-\begin{tabularx}{\linewidth}{|l|L|}
-\hline
-\textbf{Test Case ID} & TC-009b \\ \hline
-\textbf{Title} & KYC Status - Unauthorized Access \\ \hline
-\textbf{Requirement} & FR-004, NFR-002 \\ \hline
-\textbf{Preconditions} & User not authenticated. \\ \hline
-\textbf{Steps} & 
-\begin{minipage}[t]{\linewidth}
-\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item Send GET request to \texttt{/api/kyc/status} without auth token.
-\end{enumerate}
-\end{minipage} \\ \hline
-\textbf{Expected Result} & Returns 401 Unauthorized. \\ \hline
-\textbf{Actual Result} & Passed - Returns 401 with error message. \\ \hline
-\textbf{Status} & \textcolor{green}{Passed} \\ \hline
-\textbf{Priority} & High \\ \hline
-\end{tabularx}
-
-\subsection*{TC-010}
+\subsection*{TC-009}
 \textbf{Title:} Messaging After Acceptance \\
 \textbf{Requirement:} FR-006 \\
 \textbf{Expected Result:} Parties can exchange messages in job thread; messages persist in Firestore. \\
 \textbf{Status:} Planned \quad \textbf{Priority:} Medium
 
-\subsection*{TC-011}
+\subsection*{TC-010}
 \textbf{Title:} Submit Review on Completion \\
 \textbf{Requirement:} FR-007 \\
 \textbf{Expected Result:} Review saved and visible on profile; duplicate review blocked. \\
 \textbf{Status:} Planned \quad \textbf{Priority:} Medium
 
-\subsection*{TC-012}
+\subsection*{TC-011}
 \textbf{Title:} Performance P95 - Map Query \\
 \textbf{Requirement:} NFR-001 \\
 \textbf{Expected Result:} P95 end-to-end from filter change to results render \(\leq 800\,\)ms on stub dataset. \\
 \textbf{Status:} Planned \quad \textbf{Priority:} Low
 
-\subsection*{TC-013}
+\subsection*{TC-012}
 \textbf{Title:} Ruleset Audit - No Write Without Claims \\
 \textbf{Requirement:} NFR-002 \\
 \textbf{Expected Result:} Firestore rules reject writes missing \texttt{kycVerified == true}. \\
 \textbf{Status:} Pending \quad \textbf{Priority:} High
 
-\subsection*{TC-014}
+\subsection*{TC-013}
 \textbf{Title:} Accessibility - Keyboard Nav on Map/List \\
 \textbf{Requirement:} NFR-003 \\
 \textbf{Expected Result:} Tabbing reaches filters, list items, and primary actions; visible focus outlines present. \\
 \textbf{Status:} Planned \quad \textbf{Priority:} Low
 
+\subsection*{TC-014a}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-014a \\ \hline
+\textbf{Title} & Firebase Signup - Provision Account and Send Verification Email \\ \hline
+\textbf{Requirement} & FR-008 \\ \hline
+\textbf{Preconditions} & Email is brand new inside the Firebase project; Identity Toolkit is online. \\ \hline
+\textbf{Steps} &
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Send POST \texttt{/api/auth/signup} with first/last name, valid email, password, confirmPassword.
+  \item Let Firebase create the account and queue the verification email.
+  \item Read the JSON response from our API.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & HTTP 201 with sanitized user data, email + KYC both \texttt{pending}, and Firebase verification email requested. \\ \hline
+\textbf{Actual Result} & Passed -- Confirmed in \texttt{server/src/routes/\_\_tests\_\_/auth.integration.real.routes.test.js}. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-014b}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-014b \\ \hline
+\textbf{Title} & Firebase Signup - Reject Invalid Credentials \\ \hline
+\textbf{Requirement} & FR-008 \\ \hline
+\textbf{Preconditions} & Same Firebase project as TC-014a; email still unused. \\ \hline
+\textbf{Steps} &
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item POST \texttt{/api/auth/signup} with a broken email or a password shorter than eight characters.
+  \item Watch the server reject the payload before any Firebase call.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & HTTP 400 with a clear error; Firebase signup helper never runs. \\ \hline
+\textbf{Actual Result} & Passed -- Shown in the same Jest suite for real adapters. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-014c}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-014c \\ \hline
+\textbf{Title} & Firebase Login - Verified User Receives Session Tokens \\ \hline
+\textbf{Requirement} & FR-008 \\ \hline
+\textbf{Preconditions} & User already exists in Firebase with both email and KYC marked \texttt{verified}. \\ \hline
+\textbf{Steps} &
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item POST \texttt{/api/auth/login} with the correct email and password.
+  \item Inspect the response for session + requirement flags.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & HTTP 200 with sanitized user, Firebase ID + refresh tokens, and \texttt{requirements = \{emailVerified: true, kycVerified: true\}}. \\ \hline
+\textbf{Actual Result} & Passed -- Assertions live in \texttt{auth.integration.real.routes.test.js}. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-014d}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-014d \\ \hline
+\textbf{Title} & Firebase Login - Reject Wrong Passwords \\ \hline
+\textbf{Requirement} & FR-008 \\ \hline
+\textbf{Preconditions} & User exists in Firebase; test double forces Identity Toolkit to return \texttt{INVALID\_PASSWORD}. \\ \hline
+\textbf{Steps} &
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item POST \texttt{/api/auth/login} with the wrong password.
+  \item Capture HTTP status + body.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & HTTP 401 with \texttt{\{error: "invalid credentials"\}}; no session issued. \\ \hline
+\textbf{Actual Result} & Passed -- Covered in \texttt{auth.integration.real.routes.test.js}. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
 \subsection*{TC-015a}
 \begin{tabularx}{\linewidth}{|l|L|}
 \hline
 \textbf{Test Case ID} & TC-015a \\ \hline
-\textbf{Title} & Profile Page - Display KYC Pending Status \\ \hline
-\textbf{Requirement} & FR-004 \\ \hline
-\textbf{Preconditions} & User authenticated, KYC status = \texttt{pending}. \\ \hline
-\textbf{Steps} & 
+\textbf{Title} & Role Switch - Authorization Required \\ \hline
+\textbf{Requirement} & FR-009 \\ \hline
+\textbf{Preconditions} & User is signed in and has a valid Firebase ID token. \\ \hline
+\textbf{Steps} &
 \begin{minipage}[t]{\linewidth}
 \begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item Navigate to \texttt{/profile}.
-  \item Profile component renders and displays account status section.
-  \item System retrieves user KYC status from session.
+  \item PATCH \texttt{/api/auth/role} without the Authorization header.
+  \item Repeat with \texttt{Authorization: Bearer <idToken>} and payload \texttt{\{role: "contractor"\}}.
 \end{enumerate}
 \end{minipage} \\ \hline
-\textbf{Expected Result} & KYC status displays "Pending" tag with appropriate styling. \\ \hline
-\textbf{Actual Result} & Passed - Profile page correctly displays pending status. \\ \hline
+\textbf{Expected Result} & Unauthorized request returns 401; authorized request returns 200 with updated \texttt{userType} and refreshed requirement flags. \\ \hline
+\textbf{Actual Result} & Passed -- Exercised via Jest role-switch integration test. \\ \hline
 \textbf{Status} & \textcolor{green}{Passed} \\ \hline
-\textbf{Priority} & High \\ \hline
+\textbf{Priority} & Medium \\ \hline
 \end{tabularx}
 
 \subsection*{TC-015b}
 \begin{tabularx}{\linewidth}{|l|L|}
 \hline
 \textbf{Test Case ID} & TC-015b \\ \hline
-\textbf{Title} & Profile Page - Display KYC Verified Status \\ \hline
-\textbf{Requirement} & FR-004 \\ \hline
-\textbf{Preconditions} & User authenticated, KYC status = \texttt{verified}. \\ \hline
-\textbf{Steps} & 
+\textbf{Title} & Auth Me - Return Sanitized User Context \\ \hline
+\textbf{Requirement} & FR-009 \\ \hline
+\textbf{Preconditions} & Contractor user plus valid Firebase ID token. \\ \hline
+\textbf{Steps} &
 \begin{minipage}[t]{\linewidth}
 \begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item Navigate to \texttt{/profile}.
-  \item Profile component renders with verified KYC status.
+  \item GET \texttt{/api/auth/me} without Authorization header and confirm 401.
+  \item Repeat with Authorization header; inspect payload for sanitized user fields. 
 \end{enumerate}
 \end{minipage} \\ \hline
-\textbf{Expected Result} & KYC status displays "Verified" tag; no action buttons shown. \\ \hline
-\textbf{Actual Result} & Passed - Profile page displays verified status correctly. \\ \hline
+\textbf{Expected Result} & Unauthorized call blocked; authorized call returns sanitized \texttt{user} payload (no \texttt{passwordHash}) plus metadata. \\ \hline
+\textbf{Actual Result} & Passed -- Documented in \texttt{auth.integration.real.routes.test.js}. \\ \hline
 \textbf{Status} & \textcolor{green}{Passed} \\ \hline
-\textbf{Priority} & High \\ \hline
-\end{tabularx}
-
-\subsection*{TC-015c}
-\begin{tabularx}{\linewidth}{|l|L|}
-\hline
-\textbf{Test Case ID} & TC-015c \\ \hline
-\textbf{Title} & Profile Page - Complete KYC Button Displayed \\ \hline
-\textbf{Requirement} & FR-004 \\ \hline
-\textbf{Preconditions} & User authenticated, KYC status = \texttt{pending}. \\ \hline
-\textbf{Steps} & 
-\begin{minipage}[t]{\linewidth}
-\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item Navigate to \texttt{/profile}.
-  \item System checks KYC status is not verified.
-  \item Profile component renders action buttons.
-\end{enumerate}
-\end{minipage} \\ \hline
-\textbf{Expected Result} & "Complete KYC" and "Refresh Status" buttons are visible. \\ \hline
-\textbf{Actual Result} & Passed - Action buttons displayed for pending status. \\ \hline
-\textbf{Status} & \textcolor{green}{Passed} \\ \hline
-\textbf{Priority} & High \\ \hline
-\end{tabularx}
-
-\subsection*{TC-015d}
-\begin{tabularx}{\linewidth}{|l|L|}
-\hline
-\textbf{Test Case ID} & TC-015d \\ \hline
-\textbf{Title} & Profile Page - Initiate KYC Verification \\ \hline
-\textbf{Requirement} & FR-004 \\ \hline
-\textbf{Preconditions} & User authenticated, KYC pending, production mode. \\ \hline
-\textbf{Steps} & 
-\begin{minipage}[t]{\linewidth}
-\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item User clicks "Complete KYC" button.
-  \item System calls \texttt{/api/kyc/verification} endpoint.
-  \item System receives Stripe verification URL.
-  \item System opens URL in new browser tab.
-\end{enumerate}
-\end{minipage} \\ \hline
-\textbf{Expected Result} & Stripe Identity verification opens in new tab; notification displayed. \\ \hline
-\textbf{Actual Result} & Passed - Verification URL opened correctly. \\ \hline
-\textbf{Status} & \textcolor{green}{Passed} \\ \hline
-\textbf{Priority} & High \\ \hline
-\end{tabularx}
-
-\subsection*{TC-015e}
-\begin{tabularx}{\linewidth}{|l|L|}
-\hline
-\textbf{Test Case ID} & TC-015e \\ \hline
-\textbf{Title} & Profile Page - Refresh KYC Status \\ \hline
-\textbf{Requirement} & FR-004 \\ \hline
-\textbf{Preconditions} & User authenticated, KYC pending. \\ \hline
-\textbf{Steps} & 
-\begin{minipage}[t]{\linewidth}
-\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item User clicks "Refresh Status" button.
-  \item System calls \texttt{/api/kyc/status} endpoint.
-  \item System receives updated status.
-  \item System updates UI and session with new status.
-\end{enumerate}
-\end{minipage} \\ \hline
-\textbf{Expected Result} & KYC status refreshed; UI updated with current status. \\ \hline
-\textbf{Actual Result} & Passed - Status refresh works correctly. \\ \hline
-\textbf{Status} & \textcolor{green}{Passed} \\ \hline
-\textbf{Priority} & High \\ \hline
+\textbf{Priority} & Medium \\ \hline
 \end{tabularx}
 
 \subsection*{TC-016a}
 \begin{tabularx}{\linewidth}{|l|L|}
 \hline
-\textbf{Test Case ID} & TC-016a\\ \hline
-\textbf{Title} & Profile Page - Upload Avatar Successfully \\ \hline
-\textbf{Requirement} & FR-008 (User Profile Management) \\ \hline
-\textbf{Preconditions} & User authenticated. \\ \hline
-\textbf{Steps} & 
+\textbf{Test Case ID} & TC-016a \\ \hline
+\textbf{Title} & Session Service - Persist and Notify Subscribers \\ \hline
+\textbf{Requirement} & FR-010 \\ \hline
+\textbf{Preconditions} & Browser environment available (Vitest JSDOM); subscribers registered. \\ \hline
+\textbf{Steps} &
 \begin{minipage}[t]{\linewidth}
 \begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item User clicks "Change Avatar" button.
-  \item User selects valid image file (PNG, < 5MB).
-  \item System uploads file to storage.
-  \item System updates user profile with avatar URL.
+  \item Call \texttt{setSession} with a real Firebase-authenticated user payload.
+  \item Verify \texttt{subscribeSession} listener triggered.
+  \item Inspect \texttt{localStorage} for serialized session data.
 \end{enumerate}
 \end{minipage} \\ \hline
-\textbf{Expected Result} & Avatar uploaded; preview displayed; success notification shown. \\ \hline
-\textbf{Actual Result} & Passed - Avatar upload successful. \\ \hline
+\textbf{Expected Result} & Session stored under \texttt{openbid\_session}; only real-user metadata persisted; listeners invoked once. \\ \hline
+\textbf{Actual Result} & Passed -- Covered by \texttt{client/src/\_\_tests\_\_/session.test.js}. \\ \hline
 \textbf{Status} & \textcolor{green}{Passed} \\ \hline
 \textbf{Priority} & Medium \\ \hline
 \end{tabularx}
@@ -425,19 +441,19 @@ For brevity we include the highest-priority cases now; the full catalog will liv
 \begin{tabularx}{\linewidth}{|l|L|}
 \hline
 \textbf{Test Case ID} & TC-016b \\ \hline
-\textbf{Title} & Profile Page - Reject Large Avatar Files \\ \hline
-\textbf{Requirement} & FR-008, NFR-002 (Security) \\ \hline
-\textbf{Preconditions} & User authenticated. \\ \hline
-\textbf{Steps} & 
+\textbf{Title} & Session Service - setUser Preserves Requirements \\ \hline
+\textbf{Requirement} & FR-010 \\ \hline
+\textbf{Preconditions} & Existing session with requirement flags stored. \\ \hline
+\textbf{Steps} &
 \begin{minipage}[t]{\linewidth}
 \begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item User clicks "Change Avatar" button.
-  \item User selects image file larger than 5MB.
-  \item System validates file size before upload.
+  \item Initialize session via \texttt{setSession}.
+  \item Invoke \texttt{setUser} with new user payload and explicit requirements.
+  \item Query \texttt{getRequirements} and \texttt{getSession}.
 \end{enumerate}
 \end{minipage} \\ \hline
-\textbf{Expected Result} & Upload rejected; error message "Image must be smaller than 5MB" displayed. \\ \hline
-\textbf{Actual Result} & Passed - Large files rejected correctly. \\ \hline
+\textbf{Expected Result} & Updated user persisted; requirements reflect provided override (email + KYC flags). \\ \hline
+\textbf{Actual Result} & Passed -- Validated in \texttt{session.test.js}. \\ \hline
 \textbf{Status} & \textcolor{green}{Passed} \\ \hline
 \textbf{Priority} & Medium \\ \hline
 \end{tabularx}
@@ -446,42 +462,236 @@ For brevity we include the highest-priority cases now; the full catalog will liv
 \begin{tabularx}{\linewidth}{|l|L|}
 \hline
 \textbf{Test Case ID} & TC-016c \\ \hline
-\textbf{Title} & Profile Page - Handle Avatar Upload Error \\ \hline
-\textbf{Requirement} & FR-008 \\ \hline
-\textbf{Preconditions} & User authenticated; network/server error occurs. \\ \hline
-\textbf{Steps} & 
+\textbf{Title} & Session Service - Inactivity Monitor Auto Logout \\ \hline
+\textbf{Requirement} & FR-010 \\ \hline
+\textbf{Preconditions} & Session established; Vitest fake timers. \\ \hline
+\textbf{Steps} &
 \begin{minipage}[t]{\linewidth}
 \begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item User selects valid image file.
-  \item System attempts upload to \texttt{/api/avatar/upload}.
-  \item Server returns error response.
+  \item Call \texttt{startInactivityMonitor} with spy callback.
+  \item Advance timers to just before the 2-minute limit; ensure no callback.
+  \item Advance timers past the limit; ensure callback fires and cleanup works.
 \end{enumerate}
 \end{minipage} \\ \hline
-\textbf{Expected Result} & User-friendly error message displayed; no profile update. \\ \hline
-\textbf{Actual Result} & Passed - Error handled gracefully. \\ \hline
+\textbf{Expected Result} & Timeout callback executes exactly once after \(2\,\)minutes of inactivity, indicating logout. \\ \hline
+\textbf{Actual Result} & Passed -- Covered by Vitest case in \texttt{session.test.js}. \\ \hline
 \textbf{Status} & \textcolor{green}{Passed} \\ \hline
 \textbf{Priority} & Medium \\ \hline
 \end{tabularx}
 
-\subsection*{TC-016d}
+\subsection*{TC-017a}
 \begin{tabularx}{\linewidth}{|l|L|}
 \hline
-\textbf{Test Case ID} & TC-016d \\ \hline
-\textbf{Title} & Profile Page - Display Existing Avatar \\ \hline
-\textbf{Requirement} & FR-008 \\ \hline
-\textbf{Preconditions} & User authenticated; avatar URL exists in profile. \\ \hline
-\textbf{Steps} & 
+\textbf{Test Case ID} & TC-017a \\ \hline
+\textbf{Title} & Job Create - Verified Contractor Path \\ \hline
+\textbf{Requirement} & FR-011 \\ \hline
+\textbf{Preconditions} & Contractor account with \texttt{kycStatus = verified} and a valid Firebase ID token. \\ \hline
+\textbf{Steps} &
 \begin{minipage}[t]{\linewidth}
 \begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
-  \item Navigate to \texttt{/profile}.
-  \item System retrieves user avatar URL from database.
-  \item Profile component renders avatar image.
+  \item POST \texttt{/api/jobs} with the Authorization header plus title, description, budget, and location.
+  \item Read the JSON response.
 \end{enumerate}
 \end{minipage} \\ \hline
-\textbf{Expected Result} & User's avatar displayed in profile header. \\ \hline
-\textbf{Actual Result} & Passed - Existing avatar displayed correctly. \\ \hline
+\textbf{Expected Result} & HTTP 200 with a job whose \texttt{posterId} matches the contractor and status \texttt{open}. \\ \hline
+\textbf{Actual Result} & Passed -- Verified in \texttt{jobs.integration.real.routes.test.js}. \\ \hline
 \textbf{Status} & \textcolor{green}{Passed} \\ \hline
-\textbf{Priority} & Low \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-017b}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-017b \\ \hline
+\textbf{Title} & Job Create - Bidder Rejected \\ \hline
+\textbf{Requirement} & FR-011 \\ \hline
+\textbf{Preconditions} & Bidder account logged in with Firebase token. \\ \hline
+\textbf{Steps} &
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item POST \texttt{/api/jobs} using the bidder's token and minimal payload.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & HTTP 403 with \texttt{\{error: "contractor\_only"\}}; no job written. \\ \hline
+\textbf{Actual Result} & Passed -- Documented in \texttt{jobs.integration.real.routes.test.js}. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-017c}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-017c \\ \hline
+\textbf{Title} & Job Create - KYC Pending Block \\ \hline
+\textbf{Requirement} & FR-011 \\ \hline
+\textbf{Preconditions} & Contractor account exists but \texttt{kycStatus = pending}. \\ \hline
+\textbf{Steps} &
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item POST \texttt{/api/jobs} with the contractor's token while KYC is still pending.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & HTTP 403 with \texttt{\{error: "KYC required"\}}; job not created. \\ \hline
+\textbf{Actual Result} & Passed -- See ``enforces KYC verification'' Jest test. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-017d}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-017d \\ \hline
+\textbf{Title} & Job Update - Owner Edits Open Job \\ \hline
+\textbf{Requirement} & FR-011 \\ \hline
+\textbf{Preconditions} & Contractor owns an \texttt{open} job and is signed in. \\ \hline
+\textbf{Steps} &
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item PATCH \texttt{/api/jobs/:jobId} with a new title and budget.
+  \item Read response body.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & HTTP 200; returned job reflects updated fields; timestamps preserved. \\ \hline
+\textbf{Actual Result} & Passed -- ``updates an open job'' Jest test. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & Medium \\ \hline
+\end{tabularx}
+
+\subsection*{TC-017e}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-017e \\ \hline
+\textbf{Title} & Job Update - Foreign Owner Forbidden \\ \hline
+\textbf{Requirement} & FR-011 \\ \hline
+\textbf{Preconditions} & Two contractors exist; the job belongs to contractor A; contractor B is signed in. \\ \hline
+\textbf{Steps} &
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Contractor B PATCHes \texttt{/api/jobs/:jobId} owned by contractor A.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & HTTP 403 with \texttt{\{error: "forbidden"\}}; job unchanged. \\ \hline
+\textbf{Actual Result} & Passed -- ``forbids editing another contractor's job'' Jest test. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & Medium \\ \hline
+\end{tabularx}
+
+\subsection*{TC-017f}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-017f \\ \hline
+\textbf{Title} & Job Update - Locked Status \\ \hline
+\textbf{Requirement} & FR-011 \\ \hline
+\textbf{Preconditions} & Contractor owns a job already marked \texttt{awarded} or \texttt{completed}. \\ \hline
+\textbf{Steps} &
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Try to PATCH the locked job.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & HTTP 409 with \texttt{\{error: "job\_locked"\}}. \\ \hline
+\textbf{Actual Result} & Passed -- ``returns job\_locked when status is no longer open'' Jest test. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & Medium \\ \hline
+\end{tabularx}
+
+\subsection*{TC-017g}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-017g \\ \hline
+\textbf{Title} & Job Delete - Owner Removes Open Job \\ \hline
+\textbf{Requirement} & FR-011 \\ \hline
+\textbf{Preconditions} & Contractor owns an open job. \\ \hline
+\textbf{Steps} &
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item DELETE \texttt{/api/jobs/:jobId} with the owner's token.
+  \item Try reading the job from Firestore.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & HTTP 204; subsequent read returns null. \\ \hline
+\textbf{Actual Result} & Passed -- ``removes an open job owned by contractor Jane Doe'' Jest test. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & Medium \\ \hline
+\end{tabularx}
+
+\subsection*{TC-017h}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-017h \\ \hline
+\textbf{Title} & Job Delete - Foreign Owner Forbidden \\ \hline
+\textbf{Requirement} & FR-011 \\ \hline
+\textbf{Preconditions} & Job owned by contractor A; contractor B signed in. \\ \hline
+\textbf{Steps} &
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Contractor B DELETEs \texttt{/api/jobs/:jobId}.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & HTTP 403 with \texttt{\{error: "forbidden"\}}; job remains. \\ \hline
+\textbf{Actual Result} & Passed -- ``forbids deleting someone else's job'' Jest test. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & Medium \\ \hline
+\end{tabularx}
+
+\subsection*{TC-017i}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-017i \\ \hline
+\textbf{Title} & Job Delete - Locked Status \\ \hline
+\textbf{Requirement} & FR-011 \\ \hline
+\textbf{Preconditions} & Contractor owns a job that is no longer \texttt{open}. \\ \hline
+\textbf{Steps} &
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Try to DELETE the locked job.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & HTTP 409 with \texttt{\{error: "job\_locked"\}}. \\ \hline
+\textbf{Actual Result} & Passed -- ``returns job\_locked when job status is not open'' Jest test. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & Medium \\ \hline
+\end{tabularx}
+
+\subsection*{TC-018a}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-018a \\ \hline
+\textbf{Title} & Bid Create - Contractor Cannot Bid Own Job \\ \hline
+\textbf{Requirement} & FR-012 \\ \hline
+\textbf{Preconditions} & Contractor owns an open job and signs in as the bidder. \\ \hline
+\textbf{Steps} &
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item POST \texttt{/api/bids/:jobId} with the contractor's token and a valid amount.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & HTTP 403 with \texttt{\{error: "own\_job\_bid"\}}; no bid written. \\ \hline
+\textbf{Actual Result} & Passed -- ``prevents contractors from bidding on their own jobs'' test in \texttt{bids.integration.real.routes.test.js}. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-018b}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-018b \\ \hline
+\textbf{Title} & Bid Accept - Lock Job/Bid Lifecycle \\ \hline
+\textbf{Requirement} & FR-012 \\ \hline
+\textbf{Preconditions} & Contractor owns a job; bidder submits a valid bid; Firebase tokens exist for contractor, bidder, and observer. \\ \hline
+\textbf{Steps} &
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Bidder POSTs \texttt{/api/bids/:jobId} with a valid amount.
+  \item Contractor POSTs \texttt{/api/bids/:jobId/:bidId/accept}.
+  \item Contractor tries to PATCH the job; bidder tries to PATCH the accepted bid.
+  \item Observer GETs \texttt{/api/jobs} to check visibility.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Job flips to \texttt{awarded} with \texttt{awardedBidId}; further edits return \texttt{job\_locked} / \texttt{bidding\_closed}; observers no longer see the job. \\ \hline
+\textbf{Actual Result} & Passed -- ``Accepting a bid hides the job from outsiders and locks further edits'' test. \\ \hline
+\textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
 \end{tabularx}
 
 % ===================== 5. Code Repository and Branching Strategy =====================
@@ -569,45 +779,6 @@ it('TC-012: rejects write without kycVerified', async () => {
   const db = authedDB({ uid: 'u1', kycVerified: false })
   const ref = db.collection('jobs').doc('j1')
   await assertFails(ref.set({ title: 'T', ... }))
-})
-\end{lstlisting}
-
-\subsection*{KYC Routes (Express + supertest + Jest)}
-\begin{lstlisting}
-import request from 'supertest'
-import express from 'express'
-
-// TC-008a: Create Stripe verification session
-test('should return Stripe verification URL', async () => {
-  const response = await request(app)
-    .post('/api/kyc/verification')
-    .set('Authorization', 'Bearer fake-token')
-    .expect(200)
-
-  expect(response.body.url).toContain('https://verify.stripe.com/')
-  expect(response.body.sessionId).toContain('vs')
-})
-
-// TC-009a: Check KYC status
-test('should return KYC status', async () => {
-  const response = await request(app)
-    .get('/api/kyc/status')
-    .set('Authorization', 'Bearer fake-token')
-    .expect(200)
-
-  expect(['verified', 'pending', 'failed'])
-    .toContain(response.body.status)
-})
-
-// TC-008b: Unauthorized access
-test('should reject unauthorized user', async () => {
-  mockAuth.auth.verify.mockResolvedValue(null)
-  
-  const response = await request(app)
-    .post('/api/kyc/verification')
-    .expect(401)
-
-  expect(response.body.error).toBe('unauthorized')
 })
 \end{lstlisting}
 

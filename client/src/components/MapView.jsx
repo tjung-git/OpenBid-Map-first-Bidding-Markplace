@@ -2,25 +2,32 @@ import { Tile, InlineNotification } from "@carbon/react";
 import { cfg } from "../services/config";
 import { Loader } from "@googlemaps/js-api-loader";
 import { useEffect, useRef } from "react";
+import { isValidCoords } from "../util/locationHelpers";
+import { createMap } from "../util/mapHelpers";
 import "../styles/components/map.css";
 
 export default function MapView({
-  center = { lat: 43.6532, lng: -79.3832 },
-  markers = [],
+  center = {},
+  markers,
 }) {
+
   const divRef = useRef(null);
 
   useEffect(() => {
+    let lat, lng;
+
+    if(!("lat" in center) || !("lng" in center)){
+      lat = 43.6532;
+      lng = -79.3832;
+    } else if (!isValidCoords(center.lat, center.lng)){
+      lat = 43.6532;
+      lng = -79.3832;
+    } else {
+      ({lat, lng} = center);
+    }
+
     if (cfg.prototype) return;
-    const loader = new Loader({
-      apiKey: cfg.mapsKey,
-      version: "weekly",
-    });
-    let map;
-    loader.load().then((google) => {
-      map = new google.maps.Map(divRef.current, { center, zoom: 11 });
-      markers.forEach((m) => new google.maps.Marker({ position: m, map }));
-    });
+    createMap(lat, lng, cfg.mapsKey, markers, divRef);
     return () => {
       /* cleanup nothing */
     };
@@ -38,5 +45,5 @@ export default function MapView({
       </Tile>
     );
   }
-  return <div ref={divRef} className="map-container" />;
+  return <div ref={divRef} style={{ height: 320, borderRadius: 8, marginTop: 16 }} />;
 }
