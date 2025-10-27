@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { DataTable, Button, InlineNotification } from "@carbon/react";
+import { DataTable, Button, InlineNotification, FlexGrid, Column, Row, NumberInput } from "@carbon/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import {
@@ -7,11 +7,20 @@ import {
   useSessionUser,
 } from "../hooks/useSession";
 import MapView from "../components/MapView";
+import SearchAutocomplete from "../components/SearchAutocomplete";
+import { haversineFormulaKm } from "../util/locationHelpers";
+import { cfg } from "../services/config";
 import "../styles/pages/jobs.css";
 
 export default function JobList() {
   const [jobs, setJobs] = useState([]);
+  const [filteredJobs, setFilteredJobs] = useState([]);
   const [err, setErr] = useState("");
+  const [minBudget, setMinBudget] = useState(0);
+  const [maxBudget, setMaxBudget] = useState(1000000);
+  const [center, setCenter] = useState({ lat: 43.6532, lng: -79.3832 });
+  const [selectedAddress, setSelectedAddress] = useState("Toronto, ON, Canada");
+  const [radius, setRadius] = useState(1000000); //In metres
   const [success, setSuccess] = useState("");
   const nav = useNavigate();
   const location = useLocation();
@@ -29,6 +38,12 @@ export default function JobList() {
     }
   }, [location.state, location.pathname, nav]);
 
+  const handlePlaceSelection = (placeData) => {
+    const {address, latLng} = placeData;
+    setCenter(latLng);
+    setSelectedAddress(address);
+  };
+
   useEffect(() => {
     if (!user) return;
     const params = [];
@@ -42,11 +57,10 @@ export default function JobList() {
       .catch(() => setErr("Failed to load jobs"));
   }, [user, isContractor]);
 
-  const markers = useMemo(() => {
-    return jobs
-      .filter((job) => job.location?.lat && job.location?.lng)
-      .map((job) => job.location);
-  }, [jobs]);
+  useEffect(() => {
+    setFilteredJobs(jobs.filter((j) => j.location?.lat && j.location?.lng && ((j.budgetAmount >= minBudget && j.budgetAmount <= maxBudget) || j.budgetAmount ==="-") 
+            && haversineFormulaKm(center.lat, center.lng, j.location?.lat, j.location?.lng) <= radius));
+  }, [radius, minBudget, maxBudget, jobs, center]);
 
   const headers = [
     { key: "title", header: "Title" },
@@ -127,6 +141,72 @@ export default function JobList() {
           lowContrast
         />
       )}
+      {!cfg.prototype &&<FlexGrid>
+        <Row>
+          <Column>
+            <SearchAutocomplete onSelectPlace={handlePlaceSelection}/>
+          </Column>
+          <Column className="filter-selection">
+            <span>Current Location: {selectedAddress}</span>
+          </Column>
+        </Row>
+        <Row style={{marginTop: 16}}>
+          <Column>
+            <NumberInput 
+              size="md"
+              id="radius" 
+              label="Radius (km)" 
+              min={5} 
+              max={1000000} 
+              onChange={(event) => setRadius(Number(event.target.value))} 
+              value={radius}
+              hideSteppers
+              helperText="Radius is set to 1000000 by default, radius should be altered after the location is selected to limit results."
+            />
+          </Column>
+          <Column className="filter-selection">
+              <span>Current Radius: {radius} km</span>
+          </Column>
+        </Row>
+      </FlexGrid>}
+      <MapView
+        markers={filteredJobs
+          .map((j) => j.location)}
+        center={center}
+      />
+      <FlexGrid style={{marginTop: 16}}>
+        <Row>
+          <Column>
+            <span>Budget Filter</span>
+          </Column>
+        </Row>
+        <Row>
+          <Column>
+            <NumberInput 
+              size="md"
+              id="minBudget" label="Min budget" 
+              min={0} 
+              max={1000000} 
+              onChange={(event) => setMinBudget(Number(event.target.value))} 
+              value={minBudget}
+              hideSteppers
+            >
+            </NumberInput>
+          </Column>
+          <Column>
+            <NumberInput
+              size="md" 
+              id="maxBudget" 
+              label="Max budget" 
+              min={0} max={1000000} 
+              onChange={(event) => setMaxBudget(Number(event.target.value))} 
+              value={maxBudget}
+              hideSteppers
+            >
+            </NumberInput>
+          </Column>
+        </Row>
+      </FlexGrid>
 
       {isContractor && !kycVerified && (
         <InlineNotification
@@ -136,8 +216,6 @@ export default function JobList() {
           lowContrast
         />
       )}
-
-      <MapView markers={markers} />
 
       {isContractor && (
         <div className="job-list-actions">
@@ -152,8 +230,14 @@ export default function JobList() {
           <Button onClick={() => nav("/jobs/myBids")}>My Bids</Button>
         </div>
       )}
+      <DataTable rows={filteredJobs
+        .map((j) => ({
+          id: j.id,
+          title: j.title,
+          budgetAmount: j.budgetAmount ?? "-",
+          status: j.status,
+        }))} headers={headers}>
 
-      <DataTable rows={rows} headers={headers}>
         {({ rows, headers, getHeaderProps, getRowProps }) => (
           <table className="cds--data-table cds--data-table--zebra job-table">
             <thead>

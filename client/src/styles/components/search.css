@@ -1,0 +1,29 @@
+#suggestions-grid-container {
+    position: relative;
+    width: 100%;
+}
+
+#suggestions-grid {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+#suggestions-grid-column {
+    width: 100%;
+}
+
+.suggestion {
+    background-color: var(--cds-background);
+    padding:1rem;
+}
+
+.suggestion:hover {
+    background-color: gray;
+    cursor: pointer;
+}
+
