@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Form,
   TextInput,
@@ -12,7 +12,6 @@ import { setSession, setUser } from "../services/session";
 import "../styles/pages/login.css";
 
 export default function Login() {
-  // Authenticates the user, caches verification requirements, and routes based on email/KYC status.
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -21,12 +20,42 @@ export default function Login() {
   const nav = useNavigate();
   const location = useLocation();
 
+  // Prevent double-run in React 18 StrictMode and page remounts
+  const duoHandledRef = useRef(false);
+
+  // Show denied banner if Duo says ?mfa=denied
   useEffect(() => {
-    if (location.state?.signupComplete) {
-      setInfo(location.state.signupComplete);
-      nav(location.pathname, { replace: true, state: {} });
+    const params = new URLSearchParams(location.search);
+    if (params.get("mfa") === "denied") {
+      setError("You denied the Duo prompt. Please approve to continue.");
+      nav(location.pathname, { replace: true });
     }
-  }, [location.state, location.pathname, nav]);
+  }, [location.search, location.pathname, nav]);
+
+  // Handle Duo success: /login or /login/finish with ?code=otc_...
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const code = params.get("code");
+    if (!code) return;
+
+    // Guard: only handle this code once
+    if (duoHandledRef.current) return;
+    duoHandledRef.current = true;
+    if (sessionStorage.getItem(`duo_handled_${code}`)) return;
+    sessionStorage.setItem(`duo_handled_${code}`, "1");
+
+    (async () => {
+      try {
+        const finalized = await api.duoFinalize(code);
+        setSession(finalized);
+        setUser(finalized.user, finalized.requirements);
+        nav("/jobs", { replace: true });
+      } catch (e) {
+        setError("Multi-factor finalization failed. Please sign in again.");
+        nav("/login", { replace: true });
+      }
+    })();
+  }, [location.search, nav]);
 
   async function submit(e) {
     e.preventDefault();
@@ -35,7 +64,15 @@ export default function Login() {
     setSubmitting(true);
     try {
       const data = await api.login(email, password);
+
+      // If MFA required, go start Duo (server will redirect back with ?code=...)
+      if (data?.mfa?.required && data?.mfa?.startUrl) {
+        window.location.assign(data.mfa.startUrl);
+        return;
+      }
+
       setSession(data);
+
       const selectedRole = "bidder";
       const currentRole = (data.user?.userType || "").toLowerCase();
 
