@@ -41,6 +41,7 @@ if (!config.prototype) {
     async (req, res) => {
       const sig = req.headers["stripe-signature"];
       let event;
+
       try {
         const stripe = (await import("stripe")).default;
         const stripeClient = new stripe(config.stripe.secretKey);
@@ -53,11 +54,11 @@ if (!config.prototype) {
         console.log(`Webhook signature verification failed.`, err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
       }
+
       // Handle the event
       if (event.type === "identity.verification_session.verified") {
         const verificationSession = event.data.object;
         const userId = verificationSession.metadata?.user_id;
-
         if (userId) {
           // Update user status in database
           const { db } = await import("./adapters/db.real.js");
@@ -70,6 +71,7 @@ if (!config.prototype) {
           }
         }
       }
+
       res.json({ received: true });
     }
   );
