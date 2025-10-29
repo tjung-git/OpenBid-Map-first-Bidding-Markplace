@@ -7,8 +7,7 @@ const base = cfg.apiBase;
 function headers() {
   const h = { "Content-Type": "application/json" };
   const session = getSession();
-  const uid =
-    session?.user?.uid || localStorage.getItem("mockUid") || null;
+  const uid = session?.user?.uid || localStorage.getItem("mockUid") || null;
   if (session?.user?.uid) {
     h["x-user-id"] = session.user.uid;
   }
@@ -65,6 +64,7 @@ export const api = {
     const r = await fetch(`${base}/api/auth/role`, {
       method: "PATCH",
       headers: headers(),
+      credentials: "include",
       body: JSON.stringify({ role }),
     });
     const data = await r.json();
@@ -175,7 +175,7 @@ export const api = {
   },
   async uploadAvatar(file) {
     const formData = new FormData();
-    formData.append('avatar', file);
+    formData.append("avatar", file);
     const session = getSession();
     const authToken = session?.session?.token || session?.session?.idToken;
     const h = {};
@@ -198,5 +198,15 @@ export const api = {
       throw { status: r.status, data };
     }
     return r.json();
+  },
+  async duoFinalize(code) {
+    const r = await fetch(`${base}/api/auth/duo/finalize`, {
+      method: "POST",
+      headers: { ...headers() },
+      body: JSON.stringify({ code }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw { status: r.status, data };
+    return data;
   },
 };
