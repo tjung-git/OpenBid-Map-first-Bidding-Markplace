@@ -33,45 +33,44 @@ app.use("/api/password", passwordRoutes);
 app.use("/api/auth/duo", duoRoutes);
 app.use("/api/upload", uploadRoutes);
 
-// Stripe webhook (real only)
-if (!config.prototype) {
-  app.post(
-    "/api/webhooks/stripe",
-    express.raw({ type: "application/json" }),
-    async (req, res) => {
-      const sig = req.headers["stripe-signature"];
-      let event;
+app.post(
+  "/api/webhooks/stripe",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    const sig = req.headers["stripe-signature"];
+    let event;
+    try {
+      const stripe = (await import("stripe")).default;
+      const stripeClient = new stripe(config.stripe.secretKey);
+      event = stripeClient.webhooks.constructEvent(
+        req.body,
+        sig,
+        config.stripe.webhookSecret
+      );
+    } catch (err) {
+      console.log(`Webhook signature verification failed.`, err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+    // Handle the event
+    if (event.type === "identity.verification_session.verified") {
+      const verificationSession = event.data.object;
+      const userId = verificationSession.metadata?.user_id;
 
-      try {
-        const stripeMod = await import("stripe");
-        const Stripe = stripeMod.default;
-        const stripe = new Stripe(config.stripe.secretKey);
-        event = stripe.webhooks.constructEvent(
-          req.body,
-          sig,
-          config.stripe.webhookSecret
-        );
-      } catch (err) {
-        console.log(`Webhook signature verification failed.`, err.message);
-        return res.status(400).send(`Webhook Error: ${err.message}`);
-      }
-
-      if (event.type === "identity.verification_session.verified") {
-        const verificationSession = event.data.object;
-        const userId = verificationSession.metadata?.user_id;
-        if (userId) {
-          const { db } = await import("./adapters/db.real.js");
-          const user = await db.user.get(userId);
-          if (user) {
-            await db.user.upsert({ ...user, kycStatus: "verified" });
-          }
+      if (userId) {
+        // Update user status in database
+        const { db } = await import("./adapters/db.real.js");
+        const user = await db.user.get(userId);
+        if (user) {
+          await db.user.upsert({
+            ...user,
+            kycStatus: "verified",
+          });
         }
       }
-
-      res.json({ received: true });
     }
-  );
-}
+    res.json({ received: true });
+  }
+);
 
 app.use((err, req, res, next) => {
   console.error("[server] error:", err);
