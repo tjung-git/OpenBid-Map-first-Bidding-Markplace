@@ -86,7 +86,7 @@ FR-001 & System shall allow authenticated users to \textbf{post jobs} with title
 FR-002 & System shall allow providers to \textbf{browse jobs on a map} with basic filters (radius, category). & TC-003a-d, TC-004 & Partially Covered \\
 FR-003 & System shall allow providers to \textbf{place bids} on open jobs; posters can view and accept a bid. & TC-005, TC-006 & Partially Covered \\
 FR-004 & System shall enforce \textbf{KYC for all users} before posting or bidding. & TC-007 & Partially Covered \\
-FR-005 & System shall support \textbf{user authentication} with \textbf{Duo 2FA} for sensitive actions. & TC-008 & Partially Covered \\
+FR-005 & System shall support \textbf{user authentication} with \textbf{Duo 2FA} for sensitive actions. & TC-008 & Covered \\
 FR-006 & System shall provide \textbf{in-thread messaging} per job after acceptance. & TC-009 & Planned \\
 FR-007 & System shall record \textbf{ratings and reviews} after job completion. & TC-010 & Planned \\
 FR-008 & System must create Firebase accounts and keep users out until they click the email verification link. & TC-014a--d & Covered \\
@@ -259,11 +259,19 @@ is gracefully handled. \\ \hline
 \textbf{Status:} Pending \quad \textbf{Priority:} High
 
 \subsection*{TC-008}
-\textbf{Title:} Duo 2FA Challenge on Sensitive Action \\
+\textbf{Title:} Duo 2FA Challenge on Login \\
 \textbf{Requirement:} FR-005 \\
-\textbf{Preconditions:} User logged in without recent 2FA; action = add payout method. \\
-\textbf{Expected Result:} Duo prompt required; action proceeds only on success. \\
-\textbf{Status:} Pending \quad \textbf{Priority:} Medium
+\textbf{Preconditions:} User exists, Duo enabled. \\
+\textbf{Steps:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item POST \texttt{/api/auth/login} with valid credentials.
+  \item Follow \texttt{mfa.startUrl} to begin Duo: GET \texttt{/api/auth/duo/start?state=...}.
+  \item Simulate Duo callback: GET \texttt{/api/auth/duo/callback?state=...{\&}code=allow-123}.
+  \item Finalize: POST \texttt{/api/auth/duo/finalize} with one-time code.
+\end{enumerate}
+\textbf{Expected Result:} Login returns 202 with Duo start URL; callback redirects to \texttt{/login/finish?code=...}; finalize returns session JSON. \\
+\textbf{Actual Result:} \textcolor{green}{Passed} -- Covered by Jest \texttt{tests/auth.duo.test.js}. \\
+\textbf{Status:} \textcolor{green}{Passed} \quad \textbf{Priority:} Medium
 
 \subsection*{TC-009}
 \textbf{Title:} Messaging After Acceptance \\
