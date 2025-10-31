@@ -65,29 +65,6 @@ latexmk automates LaTeX document compilation.
 - Verify: `latexmk --version`
 - If missing: `sudo tlmgr install latexmk`
 
-## Project Structure
-```
-.
-├── .github/              # Github configuration files
-│   ├── pull_request_template.md     # Request template for creating pull requests
-├── .vscode/              # VSCode configuration files
-│   ├── settings.json    # VSCode latex settings
-├── documentation/        # LaTeX documents for 1.1 and 1.2
-│   ├── 1.1 Project Proposal/     # LaTeX documents for 1.1
-│   │   ├── main.pdf         # Compiled 1.1 PDF output
-│   │   └── main.tex         # Main 1.1 LaTeX document
-│   ├── 1.2 Detailed User Stories, Requirements, and Initial Prototype/     # LaTeX documents for 1.2
-│   │   ├── main.pdf         # Compiled 1.2 PDF output
-│   │   ├── main.tex         # Main 1.2 LaTeX document
-│   │   ├── UC-1.png        # Manage Jobs UML diagram
-│   │   ├── UC-2.png        # Browse & Bid UML diagram
-│   │   ├── UC-3.png        # Award & Escrow UML diagram
-│   │   └── UC-4.png        # Complete & Payout UML diagram
-├── .gitignore           # git ignore
-├── Makefile             # Automation scripts
-└── README.md           # This file
-```
-
 ## Usage
 
 ### Building the Project Proposal
