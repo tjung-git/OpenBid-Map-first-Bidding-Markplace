@@ -4,7 +4,7 @@ module.exports = {
     '^.+\\.js$': ['babel-jest', { presets: ['@babel/preset-env'] }],
   },
   transformIgnorePatterns: ['node_modules/(?!(supertest|@jest/globals)/)'],
-  testMatch: ['**/tests/**/*.test.js'],
+  testMatch: ['**/__tests__/**/*.test.js'],
   testPathIgnorePatterns: ['/node_modules/', 'testUtils.js'],
-  setupFiles: ['<rootDir>/tests/setupenv.js'],
+  setupFiles: ['<rootDir>/src/routes/__tests__/setupenv.js'],
 };

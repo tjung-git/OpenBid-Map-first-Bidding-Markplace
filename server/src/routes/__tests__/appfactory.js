@@ -3,12 +3,12 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 
-import authRoutes from "../src/routes/auth.routes.js";
-import jobsRoutes from "../src/routes/jobs.routes.js";
-import bidsRoutes from "../src/routes/bids.routes.js";
-import passwordRoutes from "../src/routes/password.routes.js";
-import duoRoutes from "../src/routes/duo.routes.js";
-import { config } from "../src/config.js";
+import authRoutes from "../auth.routes.js";
+import jobsRoutes from "../jobs.routes.js";
+import bidsRoutes from "../bids.routes.js";
+import passwordRoutes from "../password.routes.js";
+import duoRoutes from "../duo.routes.js";
+import { config } from "../../config.js";
 
 export function makeTestApp() {
   const app = express();
