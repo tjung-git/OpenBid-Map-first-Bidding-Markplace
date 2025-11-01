@@ -334,6 +334,62 @@ You should see the standard keys (e.g., `FIREBASE_PROJECT_ID`, `STRIPE_SECRET_KE
    - Install and build the client,
    - Deploy Hosting and the Cloud Function.
 
+### Working from the `live` branch
+
+When you create a feature branch off `live`, follow this checklist so local work stays compatible with the serverless pipeline:
+
+1. **Create your feature branch**
+   ```bash
+   git checkout live
+   git pull
+   git checkout -b feature/<ticket-or-short-name>
+   ```
+
+2. **Set up env files** (first time on a new machine)
+   ```bash
+   cp server/.env.example server/.env         # fill in shared secrets
+   cp client/.env.example client/.env         # local Vite config
+   ```
+   - `.env.example` files are just templates. The app only reads `.env`/`.env.local`, so be sure to copy and edit your personal versions.
+   - Do **not** edit `client/.env.production`; it keeps the production values for CI/Hosting.
+   - Use `client/.env` or `client/.env.local` for local overrides (e.g., `VITE_API_BASE=http://localhost:4000`).
+
+3. **Install dependencies**
+   ```bash
+   npm install --prefix server
+   npm install --prefix client
+   ```
+   If you plan to run or deploy the Cloud Function, also run:
+   ```bash
+   npm --prefix functions run copy-server
+   npm install --prefix functions
+   ```
+
+4. **Run everything locally**
+   ```bash
+   npm run dev --prefix server   # Express API on :4000
+   npm run dev --prefix client   # Vite dev server on :5173
+   ```
+   Optional: `firebase emulators:start --only functions,hosting` to exercise the Hosting → Function rewrite in one process.
+
+5. **Test before pushing**
+   - Backend unit/integration tests: `npm test --prefix server`
+   - Manual smoke test of signup → Duo → login, map autocomplete, and bid flows.
+
+6. **Commit & push**
+   ```bash
+   git status   # ensure no .env or secrets are staged
+   git commit -am "feat: short summary"
+   git push -u origin feature/<ticket-or-short-name>
+   ```
+   Open a PR into `live`. Merging the PR triggers the GitHub Actions workflow which builds and deploys automatically.
+
+> 🔐 Keep secrets out of git. Runtime credentials live in Firebase Secret Manager and personal `.env` files. The only public env file committed to the repo is `client/.env.production` because it contains public-only values.
+
+#### Adding new environment variables
+- **Server-side values**: add placeholders to `server/.env`, document them, and set them via `firebase functions:secrets:set`. Update `functions/index.js` to load the new secret into `process.env` if the Express app needs it.
+- **Client-side (`VITE_*`) values**: update `client/.env` for local dev and ensure `client/.env.production` contains the production-safe value. Never commit private keys.
+
 ### Troubleshooting
 - **Function crashes at startup**: Ensure all secrets above are set; missing Firebase admin credentials are the most common cause.
 - **Need to rotate secrets**: Re-run the `firebase functions:secrets:set` command. Deploying the function pulls the latest version automatically.
