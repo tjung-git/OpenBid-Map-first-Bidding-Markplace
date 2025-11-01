@@ -136,7 +136,7 @@ These steps provision Firebase, configure the Node/React apps, and run the proto
 
 ### 3. React client environment
 
-Create or edit `client/.env`:
+Create or edit `client/.env` for local development:
 
 ```ini
 VITE_PROTOTYPE=FALSE
@@ -144,7 +144,7 @@ VITE_API_BASE=http://localhost:4000
 VITE_GOOGLE_MAPS_API_KEY=<optional>
 ```
 
-The API key from step 2 is consumed on the server; the client only needs its backend URL (and optionally a Google Maps key).
+The repo also includes `client/.env.production` so CI builds and Firebase Hosting deploys always inject the serverless API origin and public Maps key. Vite reads `*.production` when `NODE_ENV=production`; without it the bundle falls back to `http://localhost:4000`, which caused the hosted app to post to a non-existent local server after login. Keep this file checked in and use `client/.env`/`client/.env.local` for local overrides.
 
 ### 4. Email Verification Workflow
 
@@ -324,7 +324,7 @@ You should see the standard keys (e.g., `FIREBASE_PROJECT_ID`, `STRIPE_SECRET_KE
 
 ### Local vs. Production Settings
 - Keep `server/.env` for local development (`APP_URL=http://localhost:5173`, etc.). For production overrides, rely on Firebase Secret Manager.
-- `client/.env` now points to `https://openbid2107.web.app`; add `client/.env.local` with `VITE_API_BASE=http://localhost:4000` when testing against the local Express server.
+- `client/.env.production` ships with the production values so CI builds target `https://openbid2107.web.app`. Keep personal overrides in `client/.env` / `client/.env.local` when testing against `http://localhost:4000`.
 
 ### CI Automation
 1. Generate a CI token: `firebase login:ci`.
