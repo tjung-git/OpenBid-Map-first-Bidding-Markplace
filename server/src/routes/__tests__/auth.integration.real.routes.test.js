@@ -111,8 +111,8 @@ describe("auth routes (real adapters)", () => {
     expect(mocks.signUpWithEmailPasswordMock).not.toHaveBeenCalled();
   });
 
-  test("POST /api/auth/login returns session details for verified Jane Doe", async () => {
-    // After verifying Jane's account she should be able to log in and get a Firebase session.
+  test("POST /api/auth/login returns MFA request for verified Jane Doe", async () => {
+    // After verifying Jane's account, login now requires Duo MFA and returns 202 with MFA details.
     const { app, db, mocks } = await createRealApp({ auth: true });
     const jane = await setupJaneDoe({ app });
     await db.user.update(jane.uid, {
@@ -125,28 +125,16 @@ describe("auth routes (real adapters)", () => {
       password: "password123",
     });
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(202);
     expect(mocks.authSignInMock).toHaveBeenCalledWith(
       "jane.doe@example.com",
       "password123"
     );
-    expect(response.body.user).toMatchObject({
-      uid: jane.uid,
-      email: "jane.doe@example.com",
-      userType: "bidder",
-      emailVerification: "verified",
-      kycStatus: "verified",
+    expect(response.body.mfa).toMatchObject({
+      provider: "duo",
+      required: true,
     });
-    expect(response.body.session).toMatchObject({
-      uid: jane.uid,
-      email: "jane.doe@example.com",
-      idToken: "firebase_login_token",
-      refreshToken: "firebase_login_refresh",
-    });
-    expect(response.body.requirements).toEqual({
-      emailVerified: true,
-      kycVerified: true,
-    });
+    expect(response.body.mfa.startUrl).toMatch(/\/api\/auth\/duo\/start\?state=/);
   });
 
   test("PATCH /api/auth/role switches Jane Doe to contractor when authorized", async () => {

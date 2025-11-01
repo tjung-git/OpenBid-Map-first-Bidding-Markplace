@@ -1,5 +1,5 @@
-import { db as mockDb } from "../src/adapters/db.mock.js";
-import { config } from "../src/config.js";
+import { db as mockDb } from "../../adapters/db.mock.js";
+import { config } from "../../config.js";
 
 export async function seedUser({
   uid,
@@ -10,6 +10,7 @@ export async function seedUser({
   emailVerification = "verified",
   userType = "bidder",
   passwordHash = "$2a$10$abcdefghiJKLmnopqrstuvwxyzABCDEuv",
+  duoEnabled = false,
 }) {
   if (!config.prototype) {
     throw new Error("Tests expect PROTOTYPE=TRUE");
@@ -25,6 +26,7 @@ export async function seedUser({
     emailVerification,
     kycSessionId: null,
     passwordHash,
+    duoEnabled,
     createdAt: now,
     updatedAt: now,
   };
