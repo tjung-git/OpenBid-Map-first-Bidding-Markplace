@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "openbid2107"
+  },
+  "targets": {
+    "openbid2107": {
+      "hosting": {
+        "client": [
+          "openbid2107"
+        ]
+      }
+    }
+  }
+}

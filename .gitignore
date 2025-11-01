@@ -5,6 +5,9 @@
 node_modules/
 client/node_modules/
 server/node_modules/
+functions/server/
+client/dist/
+.firebase/
 
 # Environment variables
 .env
