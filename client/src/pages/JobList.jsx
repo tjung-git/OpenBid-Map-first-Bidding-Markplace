@@ -99,12 +99,6 @@ export default function JobList() {
     setSelectedAddress(address);
   };
 
-  const markers = useMemo(() => {
-    return jobs
-      .filter((job) => job.location?.lat && job.location?.lng)
-      .map((job) => job.location);
-  }, [jobs]);
-
   const headers = [
     { key: "title", header: "Title" },
     { key: "description", header: "Description" },
