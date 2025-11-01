@@ -24,5 +24,11 @@ clean-latex:
 		"documentation/1.2 Detailed User Stories, Requirements, and Initial Prototype"/*.out "documentation/1.2 Detailed User Stories, Requirements, and Initial Prototype"/*.toc \
 		"documentation/1.2 Detailed User Stories, Requirements, and Initial Prototype"/*.bbl "documentation/1.2 Detailed User Stories, Requirements, and Initial Prototype"/*.blg \
 		"documentation/1.2 Detailed User Stories, Requirements, and Initial Prototype"/*.synctex.gz 2>/dev/null || true
+
+		@rm -f "documentation/2.1 Testing and Initial Development"/*.aux "documentation/2.1 Testing and Initial Development"/*.fdb_latexmk \
+		"documentation/2.1 Testing and Initial Development"/*.fls "documentation/2.1 Testing and Initial Development"/*.log \
+		"documentation/2.1 Testing and Initial Development"/*.out "documentation/2.1 Testing and Initial Development"/*.toc \
+		"documentation/2.1 Testing and Initial Development"/*.bbl "documentation/2.1 Testing and Initial Development"/*.blg \
+		"documentation/2.1 Testing and Initial Development"/*.synctex.gz 2>/dev/null || true
 		
 	@echo "LaTeX cleanup complete!"

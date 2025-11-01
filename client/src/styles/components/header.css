@@ -1,0 +1,45 @@
+.header-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.header-user-greeting {
+  font-weight: 600;
+}
+
+.header-user-details {
+  opacity: 0.85;
+}
+
+.header-user-status {
+  color: var(--cds-text-secondary, #6f6f6f);
+  font-style: italic;
+}
+
+.header-user-status-warning {
+  color: #e0b400;
+  font-weight: 600;
+}
+
+.header-logo-button {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  gap: 0.5rem;
+}
+
+.header-logo-button img {
+  height: 28px;
+  width: 28px;
+}
+
+.header-logo-text {
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}

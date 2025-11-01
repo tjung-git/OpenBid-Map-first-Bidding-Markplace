@@ -1,0 +1,118 @@
+.role-choice-panel {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  background: var(--cds-layer, #fff);
+  border-radius: 0.75rem;
+  border: 1px solid var(--cds-border-subtle-00, #e0e0e0);
+  box-shadow: 0 8px 24px rgba(22, 22, 22, 0.08);
+}
+
+.role-choice-header {
+  margin-bottom: 1rem;
+}
+
+.role-choice-header h3 {
+  margin: 0.25rem 0;
+  font-size: 1.25rem;
+}
+
+.role-choice-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  color: #8d8d8d;
+  margin: 0;
+}
+
+.role-choice-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 720px) {
+  .role-choice-options {
+    flex-direction: row;
+  }
+}
+
+.role-choice-card {
+  flex: 1;
+  border: 1px solid var(--cds-border-subtle-01, #d1d1d1);
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--cds-layer, #fff);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease,
+    transform 0.2s ease;
+  color: var(--cds-text-primary, #161616);
+}
+
+.role-choice-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.role-choice-card:not(:disabled):hover,
+.role-choice-card:not(:disabled):focus-visible {
+  border-color: #0f62fe;
+  box-shadow: 0 8px 24px rgba(15, 98, 254, 0.1);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.role-choice-card--active {
+  border-color: #0f62fe;
+  box-shadow: 0 10px 26px rgba(15, 98, 254, 0.16);
+}
+
+.role-choice-card--loading {
+  position: relative;
+}
+
+.role-choice-label {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.role-choice-role {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  color: #8d8d8d;
+}
+
+.role-choice-card--active .role-choice-role {
+  color: #0f62fe;
+}
+
+.role-choice-copy {
+  margin: 0;
+  color: var(--cds-text-secondary, #525252);
+  flex: 1;
+}
+
+.role-choice-cta {
+  font-weight: 600;
+  color: #0f62fe;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.role-choice-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.role-choice-hint {
+  font-size: 0.9rem;
+  color: var(--cds-text-secondary, #6f6f6f);
+  margin-bottom: 1rem;
+}
