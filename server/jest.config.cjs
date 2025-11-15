@@ -6,5 +6,5 @@ module.exports = {
   transformIgnorePatterns: ['node_modules/(?!(supertest|@jest/globals)/)'],
   testMatch: ['**/__tests__/**/*.test.js'],
   testPathIgnorePatterns: ['/node_modules/', 'testUtils.js'],
-  setupFiles: ['<rootDir>/src/routes/__tests__/setupenv.js'],
+  setupFiles: ['<rootDir>/src/__tests__/setupenv.js'],
 };
