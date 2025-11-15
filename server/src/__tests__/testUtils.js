@@ -317,27 +317,27 @@ export async function createPrototypeApp({
   app.use(express.json());
 
   if (auth) {
-    const { default: authRoutes } = await import("../auth.routes.js");
+    const { default: authRoutes } = await import("../routes/auth.routes.js");
     app.use("/api/auth", authRoutes);
   }
 
   if (jobs) {
-    const { default: jobsRoutes } = await import("../jobs.routes.js");
+    const { default: jobsRoutes } = await import("../routes/jobs.routes.js");
     app.use("/api/jobs", jobsRoutes);
   }
 
   if (bids) {
-    const { default: bidsRoutes } = await import("../bids.routes.js");
+    const { default: bidsRoutes } = await import("../routes/bids.routes.js");
     app.use("/api/bids", bidsRoutes);
   }
 
   if (kyc) {
-    const { default: kycRoutes } = await import("../kyc.routes.js");
+    const { default: kycRoutes } = await import("../routes/kyc.routes.js");
     app.use("/api/kyc", kycRoutes);
   }
 
   if (password) {
-    const { default: passwordRoutes } = await import("../password.routes.js");
+    const { default: passwordRoutes } = await import("../routes/password.routes.js");
     app.use("/api/password", passwordRoutes);
   }
 
@@ -524,8 +524,8 @@ export async function createRealApp({
 
   let FirebaseIdentityErrorClass;
 
-  jest.doMock("../../lib/firebaseIdentity.js", () => {
-    const actual = jest.requireActual("../../lib/firebaseIdentity.js");
+  jest.doMock("../lib/firebaseIdentity.js", () => {
+    const actual = jest.requireActual("../lib/firebaseIdentity.js");
     FirebaseIdentityErrorClass = actual.FirebaseIdentityError;
     return {
       __esModule: true,
@@ -538,8 +538,8 @@ export async function createRealApp({
     };
   });
 
-  jest.doMock("../../lib/firebase.js", () => {
-    const actual = jest.requireActual("../../lib/firebase.js");
+  jest.doMock("../lib/firebase.js", () => {
+    const actual = jest.requireActual("../lib/firebase.js");
     return {
       __esModule: true,
       ...actual,
@@ -562,27 +562,27 @@ export async function createRealApp({
   app.use(express.json());
 
   if (auth) {
-    const { default: authRoutes } = await import("../auth.routes.js");
+    const { default: authRoutes } = await import("../routes/auth.routes.js");
     app.use("/api/auth", authRoutes);
   }
 
   if (jobs) {
-    const { default: jobsRoutes } = await import("../jobs.routes.js");
+    const { default: jobsRoutes } = await import("../routes/jobs.routes.js");
     app.use("/api/jobs", jobsRoutes);
   }
 
   if (bids) {
-    const { default: bidsRoutes } = await import("../bids.routes.js");
+    const { default: bidsRoutes } = await import("../routes/bids.routes.js");
     app.use("/api/bids", bidsRoutes);
   }
 
   if (kyc) {
-    const { default: kycRoutes } = await import("../kyc.routes.js");
+    const { default: kycRoutes } = await import("../routes/kyc.routes.js");
     app.use("/api/kyc", kycRoutes);
   }
 
   if (password) {
-    const { default: passwordRoutes } = await import("../password.routes.js");
+    const { default: passwordRoutes } = await import("../routes/password.routes.js");
     app.use("/api/password", passwordRoutes);
   }
 

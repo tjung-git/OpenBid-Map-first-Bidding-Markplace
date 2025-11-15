@@ -1,5 +1,5 @@
-import { db as mockDb } from "../../adapters/db.mock.js";
-import { config } from "../../config.js";
+import { db as mockDb } from "../adapters/db.mock.js";
+import { config } from "../config.js";
 
 export async function seedUser({
   uid,
