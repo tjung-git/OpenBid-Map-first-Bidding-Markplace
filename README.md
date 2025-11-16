@@ -1,6 +1,6 @@
 # OpenBid: Map-first Bidding Marketplace
 
-OpenBid is a map-first bidding marketplace platform developed by Team 1: Tyler, Mani, Yanness, Alaister.
+OpenBid is a **map-first bidding marketplace platform** developed by Team 1: Tyler, Mani, Yanness, Alaister.
 
 ## Quick Start
 
@@ -8,53 +8,59 @@ OpenBid is a map-first bidding marketplace platform developed by Team 1: Tyler, 
 
 - Node.js (v16 or higher)
 - npm or yarn
-- Firebase account
 
-### Installation & Running the Application
+### Running in Prototype Mode - `PROTOTYPE=TRUE`
+
+**No configuration required!** The application runs with in-memory mocks - no database, no `.env` files needed.
 
 ```bash
 # From repo root
 cd server && npm install
 cd ../client && npm install
 
-# Start backend (needs Firebase env vars set)
+# Start backend
 cd ../server
 npm run dev
 
-# In a new terminal start the client
+# Start the client
 cd ../client
 npm run dev
 ```
 
 Visit `http://localhost:5173/` to access the application.
 
+> **Note:** Prototype mode uses mock data and in-memory storage. All data is reset when the server restarts. This is the default mode for this iteration.
+
+### Running in Production Mode - `PROTOTYPE=FALSE`
+
+For full functionality with persistent data, email verification, and KYC, see the [Configuration](#configuration) section below.
+
+> **Note:** Instructions for configuring KYC (Stripe), Duo (2FA), and Google Maps API keys will be provided in later iterations.
+
 ## Configuration
+
+> **⚠️ Optional:** Only needed if running with `PROTOTYPE=FALSE`.
+
+### Setups
+
+- Firebase account
+- Stripe account (for KYC - instructions in future iterations)
+- Duo account (for 2FA - instructions in future iterations)
+- Google Maps API key (for Google map display - instructions in future iterations)
 
 ### 1. Firebase Setup
 
 1. Sign in at [https://console.firebase.google.com](https://console.firebase.google.com)
 2. From **Project Overview** click **Add app** → **Web**
 3. Enable **Email/Password** authentication in **Build → Authentication → Sign-in method**
-4. Create a Firestore database in **Build → Firestore Database** (Native mode)
-5. Set Firestore security rules:
-
-   ```javascript
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       match /{document=**} {
-         allow read, write: if request.auth != null && request.auth.uid != null;
-       }
-     }
-   }
-   ```
+4. Create a Firestore database in **Build → Firestore Database**
 
 ### 2. Server Environment (`server/.env`)
 
 1. Navigate to **Project settings → Service accounts** and click **Generate new private key**
 2. Copy `project_id`, `client_email`, and `private_key` values
 3. Copy the `apiKey` from **Project settings → General**
-4. Update `server/.env`:
+4. Create `server/.env` with:
 
    ```ini
    PROTOTYPE=FALSE
@@ -70,22 +76,21 @@ Visit `http://localhost:5173/` to access the application.
 
 ### 3. Client Environment (`client/.env`)
 
+Create `client/.env` with:
+
 ```ini
 VITE_PROTOTYPE=FALSE
 VITE_API_BASE=http://localhost:4000
-VITE_GOOGLE_MAPS_API_KEY=<optional>
+VITE_GOOGLE_MAPS_API_KEY=<google_map_api_key>
 ```
 
-## Email Verification & KYC
+### Email Verification & KYC
 
 - Firebase sends verification emails automatically during signup
 - Use [temp-mail.org](https://temp-mail.org/en/) for testing
 - Login is blocked until email is verified
-- **Testing note:** Manually set `kycStatus` to `verified` in Firestore to simulate KYC approval
 
-## Development
-
-### Running Tests
+## Running Tests
 
 ```bash
 # Client tests
@@ -97,9 +102,19 @@ cd server
 npm test
 ```
 
-### Prototype Mode
+### Switching Between Modes
 
-Set `PROTOTYPE=TRUE` in `server/.env` to use in-memory mocks (no Firebase required).
+**Prototype Mode (default):**
+- No `.env` files needed
+- Uses in-memory mocks
+- Data resets on server restart
+- Ideal for development and testing
+
+**Firebase Mode:**
+- Requires `.env` configuration (see [Configuration](#configuration))
+- Set `PROTOTYPE=FALSE` in both `server/.env` and `VITE_PROTOTYPE=FALSE` in `client/.env`
+- Uses real Firebase backend
+- Persistent data storage
 
 ## Documentation
 
