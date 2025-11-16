@@ -1,123 +1,66 @@
 # OpenBid: Map-first Bidding Marketplace
 
-## Project Overview
-OpenBid is a map-first bidding marketplace platform developed by Team 1: Tyler, Mani, Yanness, Alaister.
+OpenBid is a **map-first bidding marketplace platform** developed by Team 1: Tyler, Mani, Yanness, Alaister.
 
-## Prerequisites
+## Quick Start
 
-### Required Software Installation
+### Prerequisites
 
-#### 1. LaTeX Distribution
-To compile the project proposal documents, you need a LaTeX distribution installed:
+- Node.js (v16 or higher)
+- npm or yarn
 
-**macOS (Recommended - Homebrew):**
+### Running in Prototype Mode - `PROTOTYPE=TRUE`
+
+**No configuration required!** The application runs with in-memory mocks - no database, no `.env` files needed.
+
 ```bash
-# Install Homebrew if you don't have it:
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+# From repo root
+cd server && npm install
+cd ../client && npm install
 
-# Install MacTeX using Homebrew:
-brew install --cask mactex
+# Start backend
+cd ../server
+npm run dev
 
-# Add LaTeX to your PATH (add to ~/.zshrc or ~/.bash_profile):
-echo 'export PATH="/Library/TeX/texbin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
+# Start the client
+cd ../client
+npm run dev
 ```
 
-**macOS (Alternative Methods):**
-- Download [MacTeX.pkg](https://www.tug.org/mactex/) directly and install via GUI
-- For minimal installation: `brew install --cask basictex` (then install additional packages as needed)
+Visit `http://localhost:5173/` to access the application.
 
-**Windows:**
-- Install [MiKTeX](https://miktex.org/download) (recommended for Windows)
-- Or install [TeX Live](https://www.tug.org/texlive/windows.html)
+> **Note:** Prototype mode uses mock data and in-memory storage. All data is reset when the server restarts. This is the default mode for this iteration.
 
-**Linux (Ubuntu/Debian):**
-```bash
-sudo apt-get update
-sudo apt-get install texlive-full
-```
+### Running in Production Mode - `PROTOTYPE=FALSE`
 
-#### 2. Make Utility
-The project uses a Makefile for automation.
+For full functionality with persistent data, email verification, and KYC, see the [Configuration](#configuration) section below.
 
-**macOS:**
-- Make is pre-installed on macOS. Verify with:
-  ```bash
-  make --version
-  ```
-- If you need a newer version, install via Homebrew:
-  ```bash
-  brew install make
-  ```
+> **Note:** Instructions for configuring KYC (Stripe), Duo (2FA), and Google Maps API keys will be provided in later iterations.
 
-**Windows:**
-- Install via Chocolatey: `choco install make`
-- Or use WSL: Install Windows Subsystem for Linux
+## Configuration
 
-**Linux:**
-- Typically pre-installed. If not: `sudo apt-get install make`
+> **⚠️ Optional:** Only needed if running with `PROTOTYPE=FALSE`.
 
-#### 3. latexmk (Recommended)
-latexmk automates LaTeX document compilation.
+### Setups
 
-**macOS:**
-- Included with MacTeX installation via Homebrew
-- Verify: `latexmk --version`
-- If missing: `sudo tlmgr install latexmk`
+- Firebase account
+- Stripe account (for KYC - instructions in future iterations)
+- Duo account (for 2FA - instructions in future iterations)
+- Google Maps API key (for Google map display - instructions in future iterations)
 
-## Usage
+### 1. Firebase Setup
 
-### Building the Project Proposal
-```bash
-# Clean LaTeX compilation artifacts
-make clean-latex
+1. Sign in at [https://console.firebase.google.com](https://console.firebase.google.com)
+2. From **Project Overview** click **Add app** → **Web**
+3. Enable **Email/Password** authentication in **Build → Authentication → Sign-in method**
+4. Create a Firestore database in **Build → Firestore Database**
 
-# Show available commands
-make help
-```
+### 2. Server Environment (`server/.env`)
 
-### Manual Compilation
-```bash
-#Both code blocks should only be run from the repo root directory
-
-#Create Project Proposal 1.1 as a PDF file
-cd "documentation/1.1 Project Proposal" 
-pdflatex main.tex
-
-#Create Project Proposal 1.2 as a PDF file
-cd "documentation/1.2 Detailed User Stories, Requirements, and Initial Prototype" 
-pdflatex main.tex
-```
-
-## Application Setup
-
-These steps provision Firebase, configure the Node/React apps, and run the prototype.
-
-### 1. Firebase project, auth, and database
-
-1. Sign in at [https://console.firebase.google.com](https://console.firebase.google.com) with a Google account.
-2. From **Project Overview** click **Add app** → **Web**. Give it any nickname (no hosting required).
-3. Open **Build → Authentication → Sign-in method** and enable **Email/Password**.
-4. Open **Build → Firestore Database** and create a database in **Native mode**. Choose *Standard* rules (Enterprise requires a paid plan). Replace the default rules with:
-
-   ```javascript
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       match /{document=**} {
-         allow read, write: if request.auth != null && request.auth.uid != null;
-       }
-     }
-   }
-   ```
-
-   Collections such as `users`, `jobs`, and `bids` are created automatically by the backend when you exercise the routes.
-
-### 2. Populate `server/.env`
-
-1. Navigate to **Project settings → Service accounts** and click **Generate new private key**. Copy the `project_id`, `client_email`, and `private_key` values.
-2. In **Project settings → General**, locate the web app you added earlier and copy the `apiKey` from the config snippet.
-3. Update `server/.env` with your values (keep the private key newlines escaped as shown):
+1. Navigate to **Project settings → Service accounts** and click **Generate new private key**
+2. Copy `project_id`, `client_email`, and `private_key` values
+3. Copy the `apiKey` from **Project settings → General**
+4. Create `server/.env` with:
 
    ```ini
    PROTOTYPE=FALSE
@@ -131,43 +74,49 @@ These steps provision Firebase, configure the Node/React apps, and run the proto
    APP_NAME=OpenBid
    ```
 
-   - `APP_URL` / `EMAIL_VERIFICATION_REDIRECT` should reference the client dev server; add the host to Firebase Auth’s authorized domains list.
-   - Leave other keys as-is unless you change ports.
+### 3. Client Environment (`client/.env`)
 
-### 3. React client environment
-
-Create or edit `client/.env`:
+Create `client/.env` with:
 
 ```ini
 VITE_PROTOTYPE=FALSE
 VITE_API_BASE=http://localhost:4000
-VITE_GOOGLE_MAPS_API_KEY=<optional>
+VITE_GOOGLE_MAPS_API_KEY=<google_map_api_key>
 ```
 
-The API key from step 2 is consumed on the server; the client only needs its backend URL (and optionally a Google Maps key).
+### Email Verification & KYC
 
-### 4. Email Verification Workflow
+- Firebase sends verification emails automatically during signup
+- Use [temp-mail.org](https://temp-mail.org/en/) for testing
+- Login is blocked until email is verified
 
-- The server signs users up via Firebase Identity Toolkit. Firebase sends the verification email automatically.
-- During testing you can use a disposable inbox such as [temp-mail.org](https://temp-mail.org/en/) to receive the link.
-- Login is blocked until the email is verified. After clicking the link, log in again—our backend syncs Firestore with Firebase Auth.
-- **Temporary note:** KYC is not yet automated. After verifying email, set the new user’s `kycStatus` to `verified` manually in Firestore to simulate a passed KYC check. A Duo-based 2FA implementation will replace this step in a future iteration.
-
-### 5. Install & Run
+## Running Tests
 
 ```bash
-# From repo root
-cd server && npm install
-cd ../client && npm install
+# Client tests
+cd client
+npm test
 
-# Start backend (needs Firebase env vars set)
-cd ../server
-npm run dev
-
-# In a new terminal start the client
-cd ../client
-npm run dev
+# Server tests
+cd server
+npm test
 ```
 
-- With `PROTOTYPE=TRUE` the backend falls back to in-memory mocks (no Firebase, no email). Keep it `FALSE` for the real stack.
-- Visit `http://localhost:5173/` to access the login page.
+### Switching Between Modes
+
+**Prototype Mode (default):**
+- No `.env` files needed
+- Uses in-memory mocks
+- Data resets on server restart
+- Ideal for development and testing
+
+**Firebase Mode:**
+- Requires `.env` configuration (see [Configuration](#configuration))
+- Set `PROTOTYPE=FALSE` in both `server/.env` and `VITE_PROTOTYPE=FALSE` in `client/.env`
+- Uses real Firebase backend
+- Persistent data storage
+
+## Documentation
+
+- [LaTeX Setup Guide](documentation/LATEX_SETUP.md) - Instructions for compiling project proposal documents
+- Project proposals available in the `documentation/` folder
