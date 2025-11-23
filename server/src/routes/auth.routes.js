@@ -139,7 +139,7 @@ router.post("/signup", async (req, res, next) => {
       email: normalizedEmail,
       userType: userTypeNormalized,
       emailVerification: config.prototype ? "verified" : "pending",
-      kycStatus: config.prototype ? "verified" : "pending",
+      kycStatus: "pending",
       kycSessionId: null,
       passwordHash,
       createdAt: nowIso,
