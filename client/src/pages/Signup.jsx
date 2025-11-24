@@ -45,6 +45,11 @@ export default function Signup() {
       });
       const message =
         "Account created. Please verify your email before signing in.";
+      try {
+        sessionStorage.setItem("signup_notice", message);
+      } catch (err) {
+        console.warn("[Signup] unable to persist notice", err);
+      }
       navigate("/login", {
         replace: true,
         state: { signupComplete: message },

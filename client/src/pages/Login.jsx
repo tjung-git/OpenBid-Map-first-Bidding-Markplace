@@ -32,6 +32,29 @@ export default function Login() {
     }
   }, [location.search, location.pathname, nav]);
 
+  // Surface signup success notice (from navigation state or session storage).
+  useEffect(() => {
+    let notice = "";
+    if (location.state?.signupComplete) {
+      notice = location.state.signupComplete;
+      const { signupComplete, ...rest } = location.state;
+      nav(location.pathname, { replace: true, state: rest });
+    } else {
+      try {
+        const stored = sessionStorage.getItem("signup_notice");
+        if (stored) {
+          notice = stored;
+          sessionStorage.removeItem("signup_notice");
+        }
+      } catch (err) {
+        console.warn("[Login] unable to read signup notice", err);
+      }
+    }
+    if (notice) {
+      setInfo(notice);
+    }
+  }, [location.state, location.pathname, nav]);
+
   // Handle Duo success: /login or /login/finish with ?code=otc_...
   useEffect(() => {
     const params = new URLSearchParams(location.search);

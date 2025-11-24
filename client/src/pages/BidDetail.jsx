@@ -102,7 +102,6 @@ export default function BidDetail() {
         const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
         setBids(list);
         setHighestBid(bidsResp.highestBid || null);
-        const minAmount = normalizeAmount(jobData?.budgetAmount);
         if (user?.uid) {
           const existing = list.find((bid) => bid.providerId === user.uid);
           if (existing) {
@@ -114,15 +113,9 @@ export default function BidDetail() {
             setNote(existing.note || "");
           } else {
             setOwnBidId(null);
-            if (Number.isFinite(minAmount) && minAmount > 0) {
-              setAmountInput(String(minAmount));
-            } else {
-              setAmountInput("");
-            }
+            setAmountInput("");
             setNote("");
           }
-        } else if (Number.isFinite(minAmount) && minAmount > 0) {
-          setAmountInput(String(minAmount));
         } else {
           setAmountInput("");
         }
@@ -195,15 +188,6 @@ export default function BidDetail() {
       setError("Enter a valid bid amount greater than 0.");
       return;
     }
-    const minAmount = budgetAmountNumber || 0;
-    if (numericAmount < minAmount) {
-      setError(
-        minAmount > 0
-          ? `You cannot bid below the contractor's budget of ${budgetDisplay}.`
-          : "Enter a valid bid amount greater than 0."
-      );
-      return;
-    }
     setSubmitting(true);
     try {
       if (ownBidId) {
@@ -266,12 +250,7 @@ export default function BidDetail() {
       setSuccess("Bid deleted.");
       setOwnBidId(null);
       setNote("");
-      const minAmount = normalizeAmount(job?.budgetAmount);
-      if (Number.isFinite(minAmount) && minAmount > 0) {
-        setAmountInput(String(minAmount));
-      } else {
-        setAmountInput("");
-      }
+      setAmountInput("");
       await refreshBids({ reset: true });
     } catch (err) {
       setError("Unable to delete bid. Please try again.");
@@ -298,22 +277,12 @@ export default function BidDetail() {
         } else {
           setOwnBidId(null);
           if (reset) {
-            const minAmount = normalizeAmount(job?.budgetAmount);
-            if (Number.isFinite(minAmount) && minAmount > 0) {
-              setAmountInput(String(minAmount));
-            } else {
-              setAmountInput("");
-            }
+            setAmountInput("");
             setNote("");
           }
         }
       } else if (reset) {
-        const minAmount = normalizeAmount(job?.budgetAmount);
-        if (Number.isFinite(minAmount) && minAmount > 0) {
-          setAmountInput(String(minAmount));
-        } else {
-          setAmountInput("");
-        }
+        setAmountInput("");
         setNote("");
       }
     } catch (err) {
@@ -457,7 +426,7 @@ export default function BidDetail() {
           )}
           {budgetDisplay && (
             <p className="bid-detail-helper">
-              Minimum bid (contractor budget): {budgetDisplay}
+              Contractor budget (for reference): {budgetDisplay}
             </p>
           )}
           {isOwnJob && (
@@ -475,14 +444,8 @@ export default function BidDetail() {
               value={amountInput === "" ? "" : Number(amountInput)}
               onChange={handleAmountChange}
               allowEmpty
-              min={budgetAmountNumber ?? 0}
-              step={5}
+              min={0}
               disabled={submitting || biddingClosed || ownBidFinalized || isOwnJob}
-              helperText={
-                budgetDisplay
-                  ? `Enter an amount of at least ${budgetDisplay}.`
-                  : undefined
-              }
             />
             <TextInput
               id="bid-note"

@@ -66,7 +66,7 @@ export default function JobBid() {
   }, [job?.location?.lat, job?.location?.lng]);
 
   const hydrateBids = useCallback(
-    (list = [], highest = null, { resetPage = false, minAmount = null } = {}) => {
+    (list = [], highest = null, { resetPage = false } = {}) => {
       setBids(list);
       setHighestBid(highest);
 
@@ -82,11 +82,7 @@ export default function JobBid() {
         } else {
           setOwnBidId(null);
           if (resetPage) {
-            if (Number.isFinite(minAmount) && minAmount > 0) {
-              setAmountInput(String(minAmount));
-            } else {
-              setAmountInput("");
-            }
+            setAmountInput("");
             setNote("");
           }
         }
@@ -113,10 +109,8 @@ export default function JobBid() {
       setJob(jobData);
       setContractor(jobResp?.contractor || null);
       const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
-      const minAmount = normalizeAmount(jobData?.budgetAmount);
       hydrateBids(list, bidsResp?.highestBid || null, {
         resetPage: true,
-        minAmount,
       });
     } catch (err) {
       console.error("[JobBid] load failed", err);
@@ -147,7 +141,6 @@ export default function JobBid() {
         const bidsResp = await api.bidsForJob(jobId);
         const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
         hydrateBids(list, bidsResp?.highestBid || null, {
-          minAmount: normalizeAmount(job?.budgetAmount),
           resetPage: reset,
         });
       } catch (err) {
@@ -263,18 +256,6 @@ export default function JobBid() {
     }
   }, [page, totalPages]);
 
-  useEffect(() => {
-    if (!ownBid && Number.isFinite(budgetAmountNumber) && budgetAmountNumber > 0) {
-      setAmountInput((current) => {
-        const numeric = Number(current);
-        if (Number.isFinite(numeric) && numeric >= budgetAmountNumber) {
-          return current;
-        }
-        return String(budgetAmountNumber);
-      });
-    }
-  }, [ownBid, budgetAmountNumber]);
-
   const paginatedBids = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
     return otherBids.slice(start, start + PAGE_SIZE);
@@ -283,14 +264,7 @@ export default function JobBid() {
   const showPagination = otherBids.length > PAGE_SIZE;
 
   function errorMessageFromResponse(resp, { mode } = {}) {
-    const minAmount = Number(resp?.minAmount);
     switch (resp?.error) {
-      case "bid_below_budget":
-        return `Bids must be at least ${
-          Number.isFinite(minAmount)
-            ? `$${minAmount.toLocaleString()}`
-            : "the job budget amount"
-        }.`;
       case "bid_already_exists":
         return "You already have a bid for this job. Update or delete it instead.";
       case "own_job_bid":
@@ -310,21 +284,6 @@ export default function JobBid() {
     const raw = value == null ? "" : String(value);
     const cleaned = raw.replace(/[^0-9.]/g, "");
     const normalized = cleaned.replace(/^0+(?=\d)/, "");
-    if (!normalized) {
-      setAmountInput("");
-      if (error && error.includes("budget")) {
-        setError("");
-      }
-      return;
-    }
-    const numeric = Number(normalized);
-    if (Number.isFinite(budgetAmountNumber) && numeric < budgetAmountNumber) {
-      setError(
-        `You cannot bid below the contractor's budget of ${budgetDisplay}.`
-      );
-    } else if (error && error.includes("budget")) {
-      setError("");
-    }
     setAmountInput(normalized);
   }
 
@@ -349,17 +308,8 @@ export default function JobBid() {
       });
       return;
     }
-    if (!Number.isFinite(numericAmount) || amountInput === "") {
+    if (!Number.isFinite(numericAmount) || amountInput === "" || numericAmount <= 0) {
       setError("Enter a valid bid amount greater than 0.");
-      return;
-    }
-    const minAmount = budgetAmountNumber || 0;
-    if (numericAmount < minAmount) {
-      setError(
-        minAmount > 0
-          ? `You cannot bid below the contractor's budget of ${budgetDisplay}.`
-          : "Enter a valid bid amount greater than 0."
-      );
       return;
     }
     setSubmitting(true);
@@ -409,12 +359,7 @@ export default function JobBid() {
       setSuccess("Bid deleted.");
       setOwnBidId(null);
       setNote("");
-      const minAmount = normalizeAmount(job?.budgetAmount);
-      if (Number.isFinite(minAmount) && minAmount > 0) {
-        setAmountInput(String(minAmount));
-      } else {
-        setAmountInput("");
-      }
+      setAmountInput("");
       await refreshBids({ reset: true });
     } catch (err) {
       setError("Unable to delete bid. Please try again.");
@@ -557,7 +502,7 @@ export default function JobBid() {
           )}
           {budgetDisplay && (
             <p className="bid-detail-helper">
-              Minimum bid (contractor budget): {budgetDisplay}
+              Contractor budget (for reference): {budgetDisplay}
             </p>
           )}
           <Form onSubmit={submitBid} className="bid-detail-form">
@@ -567,14 +512,8 @@ export default function JobBid() {
               value={amountInput === "" ? "" : Number(amountInput)}
               allowEmpty
               onChange={handleAmountChange}
-              min={budgetAmountNumber ?? 0}
-              step={5}
+              min={0}
               disabled={!canBid}
-              helperText={
-                budgetDisplay
-                  ? `Enter an amount of at least ${budgetDisplay}.`
-                  : undefined
-              }
             />
             <TextInput
               id="bid-note"
