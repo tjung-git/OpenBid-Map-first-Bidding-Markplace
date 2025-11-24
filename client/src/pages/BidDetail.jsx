@@ -45,7 +45,6 @@ export default function BidDetail() {
   const [job, setJob] = useState(null);
   const [contractor, setContractor] = useState(null);
   const [bids, setBids] = useState([]);
-  const [highestBid, setHighestBid] = useState(null);
   const [amountInput, setAmountInput] = useState("");
   const [note, setNote] = useState("");
   const [ownBidId, setOwnBidId] = useState(null);
@@ -101,7 +100,6 @@ export default function BidDetail() {
         const bidsResp = await api.bidsForJob(jobId);
         const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
         setBids(list);
-        setHighestBid(bidsResp.highestBid || null);
         if (user?.uid) {
           const existing = list.find((bid) => bid.providerId === user.uid);
           if (existing) {
@@ -264,7 +262,6 @@ export default function BidDetail() {
       const bidsResp = await api.bidsForJob(jobId);
       const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
       setBids(list);
-      setHighestBid(bidsResp.highestBid || null);
       if (user?.uid) {
         const existing = list.find((bid) => bid.providerId === user.uid);
         if (existing) {
@@ -304,14 +301,12 @@ export default function BidDetail() {
   const ownBidStatus = (ownBid?.status || "").toLowerCase();
   const ownBidFinalized =
     isBidder && ["accepted", "rejected"].includes(ownBidStatus);
-  const highestEntry = highestBid
-    ? sortedBids.find((bid) => bid.id === highestBid.id) || null
-    : sortedBids.reduce((acc, bid) => {
-        const amount = Number(bid.amount);
-        if (!Number.isFinite(amount)) return acc;
-        if (!acc || amount > Number(acc.amount)) return bid;
-        return acc;
-      }, null);
+  const bidsPlacedText =
+    sortedBids.length > 0
+      ? `${sortedBids.length} bid${
+          sortedBids.length === 1 ? "" : "s"
+        } placed so far.`
+      : "Be the first to bid.";
 
   useEffect(() => {
     const total = Math.max(
@@ -399,15 +394,9 @@ export default function BidDetail() {
 
         <Tile className="bid-detail-card">
           <h3>{ownBidId ? "Update Your Bid" : "Place Your Bid"}</h3>
-          {showCompetitiveSections &&
-            (highestEntry ? (
-              <p className="bid-detail-highest">
-                Highest bid: ${Number(highestEntry.amount).toLocaleString()}{" "}
-                {highestEntry.bidderName ? `by ${highestEntry.bidderName}` : ""}
-              </p>
-            ) : (
-              <p className="bid-detail-highest">Be the first to bid.</p>
-            ))}
+          {showCompetitiveSections && (
+            <p className="bid-detail-highest">{bidsPlacedText}</p>
+          )}
           {biddingClosed && (
             <InlineNotification
               title="Bidding Closed"
@@ -492,7 +481,6 @@ export default function BidDetail() {
                 {paginatedBids.map((bid) => {
                   const amountValue = Number(bid.amount);
                   const isOwn = bid.providerId === user?.uid;
-                  const isHighest = highestEntry && highestEntry.id === bid.id;
                   const status = (bid.status || "active").toLowerCase();
                   const statusLabel =
                     status.charAt(0).toUpperCase() + status.slice(1);
@@ -509,9 +497,6 @@ export default function BidDetail() {
                           {Number.isFinite(amountValue)
                             ? amountValue.toLocaleString()
                             : bid.amount}
-                          {isHighest && (
-                            <span className="bid-tag">Highest</span>
-                          )}
                           {isOwn && (
                             <span className="bid-tag bid-tag--own">
                               Your bid

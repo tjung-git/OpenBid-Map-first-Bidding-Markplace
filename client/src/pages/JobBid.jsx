@@ -44,7 +44,6 @@ export default function JobBid() {
   const [job, setJob] = useState(null);
   const [contractor, setContractor] = useState(null);
   const [bids, setBids] = useState([]);
-  const [highestBid, setHighestBid] = useState(null);
   const [amountInput, setAmountInput] = useState("");
   const [note, setNote] = useState("");
   const [ownBidId, setOwnBidId] = useState(null);
@@ -66,9 +65,8 @@ export default function JobBid() {
   }, [job?.location?.lat, job?.location?.lng]);
 
   const hydrateBids = useCallback(
-    (list = [], highest = null, { resetPage = false } = {}) => {
+    (list = [], { resetPage = false } = {}) => {
       setBids(list);
-      setHighestBid(highest);
 
       if (user?.uid) {
         const existing = list.find((bid) => bid.providerId === user.uid);
@@ -109,7 +107,7 @@ export default function JobBid() {
       setJob(jobData);
       setContractor(jobResp?.contractor || null);
       const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
-      hydrateBids(list, bidsResp?.highestBid || null, {
+      hydrateBids(list, {
         resetPage: true,
       });
     } catch (err) {
@@ -140,7 +138,7 @@ export default function JobBid() {
       try {
         const bidsResp = await api.bidsForJob(jobId);
         const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
-        hydrateBids(list, bidsResp?.highestBid || null, {
+        hydrateBids(list, {
           resetPage: reset,
         });
       } catch (err) {
@@ -150,7 +148,7 @@ export default function JobBid() {
         }
       }
     },
-    [jobId, hydrateBids, job?.budgetAmount]
+    [jobId, hydrateBids]
   );
 
   useEffect(() => {
@@ -196,39 +194,12 @@ export default function JobBid() {
     [sortedBids, user?.uid]
   );
 
-  const highestEntry = useMemo(() => {
-    if (highestBid?.id) {
-      return (
-        sortedBids.find((bid) => bid.id === highestBid.id) ||
-        sortedBids.find(
-          (bid) => Number(bid.amount) === Number(highestBid.amount)
-        ) ||
-        null
-      );
-    }
-    return sortedBids.reduce((acc, bid) => {
-      const amount = Number(bid.amount);
-      if (!Number.isFinite(amount)) return acc;
-      if (!acc || amount > Number(acc.amount)) return bid;
-      return acc;
-    }, null);
-  }, [highestBid, sortedBids]);
-
-  const highestAmountDisplay = useMemo(() => {
-    if (!highestEntry) return null;
-    const numeric = Number(highestEntry.amount);
-    return Number.isFinite(numeric)
-      ? numeric.toLocaleString()
-      : highestEntry.amount || "—";
-  }, [highestEntry]);
-
   const otherBids = useMemo(() => {
     return sortedBids.filter((bid) => {
       if (ownBid && bid.id === ownBid.id) return false;
-      if (highestEntry && bid.id === highestEntry.id) return false;
       return true;
     });
-  }, [sortedBids, ownBid, highestEntry]);
+  }, [sortedBids, ownBid]);
 
   const budgetAmountNumber = useMemo(
     () => normalizeAmount(job?.budgetAmount),
@@ -389,10 +360,7 @@ export default function JobBid() {
     );
   }
 
-  const renderBidItem = (
-    bid,
-    { highlightOwn = false, highlightHighest = false } = {}
-  ) => {
+  const renderBidItem = (bid, { highlightOwn = false } = {}) => {
     if (!bid) return null;
     const amountValue = Number(bid.amount);
     const status = (bid.status || "active").toLowerCase();
@@ -409,8 +377,8 @@ export default function JobBid() {
       >
         <div>
           <p className="bid-list-amount">
-            ${Number.isFinite(amountValue) ? amountValue.toLocaleString() : bid.amount}
-            {highlightHighest && <span className="bid-tag">Highest</span>}
+            $
+            {Number.isFinite(amountValue) ? amountValue.toLocaleString() : bid.amount}
             {highlightOwn && <span className="bid-tag bid-tag--own">Your bid</span>}
           </p>
           <p className="bid-list-meta">
@@ -492,14 +460,13 @@ export default function JobBid() {
               lowContrast
             />
           )}
-          {highestEntry ? (
-            <p className="bid-detail-highest">
-              Highest bid: ${highestAmountDisplay}{" "}
-              {highestEntry.bidderName ? `by ${highestEntry.bidderName}` : ""}
-            </p>
-          ) : (
-            <p className="bid-detail-highest">Be the first to bid.</p>
-          )}
+          <p className="bid-detail-highest">
+            {sortedBids.length > 0
+              ? `${sortedBids.length} bid${
+                  sortedBids.length === 1 ? "" : "s"
+                } placed so far.`
+              : "Be the first to bid."}
+          </p>
           {budgetDisplay && (
             <p className="bid-detail-helper">
               Contractor budget (for reference): {budgetDisplay}
@@ -550,36 +517,16 @@ export default function JobBid() {
       </div>
 
       <Tile className="bid-detail-card">
-        <h3>Your Bid & Highest Bid</h3>
-        <div className="bid-highlight-grid">
-          <div className="bid-highlight-section">
-            <h4>Your Bid</h4>
-            {ownBid ? (
-              <ul className="bid-list">
-                {renderBidItem(ownBid, {
-                  highlightOwn: true,
-                  highlightHighest:
-                    Boolean(highestEntry && highestEntry.id === ownBid.id),
-                })}
-              </ul>
-            ) : (
-              <p>You haven't placed a bid yet.</p>
-            )}
-          </div>
-          <div className="bid-highlight-section">
-            <h4>Highest Bid</h4>
-            {highestEntry ? (
-              <ul className="bid-list">
-                {renderBidItem(highestEntry, {
-                  highlightHighest: true,
-                  highlightOwn: highestEntry?.providerId === user?.uid,
-                })}
-              </ul>
-            ) : (
-              <p>No bids yet.</p>
-            )}
-          </div>
-        </div>
+        <h3>Your Bid</h3>
+        {ownBid ? (
+          <ul className="bid-list">
+            {renderBidItem(ownBid, {
+              highlightOwn: true,
+            })}
+          </ul>
+        ) : (
+          <p>You haven't placed a bid yet.</p>
+        )}
       </Tile>
 
       <Tile className="bid-detail-card">
@@ -591,9 +538,7 @@ export default function JobBid() {
             <ul className="bid-list">
               {paginatedBids.map((bid) =>
                 renderBidItem(bid, {
-                  highlightHighest: Boolean(
-                    highestEntry && highestEntry.id === bid.id
-                  ),
+                  highlightOwn: bid.providerId === user?.uid,
                 })
               )}
             </ul>

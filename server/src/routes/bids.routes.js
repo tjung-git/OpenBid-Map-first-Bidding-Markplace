@@ -105,20 +105,7 @@ router.get("/:jobId", async (req, res, next) => {
       return bCreated - aCreated;
     });
 
-    const highestBid = sorted.reduce((acc, bid) => {
-      const amount = Number(bid.amount);
-      if (!Number.isFinite(amount)) return acc;
-      if (!acc || amount > acc.amount) {
-        return {
-          id: bid.id,
-          amount,
-          bidderName: bid.bidderName || "Bidder",
-        };
-      }
-      return acc;
-    }, null);
-
-    res.json({ bids: sorted, highestBid });
+    res.json({ bids: sorted });
   } catch (e) {
     next(e);
   }
