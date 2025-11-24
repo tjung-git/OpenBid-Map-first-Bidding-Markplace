@@ -74,24 +74,34 @@ This document outlines the deliverables for Iteration 4- focusing on improving t
   \item Deliver a prototype demonstrating requirement \(\leftrightarrow\) test case links.
 \end{itemize}
 
-% ===================== 2. Requirements =====================
+% ===================== 3. 2.2 Updated Requirements =====================
 \section{Functional and Non-Functional Requirements}
 
 \subsection{Functional Requirements}
+Note that all prototype features will also be included in the production app (with potential modifications).
+\subsubsection{Prototype Features (Focus for this iteration)}
 \begin{enumerate}[leftmargin=1.4em]
-  \item \textbf{Account \& Identity:} Users shall be able to sign up and sign in via OAuth (Google/Apple) and email+password. Mandatory KYC must be completed before Contractors can publish profiles or Bidders can place offers.
-  \item \textbf{Two-Factor Authentication (2FA):} Users shall confirm sign-in with Duo 2FA for sensitive actions (login, payouts).
-  \item \textbf{Contractor Profiles:} Contractors shall create, update, and delete professional profiles with details including skills, description, photos, rate (fixed/hourly), availability, and location (map pin/address).
-  \item \textbf{Discovery:} Bidders shall browse Contractors in list and map views, with filters by radius, category/skill, budget range, and availability date.
-  \item \textbf{Bidding:} Job bidders shall place, edit, and withdraw bids (amount, note, ETA). Contractors shall accept a winning bid.
-  \item \textbf{Payments (Escrow):}  When a Contractor accepts an offer, the Bidder shall fund an escrow hold. On job completion, funds shall be captured and paid out to the Contractor via Stripe Connect.
+  \item \textbf{Account \& Identity:} Users shall be able to sign up and sign in via email+password. Mandatory KYC must be completed before Contracters can bid or Posters can create jobs.
+  \item \textbf{Contractor Profiles:} Contractors can create and update their profiles with basic information.
+  \item \textbf{Discovery:} Contracters shall browse jobs in a list view.
+  \item \textbf{Bidding:} Contractors shall place, edit, and withdraw bids (amount, note, ETA).
+\end{enumerate}
+\subsubsection{Production Features}
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{Updated Account \& Identity:} Users shall be able to sign up and sign in via email+password (authentication to be handled by firebase auth). Mandatory KYC must be completed via Stripe Identity before Contracters can bid or Posters can create jobs.
+  \item \textbf{Updated Contractor Profiles:} Contractors shall create, update, and delete professional profiles with details including skills, description, photos, rate (fixed/hourly), availability, and location (map pin/address).
+  \item \textbf{Updated Discovery:} Contractors shall browse jobs in list and map views, with filters by radius, category/skill, budget range, and availability date.
+  \item \textbf{Bidding:} Contractors shall place, edit, and withdraw bids (amount, note, ETA). Posters cant accept a winning bid.
+  \item \textbf{Two-Factor Authentication (2FA):} Users shall confirm sign-in with Duo 2FA.
+  \item \textbf{Payments (Escrow):}  When a Contractor accepts an offer, the Poster shall fund an escrow hold. On job completion, funds shall be captured and paid out to the Contractor via Stripe Connect.
   \item \textbf{Messaging:} Contractors and Bidders shall exchange secure messages within the context of an offer, with support for attachments and report/block controls.
   \item \textbf{Reviews:} Both parties shall leave ratings and text reviews after completion.
   \item \textbf{Safety Score:} The system shall compute a location safety score (0--100) and apply graduated friction (tips, daylight default, verified-only, or manual review).
   \item \textbf{Admin:} Admins shall review reports, manage categories, and handle disputes via a basic dashboard.
-\end{enumerate}
+  \end{enumerate}
 
 \subsection{Non-Functional Requirements}
+\textbf{Non-functional requirements will not be implemented in the prototype (only in the production application).}
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Performance:} Map/list browse and search shall return results in \(\leq 500\) ms p95 for target metro; prototype may use simplified filters.
   \item \textbf{Usability:} Mobile-first, accessible (WCAG 2.1 AA where practical); clear copy for KYC/2FA and escrow steps.
@@ -1171,11 +1181,10 @@ is gracefully handled. \\ \hline
 \section{Task Allocation and Timeline}
 \textbf{Pair-Programming Rotation (weekly):} two pairs; driver/navigator swap daily; Scrum Master rotates weekly (Tyler \(\rightarrow\) Mani \(\rightarrow\) Yanness \(\rightarrow\) Alaister).
 
-\subsection*{Sprint Plan (3 weeks for Iteration 3)}
+\subsection*{Sprint Plan (4 weeks for Iteration 4)}
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Week 1:} Implement auth + Duo 2FA hook, KYC gate stub, Post Job UI/API, initial tests.
-  \item \textbf{Week 2:} Map browse (pins, filters), Place Bid flow, tests.
-  \item \textbf{Week 3:} Prototype hardening, accessibility pass (keyboard focus), performance harness scaffolding, test documentation.
+  \item \textbf{Week 1 - 2:} Test and update the protoype based on feedback and user experience.
+  \item \textbf{Week 3 - 4:} Create user manual and update documentation.
 \end{itemize}
 
 \subsection*{Task Breakdown (examples)}
@@ -1189,9 +1198,9 @@ is gracefully handled. \\ \hline
 
 % ===================== 7. Prototype Overview =====================
 \section{Prototype Overview}
-\textbf{Stack (MVP):} React + SCSS (Firebase Hosting), Node.js + Express (Firebase Functions or Cloud Run), Firestore, Google Maps JS, Stripe (Connect/Identity), Duo 2FA.
+\textbf{Stack (MVP):} React + SCSS (Firebase Hosting), Node.js + Express (Firebase Functions or Cloud Run), Firestore, Google Maps JS, Stripe (Connect/Identity), Duo 2FA. LINE TO BE UPDATED
 
-\subsection*{Implemented in Iteration 3 (target)}
+\subsection*{Implemented in Iteration 4 (target)}
 \begin{itemize}[leftmargin=1.4em]
   \item Auth shell with Duo challenge on sensitive action.
   \item KYC gate (UI + rules) using a sandbox token flow.
