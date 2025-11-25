@@ -62,15 +62,15 @@
 \textbf{Team Members:} Tyler, Mani, Yanness, Alaister
 
 \paragraph{Document Overview}
-This document outlines the deliverables for Iteration 4- focusing on improving the inital prototype, adding additional documentation for usability, adding tests as required, and brute force testing the prototype. The main highlight of this iteration is testing and fixing a working prototype. Goals: update core functionality based on feedback and testing, add additional unit tests as required, and update the documentation with the requirements for this iteration.
+This document outlines the deliverables for Iteration 4- focusing on improving the inital prototype, testing the prototype, and updating the documentation. The main highlight of this iteration is delivering a protoype of the OpenBid application.
 
 % ===================== 2. Iteration Goals and Objectives =====================
 \section{Iteration Goals and Objectives}
 \begin{itemize}[leftmargin=1.4em]
-  \item Update core flows: \textbf{auth + Duo 2FA} and \textbf{KYC gate} (stubbed via Stripe Identity sandbox token) in the prototype.
-  \item \textbf{Post a job}, \textbf{browse on map}, \textbf{place a bid} core functionality should be fully implemented in the prototype.
-  \item Develop and run additional unit tests mapped to requirements (frontend component tests and backend handler tests) *as required.
-  \item Update documentation to ensure ease of setup and usability while adhering to the iteration requirements.
+  \item \textbf{Post a job}, \textbf{browse on map}, \textbf{place a bid} core bidding functionality should be fully implemented in the prototype.
+  \item Update core authentication and authorization funtionality of the prototype- specifically authentication and security flows: \textbf{auth + Duo 2FA} and \textbf{KYC gate} (stubbed via Stripe Identity sandbox token).
+  \item Develop and run additional unit tests mapped to requirements (frontend component tests and backend handler tests) *as required. Conduct manual e2e testing.
+  \item Update documentation- reiterate user stories, update functional and non-functional requirements, and provide a user manual.
   \item Deliver a prototype demonstrating requirement \(\leftrightarrow\) test case links.
 \end{itemize}
 
@@ -79,14 +79,14 @@ This document outlines the deliverables for Iteration 4- focusing on improving t
 
 \subsection{Functional Requirements}
 Note that all prototype features will also be included in the production app (with potential modifications).
-\subsubsection{Prototype Features (Focus for this iteration)}
+\subsubsection{Prototype Requirements (Focus for this iteration)}
 \begin{enumerate}[leftmargin=1.4em]
   \item \textbf{Account \& Identity:} Users shall be able to sign up and sign in via email+password. Mandatory KYC must be completed before Contracters can bid or Posters can create jobs.
   \item \textbf{Contractor Profiles:} Contractors can create and update their profiles with basic information.
   \item \textbf{Discovery:} Contracters shall browse jobs in a list view.
   \item \textbf{Bidding:} Contractors shall place, edit, and withdraw bids (amount, note, ETA). Posters can post jobs.
 \end{enumerate}
-\subsubsection{Production Features}
+\subsubsection{Production Requirements}
 \begin{enumerate}[leftmargin=1.4em]
   \item \textbf{Updated Account \& Identity:} Users shall be able to sign up and sign in via email+password (authentication to be handled by firebase auth). Mandatory KYC must be completed via Stripe Identity before Contracters can bid or Posters can create jobs.
   \item \textbf{Updated Contractor Profiles:} Contractors shall create, update, and delete professional profiles with details including skills, description, photos, rate (fixed/hourly), availability, and location (map pin/address).
