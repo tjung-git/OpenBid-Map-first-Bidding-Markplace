@@ -84,15 +84,15 @@ Note that all prototype features will also be included in the production app (wi
   \item \textbf{Account \& Identity:} Users shall be able to sign up and sign in via email+password. Mandatory KYC must be completed before Contracters can bid or Posters can create jobs.
   \item \textbf{Contractor Profiles:} Contractors can create and update their profiles with basic information.
   \item \textbf{Discovery:} Contracters shall browse jobs in a list view.
-  \item \textbf{Bidding:} Contractors shall place, edit, and withdraw bids (amount, note, ETA).
+  \item \textbf{Bidding:} Contractors shall place, edit, and withdraw bids (amount, note, ETA). Posters can post jobs.
 \end{enumerate}
 \subsubsection{Production Features}
 \begin{enumerate}[leftmargin=1.4em]
   \item \textbf{Updated Account \& Identity:} Users shall be able to sign up and sign in via email+password (authentication to be handled by firebase auth). Mandatory KYC must be completed via Stripe Identity before Contracters can bid or Posters can create jobs.
   \item \textbf{Updated Contractor Profiles:} Contractors shall create, update, and delete professional profiles with details including skills, description, photos, rate (fixed/hourly), availability, and location (map pin/address).
   \item \textbf{Updated Discovery:} Contractors shall browse jobs in list and map views, with filters by radius, category/skill, budget range, and availability date.
-  \item \textbf{Updated Bidding:} Contractors shall place, edit, and withdraw bids (amount, note, ETA) and Posters can accept a winning bid.
-  \item \textbf{Two-Factor Authentication (2FA):} Users shall confirm sign-in with Duo 2FA.
+  \item \textbf{Updated Bidding:} Contractors shall place, edit, and withdraw bids (amount, note, ETA) and Posters can post jobs \textbf{and} accept a winning bid.
+  \item \textbf{Two-Factor Authentication (2FA):} Users shall sign-in with Duo 2FA.
   \item \textbf{Payments (Escrow):}  When a Contractor accepts an offer, the Poster shall fund an escrow hold. On job completion, funds shall be captured and paid out to the Contractor via Stripe Connect.
   \item \textbf{Messaging:} Contractors and Bidders shall exchange secure messages within the context of an offer, with support for attachments and report/block controls.
   \item \textbf{Reviews:} Both parties shall leave ratings and text reviews after completion.
@@ -101,22 +101,22 @@ Note that all prototype features will also be included in the production app (wi
   \end{enumerate}
 
 \subsection{Non-Functional Requirements}
-\textbf{Non-functional requirements will not be implemented in the prototype (only in the production application).}
-\begin{itemize}[leftmargin=1.4em]
+\textbf{Most non-functional requirements will not be implemented in the prototype (only in the production application).}
+\begin{enumerate}[leftmargin=1.4em]
   \item \textbf{Performance:} Map/list browse and search shall return results in \(\leq 500\) ms p95 for target metro; prototype may use simplified filters.
   \item \textbf{Usability:} Mobile-first, accessible (WCAG 2.1 AA where practical); clear copy for KYC/2FA and escrow steps.
-  \item \textbf{Security:} All traffic over TLS; short-lived JWTs; server-side validation; reCAPTCHA on signup/post/bid.
+  \item \textbf{Security:} All traffic over TLS; short-lived JWTs; server-side validation; reCAPTCHA on signup/post/bid. Only KYC users shall be able to access and create jobs.
   \item \textbf{Scalability:} Stateless API (Node/Express) behind Firebase/Cloud Run; Firestore as primary data store; storage via Firebase Cloud Storage.
   \item \textbf{Reliability:} Error tracking via Sentry; observability with OpenTelemetry; automated CI checks on PRs.
   \item \textbf{Privacy:} Approximate location shown pre-accept; exact address released to the accepted job assignee only; phone masking post-accept.
-\end{itemize}
+\end{enumerate}
 
 % ===================== 4. Requirement to Test Case Traceability =====================
 \section{Requirement to Test Case Traceability}
 Tables below map each requirement to the test cases that validate it. Coverage status will be updated as testing completes.
 
 \subsection*{Functional Requirements (FR)}
-\begin{longtable}{@{}p{0.12\linewidth} p{0.55\linewidth} p{0.15\linewidth} p{0.14\linewidth}@{}}
+\begin{longtable}{@{}p{0.12\linewidth} p{0.55\linewidth} p{0.2\linewidth} p{0.14\linewidth}@{}}
 \toprule
 \textbf{Req ID} & \textbf{Requirement Description} & \textbf{Test Case IDs} & \textbf{Coverage} \\
 \midrule
@@ -138,14 +138,15 @@ FR-013 & System shall allow users to \textbf{manage their profile} including ava
 \end{longtable}
 
 \subsection*{Non-Functional Requirements (NFR)}
-\begin{longtable}{@{}p{0.12\linewidth} p{0.55\linewidth} p{0.15\linewidth} p{0.14\linewidth}@{}}
+\textbf{At this time, it was determined that it would be difficult to implement tests for the scalability, reliability and privacy non-FRs. Test cases will be planned and implemented in a future iteration.}
+\begin{longtable}{@{}p{0.12\linewidth} p{0.55\linewidth} p{0.2\linewidth} p{0.14\linewidth}@{}}
 \toprule
 \textbf{Req ID} & \textbf{Requirement Description} & \textbf{Test Case IDs} & \textbf{Coverage} \\
 \midrule
 \endhead
 NFR-001 & \textbf{Performance:} Search/browse should return results within 800\,ms P95 for a metro with 5k open jobs (stub data). & TC-011 & Planned \\
-NFR-002 & \textbf{Security:} Only KYC-verified users can hit write endpoints for jobs/bids. & Covered \\
-NFR-003 & \textbf{Usability:} Map view and list view maintain accessible contrast and keyboard navigation for core actions. & TC-013 & Planned \\
+NFR-002 & \textbf{Security:} Only KYC-verified users can hit write endpoints for jobs/bids. & TC-007, TC-008b, TC-009b, TC-013, TC-016b  & Partially Covered \\
+NFR-003 & \textbf{Usability:} Map view and list view maintain accessible contrast and keyboard navigation for core actions. Application shall be mobile responsive. & TC-013 & Planned \\
 \bottomrule
 \end{longtable}
 
