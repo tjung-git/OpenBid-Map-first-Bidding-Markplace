@@ -104,7 +104,7 @@ Note that all prototype features will also be included in the production app (wi
 \textbf{Most non-functional requirements will not be implemented in the prototype (only in the production application).}
 \begin{enumerate}[leftmargin=1.4em]
   \item \textbf{Performance:} Map/list browse and search shall return results in \(\leq 500\) ms p95 for target metro; prototype may use simplified filters.
-  \item \textbf{Usability:} Mobile-first, accessible (WCAG 2.1 AA where practical); clear copy for KYC/2FA and escrow steps.
+  \item \textbf{Usability:} Mobile-first, accessible (WCAG 2.1 AA where practical); clear copy for KYC/2FA and escrow steps. Map and list view of jobs should be easily accessible on any device.
   \item \textbf{Security:} All traffic over TLS; short-lived JWTs; server-side validation; reCAPTCHA on signup/post/bid. Only KYC users shall be able to access and create jobs.
   \item \textbf{Scalability:} Stateless API (Node/Express) behind Firebase/Cloud Run; Firestore as primary data store; storage via Firebase Cloud Storage.
   \item \textbf{Reliability:} Error tracking via Sentry; observability with OpenTelemetry; automated CI checks on PRs.
