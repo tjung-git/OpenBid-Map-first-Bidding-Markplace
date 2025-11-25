@@ -9,6 +9,7 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import { setSession, setUser } from "../services/session";
+import { cfg } from "../services/config";
 import "../styles/pages/login.css";
 
 export default function Login() {
@@ -32,8 +33,21 @@ export default function Login() {
     }
   }, [location.search, location.pathname, nav]);
 
-  // Surface signup success notice (from navigation state or session storage).
+  // Surface signup success notice (from navigation state or session storage) when email verification matters.
   useEffect(() => {
+    if (cfg.prototype) {
+      // Clean out any stale notice without showing it.
+      if (location.state?.signupComplete) {
+        const { signupComplete, ...rest } = location.state;
+        nav(location.pathname, { replace: true, state: rest });
+      }
+      try {
+        sessionStorage.removeItem("signup_notice");
+      } catch (err) {
+        console.warn("[Login] unable to clear signup notice", err);
+      }
+      return;
+    }
     let notice = "";
     if (location.state?.signupComplete) {
       notice = location.state.signupComplete;

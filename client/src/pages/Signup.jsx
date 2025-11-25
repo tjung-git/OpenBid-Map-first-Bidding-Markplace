@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Form, TextInput, Button, InlineNotification } from "@carbon/react";
 import { api } from "../services/api";
 import { useNavigate } from "react-router-dom";
+import { cfg } from "../services/config";
 import "../styles/pages/auth.css";
 
 const INITIAL_FORM = {
@@ -43,17 +44,22 @@ export default function Signup() {
         password,
         confirmPassword,
       });
-      const message =
-        "Account created. Please verify your email before signing in.";
-      try {
-        sessionStorage.setItem("signup_notice", message);
-      } catch (err) {
-        console.warn("[Signup] unable to persist notice", err);
+      const requiresEmailVerification = !cfg.prototype;
+      if (requiresEmailVerification) {
+        const message =
+          "Account created. Please verify your email before signing in.";
+        try {
+          sessionStorage.setItem("signup_notice", message);
+        } catch (err) {
+          console.warn("[Signup] unable to persist notice", err);
+        }
+        navigate("/login", {
+          replace: true,
+          state: { signupComplete: message },
+        });
+      } else {
+        navigate("/login", { replace: true });
       }
-      navigate("/login", {
-        replace: true,
-        state: { signupComplete: message },
-      });
     } catch (err) {
       const message =
         err?.data?.error || "Unable to create account. Please try again.";
