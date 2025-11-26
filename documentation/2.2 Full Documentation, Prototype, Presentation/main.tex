@@ -77,56 +77,56 @@ This document outlines the deliverables for Iteration 4- focusing on improving t
 % ===================== 3. Detailed User Stories =====================
 \section{Detailed User Stories}
 
-\subsection*{Contractors}
+\subsection*{Job Bidder}
 \paragraph{US-1: Browse Nearby Jobs (High, 3 pts)}
-As a \textbf{Contractor}, I want to see jobs near me with filters so I can quickly find relevant work.
+As a \textbf{Bidder}, I want to see jobs near me with filters so I can quickly find relevant work.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Map/list render; radius/category/budget/date filters; open job details view.
 \end{itemize}
 
 \paragraph{US-2: Place a Bid (High, 5 pts)}
-As a \textbf{Contractor}, I want to place a bid with an amount, note, and ETA so the Job Poster can evaluate me.
+As a \textbf{Bidder}, I want to place a bid with an amount, note, and ETA so the Job Poster/Contractor can evaluate me.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Bid saved; Job Poster notified; contractor can edit/withdraw prior to award.
 \end{itemize}
 
 \paragraph{US-3: Complete KYC (High, 3 pts)}
-As a \textbf{Contractor}, I want to verify my identity (document + selfie) so I can post jobs safely.
+As a \textbf{Bidder}, I want to verify my identity (document + selfie) so I can browse jobs safely.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Stripe Identity flow completes; app shows verified badge; bidding features unlock.
 \end{itemize}
 
 \paragraph{US-4: Duo 2FA (Medium, 2 pts)}
-As a \textbf{Contractor}, I want Duo phone confirmation so my account is protected during sign-in.
+As a \textbf{Bidder}, I want Duo phone confirmation so my account is protected during sign-in.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} 2FA challenge required; recovery path documented.
 \end{itemize}
 
 \paragraph{US-5: Job Thread Messaging (Medium, 3 pts)}
-As a \textbf{Contractor}, I want a per-job chat so I can coordinate details with job posters.
+As a \textbf{Bidder}, I want a per-job chat so I can coordinate details with job posters/contractors.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Send/receive text; attachments; report/block; notifications.
 \end{itemize}
 
 \paragraph{US-6: Leave Reviews (Medium, 2 pts)}
-As a \textbf{Contractor}, I want to rate and review job posters after completion so future users can trust matches.
+As a \textbf{Bidder}, I want to rate and review job posters after completion so future users can trust matches.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} 1–5 stars plus comment; appears on bidder profile; single review per job.
 \end{itemize}
 
 \paragraph{US-7: Create an account (High, 5 pts)}
-As a \textbf{Contractor}, I want to create an account using my email.
+As a \textbf{Bidder}, I want to create an account using my email.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Login page present with a seamless sign up process.
 \end{itemize}
 
 \paragraph{US-8: Personailze Profile (High, 5 pts)}
-As a \textbf{Contractor}, I want to personalize my profile to showcase my skills, reviews, experience etc.
+As a \textbf{Bidder}, I want to personalize my profile to showcase my skills, reviews, experience etc.
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Acceptance:} Editable contractor profile page to change profile picture, skills, experience etc.
+  \item \textbf{Acceptance:} Editable user profile page to change profile picture, skills, experience etc.
 \end{itemize}
 
-\subsection*{Job Posters}
+\subsection*{Job Posters/Contractors}
 
 \paragraph{US-9: Safety Score Guidance (Medium, 3 pts)}
 As a \textbf{Contractor}, I want safety guidance at post-time so I can choose safer options (e.g., daylight/public meetup).
@@ -135,42 +135,42 @@ As a \textbf{Contractor}, I want safety guidance at post-time so I can choose sa
 \end{itemize}
 
 \paragraph{US-10: Accept a Bid \& Fund Escrow (High, 4 pts)}
-As a \textbf{Job Poster}, I want to accept a bid and put funds on hold so payment is guaranteed on completion.
+As a \textbf{Contractor}, I want to accept a bid and put funds on hold so payment is guaranteed on completion.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Stripe hold succeeds; job moves to \texttt{awarded}; chat thread opens with winner.
 \end{itemize}
 
 \paragraph{US-11: Complete KYC (High, 3 pts)}
-As a \textbf{Job Poster}, I want to verify my identity (document + selfie) so I can post jobs safely.
+As a \textbf{Contractor}, I want to verify my identity (document + selfie) so I can post jobs safely.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Stripe Identity flow completes; app shows verified badge; posting features unlock.
 \end{itemize}
 
 \paragraph{US-12: Duo 2FA (Medium, 2 pts)}
-As a \textbf{Job Poster}, I want Duo phone confirmation so my account is protected during sign-in and payouts.
+As a \textbf{Contractor}, I want Duo phone confirmation so my account is protected during sign-in and payouts.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} 2FA challenge required; recovery path documented.
 \end{itemize}
 
 \paragraph{US-13: Job Thread Messaging (Medium, 3 pts)}
-As a \textbf{Job Poster}, I want a per-job chat so I can coordinate details with Contractors.
+As a \textbf{Contractor}, I want a per-job chat so I can coordinate details with Job Bidders.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Send/receive text; attachments; report/block; notifications.
 \end{itemize}
 
 \paragraph{US-14: Leave Reviews (Medium, 2 pts)}
-As a \textbf{Job Poster}, I want to rate and review Contractors after completion so future users can trust contractors.
+As a \textbf{Contractor}, I want to rate and review Job Bidders after completion so future users can trust contractors.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} 1–5 stars plus comment; appears on Contractor profile; single review per job.
 \end{itemize}
 
 \paragraph{US-15: Create an account (High, 5 pts)}
-As a \textbf{Job Poster}, I want to create an account using my email.
+As a \textbf{Contractor}, I want to create an account using my email.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Login page present with a seamless sign up process.
 \end{itemize}
 
-\subsection*{Job Browsers (Not KYC-Verified Users)}
+\subsection*{Job Browsers (Non KYC-Verified Users)}
 \paragraph{US-16: Browse Jobs Read-Only (Medium, 2 pts)}
 As a \textbf{browser}, I want to explore posted jobs on a map in read-only mode, so I can understand the platform's services before committing.
 \begin{itemize}[leftmargin=1.4em]
@@ -232,11 +232,11 @@ As an \textbf{Admin}, I want to monitor system health and performance so I can e
 \subsection{Functional Requirements}
 
 \begin{enumerate}[leftmargin=1.4em]
-  \item \textbf{Account \& Identity (\textrightarrow{} US-3, US-7, US-11, US-15, US-18, US-19):} Email/password sign-up and sign-in (handled via Firebase Auth in production). Mandatory KYC before Contractors can bid or Posters can create jobs (handled via Stripe Identity in production).
+  \item \textbf{Account \& Identity (\textrightarrow{} US-3, US-7, US-11, US-15, US-18):} Email/password sign-up and sign-in (handled via Firebase Auth in production). Mandatory KYC before bidders can bid or posters can create jobs (handled via Stripe Identity in production).
   \item \textbf{Viewing Jobs (\textrightarrow{} US-16, US-17):} Job browsers can view jobs after signing up an account.
-  \item \textbf{Contractor Profiles (\textrightarrow{} US-8):} Contractors can create and update basic profiles. In production, contractors can enhance their profiles by including skills, description, photos, rates, availability, and their location. Support for deletion.
-  \item \textbf{Discovery (\textrightarrow{} US-1):} Contractors can browse for jobs using a list. In production, there will be an added map view and job filters (radius, category/skill, budget, availability date).
-  \item \textbf{Bidding (\textrightarrow{} US-2):} KYC verified Contractors can place, edit, and withdraw bids (amount, note, ETA).
+  \item \textbf{Bidder Profiles (\textrightarrow{} US-8):} Bidder can create and update basic profiles. In production, bidders can enhance their profiles by including skills, description, photos, rates, availability, and their location. Support for deletion.
+  \item \textbf{Discovery (\textrightarrow{} US-1):} Bidders can browse for jobs using a list. In production, there will be an added map view and job filters (radius, category/skill, budget, availability date).
+  \item \textbf{Bidding (\textrightarrow{} US-2):} KYC verified bidders can place, edit, and withdraw bids (amount, note, ETA).
   \item \textbf{Posting Jobs (\textrightarrow{} US-10):} KYC verified Job Posters can place, edit, and delete jobs (amount, location, description, etc.). A Job Poster can also accept a bid on a job.
   \item \textbf{Two-Factor Authentication (2FA) (\textrightarrow{} US-4, US-12):} Duo 2FA required for sign-in.
   \item \textbf{Payments (Escrow) (\textrightarrow{} US-10):} Job Posters fund escrow on offer acceptance; payouts via Stripe Connect on completion.
@@ -250,7 +250,7 @@ As an \textbf{Admin}, I want to monitor system health and performance so I can e
 \textbf{Most non-functional requirements will only be implemented in the production application).}
 \begin{enumerate}[leftmargin=1.4em]
   \item \textbf{Performance:} Map/list browse and search shall return results in \(\leq 500\) ms p95 for target metro; prototype may use simplified filters.
-  \item \textbf{Usability:} Mobile-first, accessible (WCAG 2.1 AA where practical); clear copy for KYC/2FA and escrow steps. Map and list view of jobs should be easily accessible on any device.
+  \item \textbf{Usability:} Mobile-first, accessible (WCAG 2.1 AA where practical); clear copy for KYC/2FA and escrow steps. Map and list view of jobs should be easily accessible on any device. Detailed instructions and seamless redirect for logging in and browsing as a non-KYC user (addresses US-18, US-19, US-20 which are not covered by current FRs).
   \item \textbf{Security:} All traffic over TLS; short-lived JWTs; server-side validation; reCAPTCHA on signup/post/bid. Only KYC users shall be able to access and create jobs.
   \item \textbf{Scalability:} Stateless API (Node/Express) behind Firebase/Cloud Run; Firestore as primary data store; storage via Firebase Cloud Storage.
   \item \textbf{Reliability:} Error tracking via Sentry; observability with OpenTelemetry; automated CI checks on PRs.
