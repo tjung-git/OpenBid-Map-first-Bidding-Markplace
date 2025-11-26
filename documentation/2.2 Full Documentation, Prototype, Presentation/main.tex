@@ -1341,14 +1341,49 @@ is gracefully handled. \\ \hline
 
 % ===================== 5. User Manual =====================
 \section{User Manual}
-\subsection{Running the prototype application}
+\subsection{Running the prototype}
 To run the prototype, please view the quick start guide and follow the running in protoype mode section within the repo's README.
 
-\subsection{Using the prototype application}
+\subsection{Using the prototype}
+\subsubsection{Using OpenBid as a Job Browser}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Before the application can be used, one must log in. To do so, create an account using the create account button on the login page. Then log in.
+  \item Once logged in, a user only has access to view job postings by job posters.
+  \item Profile picture can be updated as well by navigating to the profile page (using the profile button on the right side of the website header) and clicking the change avatar button.
+\end{enumerate}
+
+\subsubsection{KYC Verification}
+\textbf{To create jobs or bid on jobs, a user must be KYC verified. The steps to do so are below}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item After logging in, navigate to the profile page by clicking the profile button on right side in the header of the website.
+  \item Click on the Complete KYC button to become KYC verified. User will now have access to bid on jobs and create jobs.
+\end{enumerate}
+
+\subsubsection{Using OpenBid as a Job Bidder}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item After logging in and navigating to the job list page, click the I want to bid on jobs button.
+  \item Click on a job to view details about a posted job.
+  \item A job bidder can choose to bid on a job after selecting a job, adding an optional note to their bid (if the job is open).
+  \item A job bidder can update their bid before the job closes.
+  \item If a job bidder's bid is accepted by the job poster. The job is closed, and the job bidder will see an accepted notice when navigating to the job again.
+\end{enumerate}
+
+\subsubsection{Using OpenBid as a Job Poster}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item After logging in and navigating to the job list page, click the I want to post jobs button.
+  \item Click the Post a Job button.
+  \item Enter the required details then press create to create a job.
+  \item The job can be updated or deleted if required by selecting the job from the job list page after selecting the I want to post jobs button.
+  \item Over time, job bidders will bid on your job. One can view bids and accept a bid after clicking on the job from the job list page.
+  \item If a job bid is accepted by a user, the job closed and the chosen job bidder will see a notice under the job indicating their bid was chosen.
+\end{enumerate}
+
+\textbf{}
+
 
 \section{Prototype Overview}
 \subsection{Protoype Description}
-This prototype highlights the core functionality of the OpenBid Application. Authenticated users can browse job postings from job posters as
+The prototype highlights the core functionality of the OpenBid Application. Authenticated users can browse job postings from job posters as
 a job browser. Users that complete KYC verification can additionally bid on jobs as a job bidder and create jobs as a job poster. The prototype uses in memory
 mocks to store persistent data and control API route flow.
 
@@ -1394,6 +1429,13 @@ mocks to store persistent data and control API route flow.
     \includegraphics[width=0.8\textwidth]{JobListPoster}
     \caption{Main job list page as a Job Poster}
     \label{fig:JobPosterImg}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{BidderBids}
+    \caption{Job Bidder's bids page}
+    \label{fig:BidsAsBidder}
 \end{figure}
 
 \begin{figure}[!htbp]
