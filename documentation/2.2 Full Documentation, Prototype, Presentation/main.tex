@@ -67,7 +67,7 @@ This document outlines the deliverables for Iteration 4- focusing on improving t
 % ===================== 2. Iteration Goals and Objectives =====================
 \section{Iteration Goals and Objectives}
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Post a job}, \textbf{browse on map}, \textbf{place a bid} core bidding functionality should be fully implemented in the prototype.
+  \item \textbf{Post a job} and \textbf{place a bid} core bidding functionality should be fully implemented in the prototype.
   \item Core authentication and authorization funtionality should be updated in the prototype- specifically authentication and security flows: \textbf{auth + Duo 2FA} and \textbf{KYC gate} (stubbed via Stripe Identity sandbox token).
   \item Develop and run additional unit tests mapped to requirements (frontend component tests and backend handler tests) *as required. Conduct manual e2e testing.
   \item Update documentation- reiterate user stories and user cases, update functional and non-functional requirements, and provide a user manual.
@@ -85,7 +85,7 @@ As a \textbf{Contractor}, I want to see jobs near me with filters so I can quick
 \end{itemize}
 
 \paragraph{US-2: Place a Bid (High, 5 pts)}
-As a \textbf{Contractor}, I want to place a bid with amount, note, and ETA so the Job Poster can evaluate me.
+As a \textbf{Contractor}, I want to place a bid with an amount, note, and ETA so the Job Poster can evaluate me.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Bid saved; Job Poster notified; contractor can edit/withdraw prior to award.
 \end{itemize}
@@ -233,6 +233,7 @@ As an \textbf{Admin}, I want to monitor system health and performance so I can e
 
 \begin{enumerate}[leftmargin=1.4em]
   \item \textbf{Account \& Identity (\textrightarrow{} US-3, US-7, US-11, US-15, US-18, US-19):} Email/password sign-up and sign-in (handled via Firebase Auth in production). Mandatory KYC before Contractors can bid or Posters can create jobs (handled via Stripe Identity in production).
+  \item \textbf{Viewing Jobs (\textrightarrow{} US-16, US-17):} Job browsers can view jobs after signing up an account.
   \item \textbf{Contractor Profiles (\textrightarrow{} US-8):} Contractors can create and update basic profiles. In production, contractors can enhance their profiles by including skills, description, photos, rates, availability, and their location. Support for deletion.
   \item \textbf{Discovery (\textrightarrow{} US-1):} Contractors can browse for jobs using a list. In production, there will be an added map view and job filters (radius, category/skill, budget, availability date).
   \item \textbf{Bidding (\textrightarrow{} US-2):} KYC verified Contractors can place, edit, and withdraw bids (amount, note, ETA).
@@ -274,16 +275,15 @@ FR-005 & System shall support \textbf{user authentication} with \textbf{Duo 2FA}
 FR-006 & System shall provide \textbf{in-thread messaging} per job after acceptance. & TC-010 & Planned \\
 FR-007 & System shall record \textbf{ratings and reviews} after job completion. & TC-011 & Planned \\
 FR-008 & System must create Firebase accounts and keep users out until they click the email verification link. & TC-014a-d & Covered \\
-FR-009 & System must let a signed-in person switch between bidder and contractor and keep their requirement flags accurate. & TC-015a-b & Covered \\
+FR-009 & System must let a signed-in person switch between job poster and contractor and keep their requirement flags accurate. & TC-015a-b & Covered \\
 FR-010 & System must save the session in local storage and log the user out after two minutes with no activity. & TC-016a-c & Covered \\
-FR-011 & Only KYC-approved contractors can create, edit, or delete their own jobs in Firestore. & TC-017a-i & Covered \\
-FR-012 & System must block self-bids and lock both the job and bids once a contractor accepts an offer. & TC-018a-b & Covered \\
+FR-011 & Only KYC-approved job posters can create, edit, or delete their own jobs in Firestore. & TC-017a-i & Covered \\
+FR-012 & System must block self-bids and lock both the job and bids once a job poster accepts an offer. & TC-018a-b & Covered \\
 FR-013 & System shall allow users to \textbf{manage their profile} including avatar upload and personal information. & TC-016a-d & Covered \\
 \bottomrule
 \end{longtable}
 
 \subsection*{Non-Functional Requirements (NFR)}
-\textbf{At this time, it was determined that it would be difficult to implement tests for the scalability, reliability and privacy non-FRs. Test cases will be planned and implemented in a future iteration.}
 \begin{longtable}{@{}p{0.12\linewidth} p{0.55\linewidth} p{0.2\linewidth} p{0.14\linewidth}@{}}
 \toprule
 \textbf{Req ID} & \textbf{Requirement Description} & \textbf{Test Case IDs} & \textbf{Coverage} \\
@@ -299,6 +299,7 @@ NFR-003 & \textbf{Usability:} Map view and list view maintain accessible contras
 \begin{itemize}[leftmargin=1.4em]
   \item Each requirement is validated by one or more test cases. Gaps are flagged as \textit{Planned}.
   \item NFR coverage status is informative only (not required for grading), but we track it to guide future work.
+  \item At this time, it was determined that it would be difficult to implement tests for the scalability, reliability and privacy non-FRs. Test cases will be planned and implemented in a future iteration.
 \end{itemize}
 
 % ===================== 6. Detailed Test Case Descriptions =====================
