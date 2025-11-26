@@ -292,6 +292,7 @@ FR-013 & System shall allow users to \textbf{manage their profile} including ava
 NFR-001 & \textbf{Performance:} Search/browse should return results within 800\,ms P95 for a metro with 5k open jobs (stub data). & TC-011 & Planned \\
 NFR-002 & \textbf{Security:} Only KYC-verified users can hit write endpoints for jobs/bids. & TC-007, TC-008b, TC-009b, TC-013, TC-016b  & Partially Covered \\
 NFR-003 & \textbf{Usability:} Map view and list view maintain accessible contrast and keyboard navigation for core actions. Application shall be mobile responsive. & TC-013 & Planned \\
+NFR-004 & \textbf{Privacy:} System shall provide an approximate job location during the pre-accept phase. Accepted bidders will be granted access to the full job location. & TC-023 & Planned \\
 \bottomrule
 \end{longtable}
 
@@ -299,12 +300,12 @@ NFR-003 & \textbf{Usability:} Map view and list view maintain accessible contras
 \begin{itemize}[leftmargin=1.4em]
   \item Each requirement is validated by one or more test cases. Gaps are flagged as \textit{Planned}.
   \item NFR coverage status is informative only (not required for grading), but we track it to guide future work.
-  \item At this time, it was determined that it would be difficult to implement tests for the scalability, reliability and privacy non-FRs. Test cases will be planned and implemented in a future iteration.
+  \item At this time, it was determined that it would be difficult to implement tests for the scalability and reliability non-FRs. Test cases for these non-FRs will be planned and implemented in a future iteration.
 \end{itemize}
 
 % ===================== 6. Detailed Test Case Descriptions =====================
 \section{Detailed Test Case Descriptions}
-For brevity we include the highest-priority cases now; the full catalog will live in the repo under \texttt{tests/}.
+For brevity we include the highest-priority cases now.
 
 \subsection*{TC-001}
 \begin{tabularx}{\linewidth}{|l|L|}
@@ -1311,6 +1312,28 @@ is gracefully handled. \\ \hline
 \textbf{Expected Result} & Job flips to \texttt{awarded} with \texttt{awardedBidId}; further edits return \texttt{job\_locked} / \texttt{bidding\_closed}; observers no longer see the job. \\ \hline
 \textbf{Actual Result} & Passed -- ``Accepting a bid hides the job from outsiders and locks further edits'' test. \\ \hline
 \textbf{Status} & \textcolor{green}{Passed} \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+\subsection*{TC-023}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-023 \\ \hline
+\textbf{Title} & Privacy - Job Location Masking Until Acceptance \\ \hline
+\textbf{Requirement} & NFR-004 \\ \hline
+\textbf{Preconditions} & Logged in, KYC verified. Bidder accepted for a job by poster. \\ \hline
+\textbf{Steps} &
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Job bidder views job with location masked.
+  \item Job bidder bids on job.
+  \item Job bidder is accepted for a job by a job poster.
+  \item Job location is revealed to the job bidder.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Full job location revealed to job bidder after acceptance. \\ \hline
+\textbf{Actual Result} & To be filled after execution. \\ \hline
+\textbf{Status} & Planned \\ \hline
 \textbf{Priority} & High \\ \hline
 \end{tabularx}
 
