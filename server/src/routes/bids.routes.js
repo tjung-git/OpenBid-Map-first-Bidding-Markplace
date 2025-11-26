@@ -105,20 +105,7 @@ router.get("/:jobId", async (req, res, next) => {
       return bCreated - aCreated;
     });
 
-    const highestBid = sorted.reduce((acc, bid) => {
-      const amount = Number(bid.amount);
-      if (!Number.isFinite(amount)) return acc;
-      if (!acc || amount > acc.amount) {
-        return {
-          id: bid.id,
-          amount,
-          bidderName: bid.bidderName || "Bidder",
-        };
-      }
-      return acc;
-    }, null);
-
-    res.json({ bids: sorted, highestBid });
+    res.json({ bids: sorted });
   } catch (e) {
     next(e);
   }
@@ -143,12 +130,6 @@ router.post("/:jobId", async (req, res, next) => {
     }
     if (job.status && job.status !== "open") {
       return res.status(409).json({ error: "bidding_closed" });
-    }
-    const budgetAmount = Number(job.budgetAmount);
-    if (Number.isFinite(budgetAmount) && numericAmount < budgetAmount) {
-      return res
-        .status(400)
-        .json({ error: "bid_below_budget", minAmount: budgetAmount });
     }
     const existingBid = (await db.bid.listByJob(req.params.jobId)).find(
       (bid) => bid.providerId === s.uid
@@ -280,14 +261,6 @@ router.patch("/:jobId/:bidId", async (req, res, next) => {
       const numericAmount = Number(req.body.amount);
       if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
         return res.status(400).json({ error: "invalid_amount" });
-      }
-      const minAmount = Number(
-        job?.budgetAmount ?? bid.jobBudgetAmount ?? bid.jobBudget
-      );
-      if (Number.isFinite(minAmount) && numericAmount < minAmount) {
-        return res
-          .status(400)
-          .json({ error: "bid_below_budget", minAmount });
       }
       patch.amount = numericAmount;
     }

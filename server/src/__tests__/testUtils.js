@@ -548,7 +548,7 @@ export async function createRealApp({
     };
   });
 
-  jest.doMock("../../adapters/auth.real.js", () => ({
+  jest.doMock("../adapters/auth.real.js", () => ({
     __esModule: true,
     auth: {
       signIn: authSignInMock,
@@ -556,7 +556,7 @@ export async function createRealApp({
     },
   }));
 
-  const { db } = await import("../../adapters/db.real.js");
+  const { db } = await import("../adapters/db.real.js");
 
   const app = express();
   app.use(express.json());
