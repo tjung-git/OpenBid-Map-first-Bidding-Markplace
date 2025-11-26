@@ -16,6 +16,8 @@
 \usepackage{parskip}
 \usepackage{listings}
 \usepackage{tabularx}
+\usepackage{graphicx}
+\graphicspath{{./PrototypeScreenshots/}}
 
 \newcolumntype{L}{>{\raggedright\arraybackslash}X}
 
@@ -1343,11 +1345,22 @@ is gracefully handled. \\ \hline
 To run the prototype, please view the quick start guide and follow the running in protoype mode section within the repo's README.
 
 \subsection{Using the prototype application}
-\begin{itemize}[leftmargin=1.4em]
-  \item 
-  \item 
-  \item 
-\end{itemize}
+
+\section{Prototype Overview}
+\subsection{Protoype Description}
+This prototype highlights the core functionality of the OpenBid Application. Authenticated users can browse job postings from job posters as
+a job bidder. Users that complete KYC verification can additionally bid on jobs and create jobs as a job poster. The prototype uses in memory
+mocks to store persistent data and control API route flow.
+
+\subsection{Prototype Screenshots}
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{MainLogin}
+    \caption{Login Screen}
+    \label{fig:MainLogin}
+\end{figure}
+
+\clearpage
 
 % ===================== 7. Code Repository and Branching Strategy =====================
 \section{Code Repository and Branching Strategy}
