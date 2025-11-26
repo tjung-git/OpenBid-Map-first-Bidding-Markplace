@@ -45,7 +45,6 @@ export default function BidDetail() {
   const [job, setJob] = useState(null);
   const [contractor, setContractor] = useState(null);
   const [bids, setBids] = useState([]);
-  const [highestBid, setHighestBid] = useState(null);
   const [amountInput, setAmountInput] = useState("");
   const [note, setNote] = useState("");
   const [ownBidId, setOwnBidId] = useState(null);
@@ -101,8 +100,6 @@ export default function BidDetail() {
         const bidsResp = await api.bidsForJob(jobId);
         const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
         setBids(list);
-        setHighestBid(bidsResp.highestBid || null);
-        const minAmount = normalizeAmount(jobData?.budgetAmount);
         if (user?.uid) {
           const existing = list.find((bid) => bid.providerId === user.uid);
           if (existing) {
@@ -114,15 +111,9 @@ export default function BidDetail() {
             setNote(existing.note || "");
           } else {
             setOwnBidId(null);
-            if (Number.isFinite(minAmount) && minAmount > 0) {
-              setAmountInput(String(minAmount));
-            } else {
-              setAmountInput("");
-            }
+            setAmountInput("");
             setNote("");
           }
-        } else if (Number.isFinite(minAmount) && minAmount > 0) {
-          setAmountInput(String(minAmount));
         } else {
           setAmountInput("");
         }
@@ -195,15 +186,6 @@ export default function BidDetail() {
       setError("Enter a valid bid amount greater than 0.");
       return;
     }
-    const minAmount = budgetAmountNumber || 0;
-    if (numericAmount < minAmount) {
-      setError(
-        minAmount > 0
-          ? `You cannot bid below the contractor's budget of ${budgetDisplay}.`
-          : "Enter a valid bid amount greater than 0."
-      );
-      return;
-    }
     setSubmitting(true);
     try {
       if (ownBidId) {
@@ -266,12 +248,7 @@ export default function BidDetail() {
       setSuccess("Bid deleted.");
       setOwnBidId(null);
       setNote("");
-      const minAmount = normalizeAmount(job?.budgetAmount);
-      if (Number.isFinite(minAmount) && minAmount > 0) {
-        setAmountInput(String(minAmount));
-      } else {
-        setAmountInput("");
-      }
+      setAmountInput("");
       await refreshBids({ reset: true });
     } catch (err) {
       setError("Unable to delete bid. Please try again.");
@@ -285,7 +262,6 @@ export default function BidDetail() {
       const bidsResp = await api.bidsForJob(jobId);
       const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
       setBids(list);
-      setHighestBid(bidsResp.highestBid || null);
       if (user?.uid) {
         const existing = list.find((bid) => bid.providerId === user.uid);
         if (existing) {
@@ -298,22 +274,12 @@ export default function BidDetail() {
         } else {
           setOwnBidId(null);
           if (reset) {
-            const minAmount = normalizeAmount(job?.budgetAmount);
-            if (Number.isFinite(minAmount) && minAmount > 0) {
-              setAmountInput(String(minAmount));
-            } else {
-              setAmountInput("");
-            }
+            setAmountInput("");
             setNote("");
           }
         }
       } else if (reset) {
-        const minAmount = normalizeAmount(job?.budgetAmount);
-        if (Number.isFinite(minAmount) && minAmount > 0) {
-          setAmountInput(String(minAmount));
-        } else {
-          setAmountInput("");
-        }
+        setAmountInput("");
         setNote("");
       }
     } catch (err) {
@@ -335,14 +301,12 @@ export default function BidDetail() {
   const ownBidStatus = (ownBid?.status || "").toLowerCase();
   const ownBidFinalized =
     isBidder && ["accepted", "rejected"].includes(ownBidStatus);
-  const highestEntry = highestBid
-    ? sortedBids.find((bid) => bid.id === highestBid.id) || null
-    : sortedBids.reduce((acc, bid) => {
-        const amount = Number(bid.amount);
-        if (!Number.isFinite(amount)) return acc;
-        if (!acc || amount > Number(acc.amount)) return bid;
-        return acc;
-      }, null);
+  const bidsPlacedText =
+    sortedBids.length > 0
+      ? `${sortedBids.length} bid${
+          sortedBids.length === 1 ? "" : "s"
+        } placed so far.`
+      : "Be the first to bid.";
 
   useEffect(() => {
     const total = Math.max(
@@ -430,15 +394,9 @@ export default function BidDetail() {
 
         <Tile className="bid-detail-card">
           <h3>{ownBidId ? "Update Your Bid" : "Place Your Bid"}</h3>
-          {showCompetitiveSections &&
-            (highestEntry ? (
-              <p className="bid-detail-highest">
-                Highest bid: ${Number(highestEntry.amount).toLocaleString()}{" "}
-                {highestEntry.bidderName ? `by ${highestEntry.bidderName}` : ""}
-              </p>
-            ) : (
-              <p className="bid-detail-highest">Be the first to bid.</p>
-            ))}
+          {showCompetitiveSections && (
+            <p className="bid-detail-highest">{bidsPlacedText}</p>
+          )}
           {biddingClosed && (
             <InlineNotification
               title="Bidding Closed"
@@ -457,7 +415,7 @@ export default function BidDetail() {
           )}
           {budgetDisplay && (
             <p className="bid-detail-helper">
-              Minimum bid (contractor budget): {budgetDisplay}
+              Contractor budget (for reference): {budgetDisplay}
             </p>
           )}
           {isOwnJob && (
@@ -475,14 +433,8 @@ export default function BidDetail() {
               value={amountInput === "" ? "" : Number(amountInput)}
               onChange={handleAmountChange}
               allowEmpty
-              min={budgetAmountNumber ?? 0}
-              step={5}
+              min={0}
               disabled={submitting || biddingClosed || ownBidFinalized || isOwnJob}
-              helperText={
-                budgetDisplay
-                  ? `Enter an amount of at least ${budgetDisplay}.`
-                  : undefined
-              }
             />
             <TextInput
               id="bid-note"
@@ -529,7 +481,6 @@ export default function BidDetail() {
                 {paginatedBids.map((bid) => {
                   const amountValue = Number(bid.amount);
                   const isOwn = bid.providerId === user?.uid;
-                  const isHighest = highestEntry && highestEntry.id === bid.id;
                   const status = (bid.status || "active").toLowerCase();
                   const statusLabel =
                     status.charAt(0).toUpperCase() + status.slice(1);
@@ -546,9 +497,6 @@ export default function BidDetail() {
                           {Number.isFinite(amountValue)
                             ? amountValue.toLocaleString()
                             : bid.amount}
-                          {isHighest && (
-                            <span className="bid-tag">Highest</span>
-                          )}
                           {isOwn && (
                             <span className="bid-tag bid-tag--own">
                               Your bid
