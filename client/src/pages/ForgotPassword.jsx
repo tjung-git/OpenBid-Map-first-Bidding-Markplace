@@ -7,6 +7,7 @@ import {
 } from "@carbon/react";
 import { Link } from "react-router-dom";
 import { api } from "../services/api";
+import { cfg } from "../services/config";
 import "../styles/pages/login.css";
 
 export default function ForgotPassword() {
@@ -20,6 +21,12 @@ export default function ForgotPassword() {
     if (submitting) return;
     setError("");
     setInfo("");
+
+    if (cfg.prototype) {
+      setError("Password reset is disabled in prototype mode.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       await api.forgotPassword(email);

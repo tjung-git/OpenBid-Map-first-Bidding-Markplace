@@ -71,6 +71,16 @@ router.get("/start", async (req, res) => {
   const client = duoClient();
   const duoState = client.generateState();
 
+  if (config.prototype) {
+    const base = appUrl(req);
+    const otc = issueOtcFor(appState, {
+      ...pending,
+      duoOk: true,
+      emailVerified: false, // Ensure email verification is not set to true
+    });
+    return res.redirect(`${base}/login?code=${otc}`);
+  }
+
   const username = pending.email || pending.uid || "user";
   putWithTTL(duoState, { ...pending, __duoUsername: username }, 5 * 60 * 1000);
 

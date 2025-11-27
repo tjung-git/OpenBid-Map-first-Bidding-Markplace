@@ -138,7 +138,7 @@ router.post("/signup", async (req, res, next) => {
       lastName,
       email: normalizedEmail,
       userType: userTypeNormalized,
-      emailVerification: config.prototype ? "verified" : "pending",
+      emailVerification: "pending",
       kycStatus: "pending",
       kycSessionId: null,
       passwordHash,
@@ -239,7 +239,7 @@ router.post("/login", async (req, res, next) => {
       }
     }
 
-    if ((user.emailVerification || "").toLowerCase() !== "verified") {
+    if (!config.prototype && (user.emailVerification || "").toLowerCase() !== "verified") {
       return res.status(403).json({
         error: "verification_required",
         emailVerification: user.emailVerification || "pending",
