@@ -70,7 +70,7 @@ This document outlines the deliverables for Iteration 4- focusing on improving t
 \section{Iteration Goals and Objectives}
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Post a job} and \textbf{place a bid} core bidding functionality should be fully implemented in the prototype.
-  \item Core authentication and authorization funtionality should be updated in the prototype- specifically authentication and security flows: \textbf{auth + Duo 2FA} and \textbf{KYC gate} (stubbed via Stripe Identity sandbox token).
+  \item Core authentication and authorization funtionality should be updated in the prototype. Email verification should automatically be set to verified upon account creation. KYC should use a force-pass route to quickly authorize a user. Finally, the duo feature will not be included in the prototype.
   \item Develop and run additional unit tests mapped to requirements (frontend component tests and backend handler tests) *as required. Conduct manual e2e testing.
   \item Update documentation- reiterate user stories and user cases, update functional and non-functional requirements, and provide a user manual.
   \item Deliver a prototype demonstrating requirement \(\leftrightarrow\) test case links.
@@ -93,7 +93,7 @@ As a \textbf{Bidder}, I want to place a bid with an amount, note, and ETA so the
 \end{itemize}
 
 \paragraph{US-3: Complete KYC (High, 3 pts)}
-As a \textbf{Bidder}, I want to verify my identity (document + selfie) so I can browse jobs safely.
+As a \textbf{Bidder}, I want to verify my identity (document + selfie) so I can browse and bid on jobs.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Stripe Identity flow completes; app shows verified badge; bidding features unlock.
 \end{itemize}
@@ -180,49 +180,43 @@ As a \textbf{browser}, I want to explore posted jobs on a map in read-only mode,
 \end{itemize}
 
 \paragraph{US-17: View Limited Job Details (Medium, 1 pt)}
-As a \textbf{browser}, I want to view limited job details (e.g., title, category, approximate location, budget range) without registering, so I see the platform's value.
+As a \textbf{browser}, I want to view limited job details (e.g., title, category, approximate location, budget range) without completing the KYC process, so I see the platform's value.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Basic job info visible; contact details and full descriptions hidden; registration required for full access.
 \end{itemize}
 
-\paragraph{US-18: Registration Prompt (Medium, 1 pt)}
-As a \textbf{browser}, I want to be prompted to create an account if I try to post a job or place a bid, so I know registration is required.
-\begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Acceptance:} Clear registration modal appears; KYC/2FA requirements explained; seamless signup flow.
-\end{itemize}
-
-\paragraph{US-19: KYC/2FA Instructions (Medium, 1 pt)}
+\paragraph{US-18: KYC/2FA Instructions (Medium, 1 pt)}
 As a \textbf{newly registered user}, I want clear instructions that I must complete KYC verification and enable Duo 2FA before being allowed to post jobs or bid, so I understand the trust policy.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Step-by-step guidance; progress indicators; help resources available.
 \end{itemize}
 
-\paragraph{US-20: Access Support Resources (Low, 1 pt)}
-As a \textbf{browser}, I want access to support or FAQ pages, so I can ask questions or learn more before verifying my account.
+\paragraph{US-19: Access Support Resources (Low, 1 pt)}
+As a \textbf{browser}, I want access to support or FAQ pages, so I can ask questions or learn more about the app before starting the KYC verification process.
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Acceptance:} Support contact form; FAQ section; help documentation accessible without full registration.
+  \item \textbf{Acceptance:} Support contact form; FAQ section; help documentation accessible without being KYC-verified.
 \end{itemize}
 
 \subsection*{Admin}
-\paragraph{US-21: Review Reports (High, 3 pts)}
+\paragraph{US-20: Review Reports (High, 3 pts)}
 As an \textbf{Admin}, I want to review user reports and disputes so I can maintain platform safety and integrity.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Report dashboard; case management tools; resolution tracking.
 \end{itemize}
 
-\paragraph{US-22: Manage Categories (Medium, 2 pts)}
+\paragraph{US-21: Manage Categories (Medium, 2 pts)}
 As an \textbf{Admin}, I want to manage job categories so the platform stays organized and relevant.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Category CRUD operations; validation; audit logging.
 \end{itemize}
 
-\paragraph{US-23: Handle Disputes (High, 4 pts)}
+\paragraph{US-22: Handle Disputes (High, 4 pts)}
 As an \textbf{Admin}, I want to handle payment and job disputes so conflicts are resolved fairly.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Dispute intake; evidence review; resolution workflow; communication tools.
 \end{itemize}
 
-\paragraph{US-24: System Monitoring (Medium, 2 pts)}
+\paragraph{US-23: System Monitoring (Medium, 2 pts)}
 As an \textbf{Admin}, I want to monitor system health and performance so I can ensure platform reliability.
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Acceptance:} Dashboard with metrics; alert system; performance monitoring.
@@ -234,7 +228,7 @@ As an \textbf{Admin}, I want to monitor system health and performance so I can e
 \subsection{Functional Requirements}
 
 \begin{enumerate}[leftmargin=1.4em]
-  \item \textbf{Account \& Identity (\textrightarrow{} US-3, US-7, US-11, US-15, US-18):} Email/password sign-up and sign-in (handled via Firebase Auth in production). Mandatory KYC before bidders can bid or posters can create jobs (handled via Stripe Identity in production).
+  \item \textbf{Account \& Identity (\textrightarrow{} US-3, US-7, US-11, US-15):} Email/password sign-up and sign-in (handled via Firebase Auth in production). Mandatory KYC before bidders can bid or posters can create jobs (handled via Stripe Identity in production).
   \item \textbf{Viewing Jobs (\textrightarrow{} US-16, US-17):} Job browsers can view jobs after signing up an account.
   \item \textbf{Bidder Profiles (\textrightarrow{} US-8):} Bidder can create and update basic profiles. In production, bidders can enhance their profiles by including skills, description, photos, rates, availability, and their location. Support for deletion.
   \item \textbf{Discovery (\textrightarrow{} US-1):} Bidders can browse for jobs using a list. In production, there will be an added map view and job filters (radius, category/skill, budget, availability date).
@@ -245,14 +239,14 @@ As an \textbf{Admin}, I want to monitor system health and performance so I can e
   \item \textbf{Messaging: (\textrightarrow{} US-5, US-13):} Secure in-offer messaging with attachments and report/block options.
   \item \textbf{Reviews (\textrightarrow{} US-6, US-14):} Both parties leave ratings and written reviews.
   \item \textbf{Safety Score (\textrightarrow{} US-9):} System calculates a 0--100 location safety score and applies friction controls.
-  \item \textbf{Admin Dashboard: (\textrightarrow{} US-21, US-22, US-23, US-24)} Admins manage reports, categories, and disputes.
+  \item \textbf{Admin Dashboard: (\textrightarrow{} US-20, US-21, US-22, US-23)} Admins manage reports, categories, and disputes.
 \end{enumerate}
 
 \subsection{Non-Functional Requirements}
 \textbf{Most non-functional requirements will only be implemented in the production application).}
 \begin{enumerate}[leftmargin=1.4em]
   \item \textbf{Performance:} Map/list browse and search shall return results in \(\leq 500\) ms p95 for target metro; prototype may use simplified filters.
-  \item \textbf{Usability:} Mobile-first, accessible (WCAG 2.1 AA where practical); clear copy for KYC/2FA and escrow steps. Map and list view of jobs should be easily accessible on any device. Detailed instructions and seamless redirect for logging in and browsing as a non-KYC user (addresses US-18, US-19, US-20 which are not covered by current FRs).
+  \item \textbf{Usability:} Mobile-first, accessible (WCAG 2.1 AA where practical); clear copy for KYC/2FA and escrow steps. Map and list view of jobs should be easily accessible on any device. The application shall include an FAQ page, support resources, and clear messages to indicate KYC verification and Duo is required to use the app (addresses US-18 and US-19 which are not covered by current FRs).
   \item \textbf{Security:} All traffic over TLS; short-lived JWTs; server-side validation; reCAPTCHA on signup/post/bid. Only KYC users shall be able to access and create jobs.
   \item \textbf{Scalability:} Stateless API (Node/Express) behind Firebase/Cloud Run; Firestore as primary data store; storage via Firebase Cloud Storage.
   \item \textbf{Reliability:} Error tracking via Sentry; observability with OpenTelemetry; automated CI checks on PRs.
