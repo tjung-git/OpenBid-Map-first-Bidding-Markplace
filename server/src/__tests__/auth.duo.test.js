@@ -1,4 +1,5 @@
-const request = require("supertest");
+import request from "supertest";
+import { config } from "../config.js";
 
 jest.mock("bcryptjs", () => ({
   compare: jest.fn(async () => true),
@@ -66,7 +67,9 @@ beforeAll(async () => {
   });
 });
 
-describe("TC-008: Duo 2FA challenge during login (login-only flow)", () => {
+const describeFn = config.prototype ? describe.skip : describe;
+
+describeFn("TC-008: Duo 2FA challenge during login (login-only flow)", () => {
   const email = "duo@test.local";
 
   test("returns 202 with mfa.startUrl, then finalize returns session JSON", async () => {
