@@ -6,6 +6,19 @@ const state = {
       email: 'test@example.com', 
       kycStatus: 'pending',
       kycSessionId: null
+    }],
+    ['u_openbid123', {
+      uid: 'u_openbid123',
+      email: 'openbid123@gmail.com',
+      firstName: 'OpenBid',
+      lastName: 'Developer',
+      userType: 'bidder',
+      emailVerification: 'verified',
+      kycStatus: 'pending',
+      kycSessionId: null,
+      passwordHash: '$2b$10$JIyQumAfY3GLNiNvSNu4.efls3iHM6CAiQyoHfr/H1mISNppvqSaC',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     }]
   ]), // key: uid -> user { uid, email, name, kycStatus, kycSessionId }
   jobs: new Map(), // jobId -> job

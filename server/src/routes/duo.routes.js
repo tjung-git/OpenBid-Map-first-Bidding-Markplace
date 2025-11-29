@@ -70,7 +70,6 @@ router.get("/start", async (req, res) => {
 
   const client = duoClient();
   const duoState = client.generateState();
-
   const username = pending.email || pending.uid || "user";
   putWithTTL(duoState, { ...pending, __duoUsername: username }, 5 * 60 * 1000);
 

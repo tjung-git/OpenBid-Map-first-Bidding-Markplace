@@ -309,6 +309,10 @@ router.post("/login", async (req, res, next) => {
       requirements,
     };
 
+    // In prototype mode, skip DUO
+    if (config.prototype) {
+      return res.json(sessionPayload);
+    }
     const state = crypto.randomBytes(16).toString("hex");
 
     putWithTTL(
