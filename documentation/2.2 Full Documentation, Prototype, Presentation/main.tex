@@ -239,7 +239,7 @@ As an \textbf{Admin}, I want to monitor system health and performance so I can e
   \item \textbf{Bidder Profiles (\textrightarrow{} US-8):} Bidder can create and update basic profiles. In production, bidders can enhance their profiles by including skills, description, photos, rates, availability, and their location. Support for deletion.
   \item \textbf{Discovery (\textrightarrow{} US-1):} Bidders can browse for jobs using a list. In production, there will be an added map view and job filters (radius, category/skill, budget, availability date).
   \item \textbf{Bidding (\textrightarrow{} US-2):} KYC verified bidders can place, edit, and withdraw bids (amount, note, ETA).
-  \item \textbf{Posting Jobs (\textrightarrow{} US-10):} KYC verified Job Posters can place, edit, and delete jobs (amount, location, description, etc.). A Job Poster can also accept a bid on a job.
+  \item \textbf{Posting Jobs (\textrightarrow{} US-10):} KYC verified Job Posters can place, edit, and delete jobs (amount, location, description, etc.). A Job Poster can additionally accept a bid on a job.
   \item \textbf{Two-Factor Authentication (2FA) (\textrightarrow{} US-4, US-12):} Duo 2FA required for sign-in.
   \item \textbf{Payments (Escrow) (\textrightarrow{} US-10):} Job Posters fund escrow on offer acceptance; payouts via Stripe Connect on completion.
   \item \textbf{Messaging: (\textrightarrow{} US-5, US-13):} Secure in-offer messaging with attachments and report/block options.
@@ -1393,11 +1393,19 @@ These instructions will walk you through starting the application for the first 
   \item Once a bid is accepted, the job will close. The bidder whose offer you selected will see a notice confirming that their bid was chosen.
 \end{enumerate}
 
+\subsubsection{*Using OpenBid with a dev account}
+When testing the application as a developer, use the following credentials to bypass the account creation process and log in directly.
+\begin{itemize}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item \textbf{Email:} openbid123@gmail.com
+  \item \textbf{Password:} openbidopenbid
+\end{itemize}
+
 \section{Prototype Overview}
 \subsection{Protoype Description}
 The prototype highlights the core functionality of the OpenBid Application. Authenticated users can browse job postings from job posters as
-a job browser. Users that complete KYC verification can additionally bid on jobs as a job bidder and create jobs as a job poster. The prototype uses in memory
-mocks to store persistent data and control API route flow.
+a job browser. Users that complete KYC verification can additionally bid on jobs as a job bidder and create jobs as a job poster. The general user journey for a 
+job bidder is the user first browses for jobs, then bids on a job, then the bid is either accepted, rejected or close (if the job closes). The general user journey
+for a job poster is the job poster first posts a job, makes optional edits, receives bids for the jobs, then closes the job at any time or accepts a bid from a bidder.
 
 \subsection{Prototype Screenshots}
 \textbf{Note that some screenshots are intentionally cut off due to sizing restrictions. Most importantly, the main components for each page are included in each image.}
