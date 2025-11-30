@@ -9,6 +9,7 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import { setSession, setUser } from "../services/session";
+import { cfg } from "../services/config";
 import "../styles/pages/login.css";
 
 export default function Login() {
@@ -31,6 +32,42 @@ export default function Login() {
       nav(location.pathname, { replace: true });
     }
   }, [location.search, location.pathname, nav]);
+
+  // Surface signup success notice (from navigation state or session storage) when email verification matters.
+  useEffect(() => {
+    if (cfg.prototype) {
+      // Clean out any stale notice without showing it.
+      if (location.state?.signupComplete) {
+        const { signupComplete, ...rest } = location.state;
+        nav(location.pathname, { replace: true, state: rest });
+      }
+      try {
+        sessionStorage.removeItem("signup_notice");
+      } catch (err) {
+        console.warn("[Login] unable to clear signup notice", err);
+      }
+      return;
+    }
+    let notice = "";
+    if (location.state?.signupComplete) {
+      notice = location.state.signupComplete;
+      const { signupComplete, ...rest } = location.state;
+      nav(location.pathname, { replace: true, state: rest });
+    } else {
+      try {
+        const stored = sessionStorage.getItem("signup_notice");
+        if (stored) {
+          notice = stored;
+          sessionStorage.removeItem("signup_notice");
+        }
+      } catch (err) {
+        console.warn("[Login] unable to read signup notice", err);
+      }
+    }
+    if (notice) {
+      setInfo(notice);
+    }
+  }, [location.state, location.pathname, nav]);
 
   // Handle Duo success: /login or /login/finish with ?code=otc_...
   useEffect(() => {
