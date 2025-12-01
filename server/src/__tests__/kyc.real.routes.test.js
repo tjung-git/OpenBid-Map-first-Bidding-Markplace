@@ -1,7 +1,7 @@
 import request from "supertest";
 import express from "express";
 
-jest.mock('../../config.js', () => ({
+jest.mock('../config.js', () => ({
   config: {
     PROTOTYPE: false,
     prototype: false,
@@ -32,13 +32,13 @@ jest.mock('stripe', () => {
 });
 
 // Mock real auth and db adapters
-jest.mock('../../adapters/auth.real.js', () => ({
+jest.mock('../adapters/auth.real.js', () => ({
   auth: {
     verify: jest.fn(),
   },
 }));
 
-jest.mock('../../adapters/db.real.js', () => ({
+jest.mock('../adapters/db.real.js', () => ({
   db: {
     user: {
       get: jest.fn(),
@@ -54,9 +54,9 @@ describe("KYC Routes - Real Mode", () => {
   let Db;
 
   beforeAll(async () => {
-    Auth = require('../../adapters/auth.real.js');
-    Db = require('../../adapters/db.real.js');
-    kycRoutes = (await import('../kyc.routes.js')).default;
+    Auth = require('../adapters/auth.real.js');
+    Db = require('../adapters/db.real.js');
+    kycRoutes = (await import('../routes/kyc.routes.js')).default;
     
     app = express();
     app.use(express.json());

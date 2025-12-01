@@ -44,7 +44,6 @@ export default function JobBid() {
   const [job, setJob] = useState(null);
   const [contractor, setContractor] = useState(null);
   const [bids, setBids] = useState([]);
-  const [highestBid, setHighestBid] = useState(null);
   const [amountInput, setAmountInput] = useState("");
   const [note, setNote] = useState("");
   const [ownBidId, setOwnBidId] = useState(null);
@@ -66,9 +65,8 @@ export default function JobBid() {
   }, [job?.location?.lat, job?.location?.lng]);
 
   const hydrateBids = useCallback(
-    (list = [], highest = null, { resetPage = false, minAmount = null } = {}) => {
+    (list = [], { resetPage = false } = {}) => {
       setBids(list);
-      setHighestBid(highest);
 
       if (user?.uid) {
         const existing = list.find((bid) => bid.providerId === user.uid);
@@ -82,11 +80,7 @@ export default function JobBid() {
         } else {
           setOwnBidId(null);
           if (resetPage) {
-            if (Number.isFinite(minAmount) && minAmount > 0) {
-              setAmountInput(String(minAmount));
-            } else {
-              setAmountInput("");
-            }
+            setAmountInput("");
             setNote("");
           }
         }
@@ -113,10 +107,8 @@ export default function JobBid() {
       setJob(jobData);
       setContractor(jobResp?.contractor || null);
       const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
-      const minAmount = normalizeAmount(jobData?.budgetAmount);
-      hydrateBids(list, bidsResp?.highestBid || null, {
+      hydrateBids(list, {
         resetPage: true,
-        minAmount,
       });
     } catch (err) {
       console.error("[JobBid] load failed", err);
@@ -146,8 +138,7 @@ export default function JobBid() {
       try {
         const bidsResp = await api.bidsForJob(jobId);
         const list = Array.isArray(bidsResp?.bids) ? bidsResp.bids : [];
-        hydrateBids(list, bidsResp?.highestBid || null, {
-          minAmount: normalizeAmount(job?.budgetAmount),
+        hydrateBids(list, {
           resetPage: reset,
         });
       } catch (err) {
@@ -157,7 +148,7 @@ export default function JobBid() {
         }
       }
     },
-    [jobId, hydrateBids, job?.budgetAmount]
+    [jobId, hydrateBids]
   );
 
   useEffect(() => {
@@ -203,39 +194,12 @@ export default function JobBid() {
     [sortedBids, user?.uid]
   );
 
-  const highestEntry = useMemo(() => {
-    if (highestBid?.id) {
-      return (
-        sortedBids.find((bid) => bid.id === highestBid.id) ||
-        sortedBids.find(
-          (bid) => Number(bid.amount) === Number(highestBid.amount)
-        ) ||
-        null
-      );
-    }
-    return sortedBids.reduce((acc, bid) => {
-      const amount = Number(bid.amount);
-      if (!Number.isFinite(amount)) return acc;
-      if (!acc || amount > Number(acc.amount)) return bid;
-      return acc;
-    }, null);
-  }, [highestBid, sortedBids]);
-
-  const highestAmountDisplay = useMemo(() => {
-    if (!highestEntry) return null;
-    const numeric = Number(highestEntry.amount);
-    return Number.isFinite(numeric)
-      ? numeric.toLocaleString()
-      : highestEntry.amount || "—";
-  }, [highestEntry]);
-
   const otherBids = useMemo(() => {
     return sortedBids.filter((bid) => {
       if (ownBid && bid.id === ownBid.id) return false;
-      if (highestEntry && bid.id === highestEntry.id) return false;
       return true;
     });
-  }, [sortedBids, ownBid, highestEntry]);
+  }, [sortedBids, ownBid]);
 
   const budgetAmountNumber = useMemo(
     () => normalizeAmount(job?.budgetAmount),
@@ -263,18 +227,6 @@ export default function JobBid() {
     }
   }, [page, totalPages]);
 
-  useEffect(() => {
-    if (!ownBid && Number.isFinite(budgetAmountNumber) && budgetAmountNumber > 0) {
-      setAmountInput((current) => {
-        const numeric = Number(current);
-        if (Number.isFinite(numeric) && numeric >= budgetAmountNumber) {
-          return current;
-        }
-        return String(budgetAmountNumber);
-      });
-    }
-  }, [ownBid, budgetAmountNumber]);
-
   const paginatedBids = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
     return otherBids.slice(start, start + PAGE_SIZE);
@@ -283,14 +235,7 @@ export default function JobBid() {
   const showPagination = otherBids.length > PAGE_SIZE;
 
   function errorMessageFromResponse(resp, { mode } = {}) {
-    const minAmount = Number(resp?.minAmount);
     switch (resp?.error) {
-      case "bid_below_budget":
-        return `Bids must be at least ${
-          Number.isFinite(minAmount)
-            ? `$${minAmount.toLocaleString()}`
-            : "the job budget amount"
-        }.`;
       case "bid_already_exists":
         return "You already have a bid for this job. Update or delete it instead.";
       case "own_job_bid":
@@ -310,21 +255,6 @@ export default function JobBid() {
     const raw = value == null ? "" : String(value);
     const cleaned = raw.replace(/[^0-9.]/g, "");
     const normalized = cleaned.replace(/^0+(?=\d)/, "");
-    if (!normalized) {
-      setAmountInput("");
-      if (error && error.includes("budget")) {
-        setError("");
-      }
-      return;
-    }
-    const numeric = Number(normalized);
-    if (Number.isFinite(budgetAmountNumber) && numeric < budgetAmountNumber) {
-      setError(
-        `You cannot bid below the contractor's budget of ${budgetDisplay}.`
-      );
-    } else if (error && error.includes("budget")) {
-      setError("");
-    }
     setAmountInput(normalized);
   }
 
@@ -349,17 +279,8 @@ export default function JobBid() {
       });
       return;
     }
-    if (!Number.isFinite(numericAmount) || amountInput === "") {
+    if (!Number.isFinite(numericAmount) || amountInput === "" || numericAmount <= 0) {
       setError("Enter a valid bid amount greater than 0.");
-      return;
-    }
-    const minAmount = budgetAmountNumber || 0;
-    if (numericAmount < minAmount) {
-      setError(
-        minAmount > 0
-          ? `You cannot bid below the contractor's budget of ${budgetDisplay}.`
-          : "Enter a valid bid amount greater than 0."
-      );
       return;
     }
     setSubmitting(true);
@@ -409,12 +330,7 @@ export default function JobBid() {
       setSuccess("Bid deleted.");
       setOwnBidId(null);
       setNote("");
-      const minAmount = normalizeAmount(job?.budgetAmount);
-      if (Number.isFinite(minAmount) && minAmount > 0) {
-        setAmountInput(String(minAmount));
-      } else {
-        setAmountInput("");
-      }
+      setAmountInput("");
       await refreshBids({ reset: true });
     } catch (err) {
       setError("Unable to delete bid. Please try again.");
@@ -444,10 +360,7 @@ export default function JobBid() {
     );
   }
 
-  const renderBidItem = (
-    bid,
-    { highlightOwn = false, highlightHighest = false } = {}
-  ) => {
+  const renderBidItem = (bid, { highlightOwn = false } = {}) => {
     if (!bid) return null;
     const amountValue = Number(bid.amount);
     const status = (bid.status || "active").toLowerCase();
@@ -464,8 +377,8 @@ export default function JobBid() {
       >
         <div>
           <p className="bid-list-amount">
-            ${Number.isFinite(amountValue) ? amountValue.toLocaleString() : bid.amount}
-            {highlightHighest && <span className="bid-tag">Highest</span>}
+            $
+            {Number.isFinite(amountValue) ? amountValue.toLocaleString() : bid.amount}
             {highlightOwn && <span className="bid-tag bid-tag--own">Your bid</span>}
           </p>
           <p className="bid-list-meta">
@@ -547,17 +460,16 @@ export default function JobBid() {
               lowContrast
             />
           )}
-          {highestEntry ? (
-            <p className="bid-detail-highest">
-              Highest bid: ${highestAmountDisplay}{" "}
-              {highestEntry.bidderName ? `by ${highestEntry.bidderName}` : ""}
-            </p>
-          ) : (
-            <p className="bid-detail-highest">Be the first to bid.</p>
-          )}
+          <p className="bid-detail-highest">
+            {sortedBids.length > 0
+              ? `${sortedBids.length} bid${
+                  sortedBids.length === 1 ? "" : "s"
+                } placed so far.`
+              : "Be the first to bid."}
+          </p>
           {budgetDisplay && (
             <p className="bid-detail-helper">
-              Minimum bid (contractor budget): {budgetDisplay}
+              Contractor budget (for reference): {budgetDisplay}
             </p>
           )}
           <Form onSubmit={submitBid} className="bid-detail-form">
@@ -567,14 +479,8 @@ export default function JobBid() {
               value={amountInput === "" ? "" : Number(amountInput)}
               allowEmpty
               onChange={handleAmountChange}
-              min={budgetAmountNumber ?? 0}
-              step={5}
+              min={0}
               disabled={!canBid}
-              helperText={
-                budgetDisplay
-                  ? `Enter an amount of at least ${budgetDisplay}.`
-                  : undefined
-              }
             />
             <TextInput
               id="bid-note"
@@ -611,36 +517,16 @@ export default function JobBid() {
       </div>
 
       <Tile className="bid-detail-card">
-        <h3>Your Bid & Highest Bid</h3>
-        <div className="bid-highlight-grid">
-          <div className="bid-highlight-section">
-            <h4>Your Bid</h4>
-            {ownBid ? (
-              <ul className="bid-list">
-                {renderBidItem(ownBid, {
-                  highlightOwn: true,
-                  highlightHighest:
-                    Boolean(highestEntry && highestEntry.id === ownBid.id),
-                })}
-              </ul>
-            ) : (
-              <p>You haven't placed a bid yet.</p>
-            )}
-          </div>
-          <div className="bid-highlight-section">
-            <h4>Highest Bid</h4>
-            {highestEntry ? (
-              <ul className="bid-list">
-                {renderBidItem(highestEntry, {
-                  highlightHighest: true,
-                  highlightOwn: highestEntry?.providerId === user?.uid,
-                })}
-              </ul>
-            ) : (
-              <p>No bids yet.</p>
-            )}
-          </div>
-        </div>
+        <h3>Your Bid</h3>
+        {ownBid ? (
+          <ul className="bid-list">
+            {renderBidItem(ownBid, {
+              highlightOwn: true,
+            })}
+          </ul>
+        ) : (
+          <p>You haven't placed a bid yet.</p>
+        )}
       </Tile>
 
       <Tile className="bid-detail-card">
@@ -652,9 +538,7 @@ export default function JobBid() {
             <ul className="bid-list">
               {paginatedBids.map((bid) =>
                 renderBidItem(bid, {
-                  highlightHighest: Boolean(
-                    highestEntry && highestEntry.id === bid.id
-                  ),
+                  highlightOwn: bid.providerId === user?.uid,
                 })
               )}
             </ul>

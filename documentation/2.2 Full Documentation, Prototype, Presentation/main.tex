@@ -16,6 +16,8 @@
 \usepackage{parskip}
 \usepackage{listings}
 \usepackage{tabularx}
+\usepackage{graphicx}
+\graphicspath{{./PrototypeScreenshots/}}
 
 \newcolumntype{L}{>{\raggedright\arraybackslash}X}
 
@@ -40,10 +42,10 @@
 % ---------- Title ----------
 \newcommand{\product}{OpenBid}
 \title{DIGT2107: Practice of Software Development\\
-\Large Project Iteration 3: Testing and Initial Development\\[4pt]
+\Large Project Iteration 4: Full Documentation, Prototype, Presentation\\[4pt]
 \large \product}
 \author{Team 1: Tyler \and Mani \and Yanness \and Alaister}
-\date{Due: November 2, 2025}
+\date{Due: November 30, 2025}
 
 \begin{document}
 \maketitle
@@ -62,22 +64,201 @@
 \textbf{Team Members:} Tyler, Mani, Yanness, Alaister
 
 \paragraph{Document Overview}
-This document outlines the deliverables for Iteration 3, focusing on the initial development phase. It shows how our \textit{test cases} map to the \textit{functional and non-functional requirements} from earlier iterations, and it reports the current working prototype. Goals: implement core functionality tied to high-priority stories, develop comprehensive unit tests, and deliver a working prototype demonstrating traceability.
+This document outlines the deliverables for Iteration 4- focusing on improving the inital prototype, testing the prototype, and updating the documentation. The main highlight of this iteration is delivering a protoype of the OpenBid application.
 
 % ===================== 2. Iteration Goals and Objectives =====================
 \section{Iteration Goals and Objectives}
 \begin{itemize}[leftmargin=1.4em]
-  \item Implement core flows: \textbf{auth + Duo 2FA}, \textbf{KYC gate} (stubbed via Stripe Identity sandbox token), \textbf{post a job}, \textbf{browse on map}, \textbf{place a bid}.
-  \item Develop and run unit tests mapped to requirements (frontend component tests and backend handler tests).
+  \item \textbf{Post a job} and \textbf{place a bid} core bidding functionality should be fully implemented in the prototype.
+  \item Core authentication and authorization funtionality should be updated in the prototype. Email verification should automatically be set to verified upon account creation. KYC should use a force-pass route to quickly authorize a user. Finally, the duo feature will not be included in the prototype.
+  \item Develop and run additional unit tests mapped to requirements (frontend component tests and backend handler tests) *as required. Conduct manual e2e testing.
+  \item Update documentation- reiterate user stories and user cases, update functional and non-functional requirements, and provide a user manual.
   \item Deliver a prototype demonstrating requirement \(\leftrightarrow\) test case links.
 \end{itemize}
 
-% ===================== 3. Requirement to Test Case Traceability =====================
+% ===================== 3. Detailed User Stories =====================
+\section{Detailed User Stories}
+
+\subsection*{Job Bidder}
+\paragraph{US-1: Browse Nearby Jobs (High, 3 pts)}
+As a \textbf{Bidder}, I want to see jobs near me with filters so I can quickly find relevant work.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Map/list render; radius/category/budget/date filters; open job details view.
+\end{itemize}
+
+\paragraph{US-2: Place a Bid (High, 5 pts)}
+As a \textbf{Bidder}, I want to place a bid with an amount, note, and ETA so the Job Poster/Contractor can evaluate me.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Bid saved; Job Poster notified; contractor can edit/withdraw prior to award.
+\end{itemize}
+
+\paragraph{US-3: Complete KYC (High, 3 pts)}
+As a \textbf{Bidder}, I want to verify my identity (document + selfie) so I can browse and bid on jobs.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Stripe Identity flow completes; app shows verified badge; bidding features unlock.
+\end{itemize}
+
+\paragraph{US-4: Duo 2FA (Medium, 2 pts)}
+As a \textbf{Bidder}, I want Duo phone confirmation so my account is protected during sign-in.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} 2FA challenge required; recovery path documented.
+\end{itemize}
+
+\paragraph{US-5: Job Thread Messaging (Medium, 3 pts)}
+As a \textbf{Bidder}, I want a per-job chat so I can coordinate details with job posters/contractors.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Send/receive text; attachments; report/block; notifications.
+\end{itemize}
+
+\paragraph{US-6: Leave Reviews (Medium, 2 pts)}
+As a \textbf{Bidder}, I want to rate and review job posters after completion so future users can trust matches.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} 1–5 stars plus comment; appears on bidder profile; single review per job.
+\end{itemize}
+
+\paragraph{US-7: Create an account (High, 5 pts)}
+As a \textbf{Bidder}, I want to create an account using my email.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Login page present with a seamless sign up process.
+\end{itemize}
+
+\paragraph{US-8: Personailze Profile (High, 5 pts)}
+As a \textbf{Bidder}, I want to personalize my profile to showcase my skills, reviews, experience etc.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Editable user profile page to change profile picture, skills, experience etc.
+\end{itemize}
+
+\subsection*{Job Posters/Contractors}
+
+\paragraph{US-9: Safety Score Guidance (Medium, 3 pts)}
+As a \textbf{Contractor}, I want safety guidance at post-time so I can choose safer options (e.g., daylight/public meetup).
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Score shown with tips; low-score flows add friction or require verification.
+\end{itemize}
+
+\paragraph{US-10: Accept a Bid \& Fund Escrow (High, 4 pts)}
+As a \textbf{Contractor}, I want to accept a bid and put funds on hold so payment is guaranteed on completion.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Stripe hold succeeds; job moves to \texttt{awarded}; chat thread opens with winner.
+\end{itemize}
+
+\paragraph{US-11: Complete KYC (High, 3 pts)}
+As a \textbf{Contractor}, I want to verify my identity (document + selfie) so I can post jobs safely.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Stripe Identity flow completes; app shows verified badge; posting features unlock.
+\end{itemize}
+
+\paragraph{US-12: Duo 2FA (Medium, 2 pts)}
+As a \textbf{Contractor}, I want Duo phone confirmation so my account is protected during sign-in and payouts.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} 2FA challenge required; recovery path documented.
+\end{itemize}
+
+\paragraph{US-13: Job Thread Messaging (Medium, 3 pts)}
+As a \textbf{Contractor}, I want a per-job chat so I can coordinate details with Job Bidders.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Send/receive text; attachments; report/block; notifications.
+\end{itemize}
+
+\paragraph{US-14: Leave Reviews (Medium, 2 pts)}
+As a \textbf{Contractor}, I want to rate and review Job Bidders after completion so future users can trust contractors.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} 1–5 stars plus comment; appears on Contractor profile; single review per job.
+\end{itemize}
+
+\paragraph{US-15: Create an account (High, 5 pts)}
+As a \textbf{Contractor}, I want to create an account using my email.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Login page present with a seamless sign up process.
+\end{itemize}
+
+\subsection*{Job Browsers (Non KYC-Verified Users)}
+\paragraph{US-16: Browse Jobs Read-Only (Medium, 2 pts)}
+As a \textbf{browser}, I want to explore posted jobs on a map in read-only mode, so I can understand the platform's services before committing.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Map/list view available; limited job details visible; registration prompt when trying to post/bid.
+\end{itemize}
+
+\paragraph{US-17: View Limited Job Details (Medium, 1 pt)}
+As a \textbf{browser}, I want to view limited job details (e.g., title, category, approximate location, budget range) without completing the KYC process, so I see the platform's value.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Basic job info visible; contact details and full descriptions hidden; registration required for full access.
+\end{itemize}
+
+\paragraph{US-18: KYC/2FA Instructions (Medium, 1 pt)}
+As a \textbf{newly registered user}, I want clear instructions that I must complete KYC verification and enable Duo 2FA before being allowed to post jobs or bid, so I understand the trust policy.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Step-by-step guidance; progress indicators; help resources available.
+\end{itemize}
+
+\paragraph{US-19: Access Support Resources (Low, 1 pt)}
+As a \textbf{browser}, I want access to support or FAQ pages, so I can ask questions or learn more about the app before starting the KYC verification process.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Support contact form; FAQ section; help documentation accessible without being KYC-verified.
+\end{itemize}
+
+\subsection*{Admin}
+\paragraph{US-20: Review Reports (High, 3 pts)}
+As an \textbf{Admin}, I want to review user reports and disputes so I can maintain platform safety and integrity.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Report dashboard; case management tools; resolution tracking.
+\end{itemize}
+
+\paragraph{US-21: Manage Categories (Medium, 2 pts)}
+As an \textbf{Admin}, I want to manage job categories so the platform stays organized and relevant.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Category CRUD operations; validation; audit logging.
+\end{itemize}
+
+\paragraph{US-22: Handle Disputes (High, 4 pts)}
+As an \textbf{Admin}, I want to handle payment and job disputes so conflicts are resolved fairly.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Dispute intake; evidence review; resolution workflow; communication tools.
+\end{itemize}
+
+\paragraph{US-23: System Monitoring (Medium, 2 pts)}
+As an \textbf{Admin}, I want to monitor system health and performance so I can ensure platform reliability.
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Acceptance:} Dashboard with metrics; alert system; performance monitoring.
+\end{itemize}
+
+% ===================== 4. 2.2 Updated Requirements =====================
+\section{Functional and Non-Functional Requirements}
+
+\subsection{Functional Requirements}
+
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{Account \& Identity (\textrightarrow{} US-3, US-7, US-11, US-15):} Email/password sign-up and sign-in (handled via Firebase Auth in production). Mandatory KYC before bidders can bid or posters can create jobs (handled via Stripe Identity in production).
+  \item \textbf{Viewing Jobs (\textrightarrow{} US-16, US-17):} Job browsers can view jobs after signing up an account.
+  \item \textbf{Bidder Profiles (\textrightarrow{} US-8):} Bidder can create and update basic profiles. In production, bidders can enhance their profiles by including skills, description, photos, rates, availability, and their location. Support for deletion.
+  \item \textbf{Discovery (\textrightarrow{} US-1):} Bidders can browse for jobs using a list. In production, there will be an added map view and job filters (radius, category/skill, budget, availability date).
+  \item \textbf{Bidding (\textrightarrow{} US-2):} KYC verified bidders can place, edit, and withdraw bids (amount, note, ETA).
+  \item \textbf{Posting Jobs (\textrightarrow{} US-10):} KYC verified Job Posters can place, edit, and delete jobs (amount, location, description, etc.). A Job Poster can additionally accept a bid on a job.
+  \item \textbf{Two-Factor Authentication (2FA) (\textrightarrow{} US-4, US-12):} Duo 2FA required for sign-in.
+  \item \textbf{Payments (Escrow) (\textrightarrow{} US-10):} Job Posters fund escrow on offer acceptance; payouts via Stripe Connect on completion.
+  \item \textbf{Messaging: (\textrightarrow{} US-5, US-13):} Secure in-offer messaging with attachments and report/block options.
+  \item \textbf{Reviews (\textrightarrow{} US-6, US-14):} Both parties leave ratings and written reviews.
+  \item \textbf{Safety Score (\textrightarrow{} US-9):} System calculates a 0--100 location safety score and applies friction controls.
+  \item \textbf{Admin Dashboard: (\textrightarrow{} US-20, US-21, US-22, US-23)} Admins manage reports, categories, and disputes.
+\end{enumerate}
+
+\subsection{Non-Functional Requirements}
+\textbf{Most non-functional requirements will only be implemented in the production application).}
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{Performance:} Map/list browse and search shall return results in \(\leq 500\) ms p95 for target metro; prototype may use simplified filters.
+  \item \textbf{Usability:} Mobile-first, accessible (WCAG 2.1 AA where practical); clear copy for KYC/2FA and escrow steps. Map and list view of jobs should be easily accessible on any device. The application shall include an FAQ page, support resources, and clear messages to indicate KYC verification and Duo is required to use the app (addresses US-18 and US-19 which are not covered by current FRs).
+  \item \textbf{Security:} All traffic over TLS; short-lived JWTs; server-side validation; reCAPTCHA on signup/post/bid. Only KYC users shall be able to access and create jobs.
+  \item \textbf{Scalability:} Stateless API (Node/Express) behind Firebase/Cloud Run; Firestore as primary data store; storage via Firebase Cloud Storage.
+  \item \textbf{Reliability:} Error tracking via Sentry; observability with OpenTelemetry; automated CI checks on PRs.
+  \item \textbf{Privacy:} Approximate location shown pre-accept; exact address released to the accepted job assignee only; phone masking post-accept.
+\end{enumerate}
+
+% ===================== 4. Requirement to Test Case Traceability =====================
 \section{Requirement to Test Case Traceability}
 Tables below map each requirement to the test cases that validate it. Coverage status will be updated as testing completes.
 
 \subsection*{Functional Requirements (FR)}
-\begin{longtable}{@{}p{0.12\linewidth} p{0.55\linewidth} p{0.15\linewidth} p{0.14\linewidth}@{}}
+\begin{longtable}{@{}p{0.12\linewidth} p{0.55\linewidth} p{0.2\linewidth} p{0.14\linewidth}@{}}
 \toprule
 \textbf{Req ID} & \textbf{Requirement Description} & \textbf{Test Case IDs} & \textbf{Coverage} \\
 \midrule
@@ -90,23 +271,24 @@ FR-005 & System shall support \textbf{user authentication} with \textbf{Duo 2FA}
 FR-006 & System shall provide \textbf{in-thread messaging} per job after acceptance. & TC-010 & Planned \\
 FR-007 & System shall record \textbf{ratings and reviews} after job completion. & TC-011 & Planned \\
 FR-008 & System must create Firebase accounts and keep users out until they click the email verification link. & TC-014a-d & Covered \\
-FR-009 & System must let a signed-in person switch between bidder and contractor and keep their requirement flags accurate. & TC-015a-b & Covered \\
+FR-009 & System must let a signed-in person switch between job poster and contractor and keep their requirement flags accurate. & TC-015a-b & Covered \\
 FR-010 & System must save the session in local storage and log the user out after two minutes with no activity. & TC-016a-c & Covered \\
-FR-011 & Only KYC-approved contractors can create, edit, or delete their own jobs in Firestore. & TC-017a-i & Covered \\
-FR-012 & System must block self-bids and lock both the job and bids once a contractor accepts an offer. & TC-018a-b & Covered \\
+FR-011 & Only KYC-approved job posters can create, edit, or delete their own jobs in Firestore. & TC-017a-i & Covered \\
+FR-012 & System must block self-bids and lock both the job and bids once a job poster accepts an offer. & TC-018a-b & Covered \\
 FR-013 & System shall allow users to \textbf{manage their profile} including avatar upload and personal information. & TC-016a-d & Covered \\
 \bottomrule
 \end{longtable}
 
 \subsection*{Non-Functional Requirements (NFR)}
-\begin{longtable}{@{}p{0.12\linewidth} p{0.55\linewidth} p{0.15\linewidth} p{0.14\linewidth}@{}}
+\begin{longtable}{@{}p{0.12\linewidth} p{0.55\linewidth} p{0.2\linewidth} p{0.14\linewidth}@{}}
 \toprule
 \textbf{Req ID} & \textbf{Requirement Description} & \textbf{Test Case IDs} & \textbf{Coverage} \\
 \midrule
 \endhead
 NFR-001 & \textbf{Performance:} Search/browse should return results within 800\,ms P95 for a metro with 5k open jobs (stub data). & TC-011 & Planned \\
-NFR-002 & \textbf{Security:} Only KYC-verified users can hit write endpoints for jobs/bids. & Covered \\
-NFR-003 & \textbf{Usability:} Map view and list view maintain accessible contrast and keyboard navigation for core actions. & TC-013 & Planned \\
+NFR-002 & \textbf{Security:} Only KYC-verified users can hit write endpoints for jobs/bids. & TC-007, TC-008b, TC-009b, TC-013, TC-016b  & Partially Covered \\
+NFR-003 & \textbf{Usability:} Map view and list view maintain accessible contrast and keyboard navigation for core actions. Application shall be mobile responsive. & TC-013 & Planned \\
+NFR-004 & \textbf{Privacy:} System shall provide an approximate job location during the pre-accept phase. Accepted bidders will be granted access to the full job location. & TC-023 & Planned \\
 \bottomrule
 \end{longtable}
 
@@ -114,11 +296,12 @@ NFR-003 & \textbf{Usability:} Map view and list view maintain accessible contras
 \begin{itemize}[leftmargin=1.4em]
   \item Each requirement is validated by one or more test cases. Gaps are flagged as \textit{Planned}.
   \item NFR coverage status is informative only (not required for grading), but we track it to guide future work.
+  \item At this time, it was determined that it would be difficult to implement tests for the scalability and reliability non-FRs. Test cases for these non-FRs will be planned and implemented in a future iteration.
 \end{itemize}
 
-% ===================== 4. Detailed Test Case Descriptions =====================
+% ===================== 6. Detailed Test Case Descriptions =====================
 \section{Detailed Test Case Descriptions}
-For brevity we include the highest-priority cases now; the full catalog will live in the repo under \texttt{tests/}.
+For brevity we include the highest-priority cases now.
 
 \subsection*{TC-001}
 \begin{tabularx}{\linewidth}{|l|L|}
@@ -1128,7 +1311,220 @@ is gracefully handled. \\ \hline
 \textbf{Priority} & High \\ \hline
 \end{tabularx}
 
-% ===================== 5. Code Repository and Branching Strategy =====================
+\subsection*{TC-023}
+\begin{tabularx}{\linewidth}{|l|L|}
+\hline
+\textbf{Test Case ID} & TC-023 \\ \hline
+\textbf{Title} & Privacy - Job Location Masking Until Acceptance \\ \hline
+\textbf{Requirement} & NFR-004 \\ \hline
+\textbf{Preconditions} & Logged in, KYC verified as a bidder. \\ \hline
+\textbf{Steps} &
+\begin{minipage}[t]{\linewidth}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Job bidder views job with location masked.
+  \item Job bidder bids on job.
+  \item Job bidder is accepted for a job by a job poster.
+  \item Job location is revealed to the job bidder.
+\end{enumerate}
+\end{minipage} \\ \hline
+\textbf{Expected Result} & Full job location revealed to job bidder after acceptance. \\ \hline
+\textbf{Actual Result} & To be filled after execution. \\ \hline
+\textbf{Status} & Planned \\ \hline
+\textbf{Priority} & High \\ \hline
+\end{tabularx}
+
+% ===================== 5. User Manual =====================
+\section{User Manual}
+
+\subsection{Running the Prototype}
+To run the prototype, please refer to the Quick Start Guide in the project's README file.  
+Follow the steps under the \textbf{Running in Prototype Mode} section.  
+These instructions will walk you through starting the application for the first time.
+
+\subsection{Using the Prototype}
+
+\subsubsection{Using OpenBid as a Job Browser}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item \textbf{Log In or Create an Account.}  
+  When you open the application, you will see the login page.  
+  If you do not have an account yet, click the \textit{Create Account} button and follow the steps to register. Then log in.
+  
+  \item \textbf{Browse Job Listings.}  
+  Once logged in, you can view all available job postings created by job posters.  
+  At this stage, you can only look at job listings unless you complete KYC (see below).
+
+  \item \textbf{Update Your Profile Picture (Optional).}  
+  Click the profile icon located on the right side of the header.  
+  On the profile page, click \textit{Change Avatar} to upload a new profile picture.
+\end{enumerate}
+
+\subsubsection{KYC Verification}
+\textbf{You must complete KYC (identity verification) to create jobs or place bids. To complete KYC:}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item Go to your profile by clicking the profile button in the top-right corner.
+  \item Click the \textit{Complete KYC} button and follow the instructions.  
+        After completing KYC, you will gain access to both bidding and job creation features.
+\end{enumerate}
+
+\subsubsection{Using OpenBid as a Job Bidder}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item After logging in, open the job list page and click the \textit{I want to bid on jobs} button.
+  \item Browse the list of available jobs and click on any job to view its details.
+  \item If the job is open, you may submit a bid. You can also include an optional note with your bid.
+  \item You may update your bid at any time before the job closes.
+  \item If your bid is accepted by the job poster, the job will close automatically.  
+        When you revisit the job page, you will see a notice indicating that your bid was accepted.
+\end{enumerate}
+
+\subsubsection{Using OpenBid as a Job Poster}
+\begin{enumerate}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item After logging in. From the job list page, click the \textit{I want to post jobs} button.
+  \item Click the \textit{Post a Job} button to begin creating a new job posting.
+  \item Fill out all required details for the job and press \textit{Create} to publish it.
+  \item You may update or delete one of your jobs by selecting it from the job list after choosing \textit{I want to post jobs}.
+  \item As bidders submit offers, you can view them by opening your job post.  
+        When ready, select a single bid to accept.
+  \item Once a bid is accepted, the job will close. The bidder whose offer you selected will see a notice confirming that their bid was chosen.
+\end{enumerate}
+
+\subsubsection{*Using OpenBid with a dev account}
+When testing the application as a developer, use the following credentials to bypass the account creation process and log in directly.
+\begin{itemize}[leftmargin=1.4em,nosep,topsep=0pt]
+  \item \textbf{Email:} openbid123@gmail.com
+  \item \textbf{Password:} openbidopenbid
+\end{itemize}
+
+\section{Prototype Overview}
+\subsection{Protoype Description}
+The prototype highlights the core functionality of the OpenBid Application. Authenticated users can browse job postings from job posters as
+a job browser. Users that complete KYC verification can additionally bid on jobs as a job bidder and create jobs as a job poster. The general user journey for a 
+job bidder is the user first browses for jobs, then bids on a job, then the bid is either accepted or rejected (if the job closes or another bidder's bid is selected). The general user journey
+for a job poster is the job poster first posts a job, makes optional edits, receives bids for the jobs, then closes the job at any time or accepts a bid from a bidder.
+
+\subsection{Prototype Screenshots}
+\textbf{Note that some screenshots are intentionally cut off due to sizing restrictions. Most importantly, the main components for each page are included in each image.}
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{MainLogin}
+    \caption{Main Login Page}
+    \label{fig:MainLoginImg}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{CreateAccount}
+    \caption{Create Account Page}
+    \label{fig:CreateAccountImg}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{ForgotPassword}
+    \caption{Forgot Password Page}
+    \label{fig:ForgotPasswordImg}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{ProfileBeforeKYC}
+    \caption{User profile page before KYC verification}
+    \label{fig:ProfileBeforeKYCImg}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{ProfileAfterKYC}
+    \caption{User profile page after KYC verification}
+    \label{fig:ProfileFAfterKYCImg}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{JobListBidder}
+    \caption{Main job list page as a Job Bidder}
+    \label{fig:JobListBidderImg}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{JobBidderBidding}
+    \caption{Page when a Job Bidder selects a job to bid on.}
+    \label{fig:BiddingImg}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{BidderBids}
+    \caption{Job Bidder's bids page}
+    \label{fig:BidsAsBidderImg}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{JobBidderBidding}
+    \caption{Page after a Job Bidder bids on a job.}
+    \label{fig:AfterBiddingImg}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{JobBidAccepted}
+    \caption{Page after a Job Bidder's bid is accepted for a job.}
+    \label{fig:JobBidAcceptedImg}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{JobListPoster}
+    \caption{Main job list page as a Job Poster}
+    \label{fig:JobPosterImg}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{JobListPosterKYC}
+    \caption{Main job list page when a Job Poster is KYC verified}
+    \label{fig:JobPosterKYCImg}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{PostJob}
+    \caption{Posting a job page}
+    \label{fig:PostingJobImg}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{ViewingJobAsJobPoster}
+    \caption{Job poster viewing a created job page}
+    \label{fig:ViewingJobAsJobPosterImg}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.5\textwidth]{JobBids}
+    \caption{Job poster viewing a created job page with bids}
+    \label{fig:JobBidsImg}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{AfterAcceptingBid}
+    \caption{Job poster job page after accepting a bid}
+    \label{fig:AfterAcceptingBidImg}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{RestrictedBidding}
+    \caption{Page displayed when a user attempts to place a bid on their own job posting}
+    \label{fig:RestrictedBiddingImg}
+\end{figure}
+
+\clearpage
+
+% ===================== 7. Code Repository and Branching Strategy =====================
 \section{Code Repository and Branching Strategy}
 \textbf{Repository:} \url{https://github.com/tjung-git/OpenBid-Map-first-Bidding-Markplace} \textit{(placeholder)} \\[4pt]
 \textbf{Branches:}
@@ -1138,15 +1534,14 @@ is gracefully handled. \\ \hline
   \item \texttt{feature/\{slug\}}: e.g., \texttt{feature/auth}, \texttt{feature/map}, \texttt{feature/bids}, \texttt{feature/kyc}, \texttt{feature/tests}.
 \end{itemize}
 
-% ===================== 6. Task Allocation and Timeline =====================
+% ===================== 8. Task Allocation and Timeline =====================
 \section{Task Allocation and Timeline}
 \textbf{Pair-Programming Rotation (weekly):} two pairs; driver/navigator swap daily; Scrum Master rotates weekly (Tyler \(\rightarrow\) Mani \(\rightarrow\) Yanness \(\rightarrow\) Alaister).
 
-\subsection*{Sprint Plan (3 weeks for Iteration 3)}
+\subsection*{Sprint Plan (4 weeks for Iteration 4)}
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Week 1:} Implement auth + Duo 2FA hook, KYC gate stub, Post Job UI/API, initial tests.
-  \item \textbf{Week 2:} Map browse (pins, filters), Place Bid flow, tests.
-  \item \textbf{Week 3:} Prototype hardening, accessibility pass (keyboard focus), performance harness scaffolding, test documentation.
+  \item \textbf{Week 1 - 2:} Test and update the protoype based on feedback and user experience.
+  \item \textbf{Week 3 - 4:} Create user manual and update documentation.
 \end{itemize}
 
 \subsection*{Task Breakdown (examples)}
@@ -1158,24 +1553,19 @@ is gracefully handled. \\ \hline
   \item Docs: update traceability, add test run notes.
 \end{itemize}
 
-% ===================== 7. Prototype Overview =====================
-\section{Prototype Overview}
-\textbf{Stack (MVP):} React + SCSS (Firebase Hosting), Node.js + Express (Firebase Functions or Cloud Run), Firestore, Google Maps JS, Stripe (Connect/Identity), Duo 2FA.
+% ===================== 9. Next Steps =====================
+\section{\textbf{Next Steps:} Bulding and Testing the Production application (MVP)}
+\begin{enumerate}
+  \item \textbf{Future Refined Stack (MVP):} The application will be migrated to the following stack: React + SCSS (Firebase Hosting), Node.js + Express (Firebase Functions or Cloud Run), Firestore, Google Maps JS, Stripe (Connect/Identity), Duo 2FA.
+  \item \textbf{Testing:} Prototype tests that are incompatible with production features will be updated while new tests will be created to test production level features.
+  \item \textbf{User Feedback:} The prototype and eventual production application will be updated based on feedback from users.
+\end{enumerate}
 
-\subsection*{Implemented in Iteration 3 (target)}
-\begin{itemize}[leftmargin=1.4em]
-  \item Auth shell with Duo challenge on sensitive action.
-  \item KYC gate (UI + rules) using a sandbox token flow.
-  \item Post Job UI + server write; basic Job Detail.
-  \item Map browse with radius/category filters on seeded data.
-  \item Place Bid basic happy path.
-\end{itemize}
-
-% ===================== 8. Submission Guidelines =====================
+% ===================== 10. Submission Guidelines =====================
 \section{Submission Guidelines}
 \begin{itemize}[leftmargin=1.4em]
-  \item \textbf{GitHub:} Push code and documentation; tag release as \texttt{ITR2.1}.
-  \item \textbf{eClass PDF:} include \textit{Prototype Overview}, \textit{Updated Requirements/Use Cases}, \textit{Test Plan and (initial) Results}, and \textit{Updated Iteration Plan/Backlog}.
+  \item \textbf{GitHub:} Push code and documentation; tag release as \texttt{ITR2.2}.
+  \item \textbf{eClass PDF:} include \textit{Prototype Overview with Screenshots}, \textit{Updated Requirements/Use Cases}, \textit{Testing Document}, and \textit{User Manual}.
 \end{itemize}
 
 % ===================== Appendix A: Sample Test Skeletons =====================
