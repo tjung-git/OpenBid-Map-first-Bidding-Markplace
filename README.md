@@ -39,7 +39,7 @@ For full functionality with persistent data, email verification, and KYC, see th
 
 ## Configuration
 
-> **⚠️ Optional:** Only needed if running with `PROTOTYPE=FALSE`.
+> **Optional:** Only needed if running with `PROTOTYPE=FALSE`.
 
 ### Setups
 
@@ -130,13 +130,13 @@ This section layers the production-ready serverless workflow on top of the exist
 ### Architecture Overview
 - **Frontend** (Vite) is built to `client/dist` and deployed to Firebase Hosting (`openbid2107`). `firebase.json` rewrites `/api/**` to the backend function and serves the SPA for every other route.
 - **Backend API** reuses the existing Express app. `server/src/app.serverless.js` exports the app without calling `app.listen()`.
-- **Cloud Function** (`functions/index.js`) pulls secrets at runtime, injects them into `process.env`, lazy-loads the Express app, and handles each HTTPS request.
+- **Cloud Function** (`functions/index.js`) loads environment variables via `dotenv`, injects them into `process.env`, lazy-loads the Express app, and handles each HTTPS request.
 - **CI/CD**: `.github/workflows/deploy-live.yml` builds the client, installs Cloud Function deps, and deploys Hosting + Functions whenever the `live` branch updates (requires a `FIREBASE_TOKEN` repo secret).
 
 ### Repository Additions
 - `server/src/app.serverless.js` – serverless-compatible Express factory.
 - `firebase.json` / `.firebaserc` – Hosting + Functions config with rewrite rules.
-- `functions/index.js` – HTTPS function that loads secrets via `defineSecret` and returns the Express app’s response.
+- `functions/index.js` – HTTPS function that loads environment variables (via `dotenv`) and returns the Express app’s response.
 - `functions/scripts/prepare-server.mjs` – predeploy script that copies `server/` into `functions/server/` so the Express code is available as a local dependency during Cloud Build installs.
 - `.github/workflows/deploy-live.yml` – Deploys on merges to `live`.
 
@@ -178,7 +178,7 @@ Choose the options below when the CLI prompts you:
 - **Set up automatic builds and deploys with GitHub?** No (we provide our own workflow).
 - **Overwrite existing files?** Choose **No** for any prompt that would overwrite tracked files—this repo already contains the correct configuration.
 
-> ✅ The repository already includes `firebase.json`, `.firebaserc`, `server/src/app.serverless.js`, and `functions/index.js`. These files are hand-written (not auto-generated) and should stay exactly as committed. Running `firebase init` on top of them with “do not overwrite” ensures the CLI registers the project without clobbering our custom code.
+> The repository already includes `firebase.json`, `.firebaserc`, `server/src/app.serverless.js`, and `functions/index.js`. These files are hand-written (not auto-generated) and should stay exactly as committed. Running `firebase init` on top of them with “do not overwrite” ensures the CLI registers the project without clobbering our custom code.
 
 **Step 4 – Install dependencies locally**
 ```bash
@@ -190,8 +190,14 @@ npm install --prefix functions
 The `copy-server` script duplicates the `server/` source into `functions/server/` (excluding `node_modules`). This lets Firebase bundle the Express code as a local dependency when it runs `npm install` in the deployment build.
 The `functions` install pulls in `openbid-server` via the local `file:../server` package so the deployed function can import the Express app.
 
-**Step 5 – Configure secrets in Firebase**
-Follow the commands in the next section (“Production Environment & Secrets”). They store values in Secret Manager and the function loads them at runtime. Remember to paste the full private key exactly as it appears in `server/.env` (with the line breaks intact).
+**Step 5 – Configure environment variables**
+- **Production (Cloud Run)** – If you've already defined the variables inside Google Cloud Run (`Cloud Run → Services → api → Variables & Secrets`, as shown in the screenshot), you're done. Deployments keep those values and the function reads them directly from `process.env`.
+- **Local development / emulators** – Copy the templates so you can run the API on your laptop:
+  ```bash
+  cp server/.env.example server/.env
+  cp functions/.env.example functions/.env    # optional: only used when running emulators or when you prefer bundling envs with the deploy
+  ```
+  Fill in the same values you use in Cloud Run—especially `PROTOTYPE`, `APP_URL`, and the Firebase admin credentials. Keep these files out of git.
 
 **Step 6 – Optional local verification**
 - Backend: `npm run dev --prefix server`
@@ -206,7 +212,7 @@ Use this to test changes before committing or deploying.
 ```bash
 firebase deploy --only hosting,functions
 ```
-The CLI installs client dependencies, builds the Vite bundle, packages the Cloud Function, and uploads both targets. Watch for any missing-secret errors during this step.
+The CLI installs client dependencies, builds the Vite bundle, packages the Cloud Function, and uploads both targets. Watch for configuration warnings that usually indicate a missing value in your Cloud Run variables (or, if you're bundling them, `functions/.env`).
 
 **Step 9 – Verify the deployment**
 ```bash
@@ -215,43 +221,19 @@ gcloud run services describe api \
   --project=openbid2107 \
   --format="json(spec.template.spec.containers[0].env)"
 ```
-Confirm the output includes the standard environment variables (`FIREBASE_PROJECT_ID`, `STRIPE_SECRET_KEY_FOR_TESTING`, etc.). If a key is missing, re-run the corresponding `firebase functions:secrets:set` command and deploy again.
+Confirm the output includes the standard environment variables (`FIREBASE_PROJECT_ID`, `STRIPE_SECRET_KEY_FOR_TESTING`, etc.). If a key is missing, update the Cloud Run variables (or your `.env` file), redeploy, and re-check the service output.
 
-### Production Environment & Secrets
-All sensitive values live in Firebase Secret Manager. Some key names (`FIREBASE_*`) are reserved for internal use, so we store them with an `APP_` prefix and let the Cloud Function map them back at runtime.
+### Production Environment Variables
+Secret Manager is no longer required. You have two options:
 
-Run the following once (replace placeholders with your real values):
+1. **Manage them in Cloud Run (recommended for production):** Open the Cloud Console → Cloud Run → Services → `api` → **Edit & deploy new revision** → **Variables & Secrets**. Add/update the keys listed below. Deployments keep these values automatically.
+2. **Use `.env` files for local/emulator runs:** `server/.env` feeds the Node backend when running `npm run dev --prefix server`. `functions/.env` (or `functions/.env.local`) is only needed if you want to run the Functions emulator locally or if you prefer bundling the variables with `firebase deploy`.
 
-```bash
-# Core flags / URLs
-printf 'FALSE' | firebase functions:secrets:set PROTOTYPE --data-file=-
-printf 'OpenBid' | firebase functions:secrets:set APP_NAME --data-file=-
-printf 'https://openbid2107.web.app' | firebase functions:secrets:set APP_URL --data-file=-
-printf 'https://openbid2107.web.app/login' | firebase functions:secrets:set EMAIL_VERIFICATION_REDIRECT --data-file=-
-
-# Duo 2FA
-printf '<YOUR_DUO_CLIENT_ID>' | firebase functions:secrets:set DUO_CLIENT_ID --data-file=-
-printf '<YOUR_DUO_CLIENT_SECRET>' | firebase functions:secrets:set DUO_CLIENT_SECRET --data-file=-
-printf '<YOUR_DUO_API_HOST>' | firebase functions:secrets:set DUO_API_HOST --data-file=-
-printf 'https://openbid2107.web.app/api/auth/duo/callback' | firebase functions:secrets:set DUO_REDIRECT_URI --data-file=-
-
-# Stripe
-printf '<YOUR_STRIPE_TEST_SECRET>' | firebase functions:secrets:set STRIPE_SECRET_KEY_FOR_TESTING --data-file=-
-printf '<YOUR_STRIPE_PROD_SECRET>' | firebase functions:secrets:set STRIPE_SECRET_KEY_FOR_PROD --data-file=-
-printf '<YOUR_STRIPE_WEBHOOK_SECRET>' | firebase functions:secrets:set STRIPE_WEBHOOK_SECRET --data-file=-
-
-# Firebase admin bundle (prefixed to avoid reserved names)
-printf '<YOUR_FIREBASE_PROJECT_ID>' | firebase functions:secrets:set APP_FIREBASE_PROJECT_ID --data-file=-
-printf '<YOUR_FIREBASE_CLIENT_EMAIL>' | firebase functions:secrets:set APP_FIREBASE_CLIENT_EMAIL --data-file=-
-cat <<'EOF' | firebase functions:secrets:set APP_FIREBASE_PRIVATE_KEY --data-file=-
------BEGIN PRIVATE KEY-----
-...your key...
------END PRIVATE KEY-----
-EOF
-printf '<YOUR_FIREBASE_WEB_API_KEY>' | firebase functions:secrets:set APP_FIREBASE_WEB_API_KEY --data-file=-
-```
-
-`functions/index.js` calls `defineSecret(...)` for each entry, writes the values into the expected environment variables (including the `FIREBASE_*` keys), and then imports the Express app. No manual Cloud Run configuration is required.
+For either approach, provide the same values:
+- `PROTOTYPE`, `APP_NAME`, `APP_URL`, `EMAIL_VERIFICATION_REDIRECT`
+- `DUO_CLIENT_ID`, `DUO_CLIENT_SECRET`, `DUO_API_HOST`, `DUO_REDIRECT_URI`
+- `STRIPE_SECRET_KEY_FOR_TESTING`, `STRIPE_SECRET_KEY_FOR_PROD`, `STRIPE_WEBHOOK_SECRET`
+- `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_WEB_API_KEY` (or the `APP_FIREBASE_*` aliases)
 
 ### Deploy Hosting + Functions
 ```bash
@@ -269,10 +251,10 @@ gcloud run services describe api \
   --format="json(spec.template.spec.containers[0].env)"
 ```
 
-You should see the standard keys (e.g., `FIREBASE_PROJECT_ID`, `STRIPE_SECRET_KEY_FOR_TESTING`) even though their secrets are stored with the `APP_*` prefix.
+You should see the standard keys (e.g., `FIREBASE_PROJECT_ID`, `STRIPE_SECRET_KEY_FOR_TESTING`). If something is missing, ensure the variable exists in Cloud Run (or `functions/.env`) and re-run the deploy.
 
 ### Local vs. Production Settings
-- Keep `server/.env` for local development (`APP_URL=http://localhost:5173`, etc.). For production overrides, rely on Firebase Secret Manager.
+- Keep `server/.env` for local development (`APP_URL=http://localhost:5173`, etc.) and manage production credentials either through Cloud Run variables or (if you prefer bundling) `functions/.env` / `.env.<project>`.
 - `client/.env.production` ships with the production values so CI builds target `https://openbid2107.web.app`. Keep personal overrides in `client/.env` / `client/.env.local` when testing against `http://localhost:4000`.
 
 ### CI Automation
@@ -296,7 +278,7 @@ When you create a feature branch off `live`, follow this checklist so local work
 
 2. **Set up env files** (first time on a new machine)
    ```bash
-   cp server/.env.example server/.env         # fill in shared secrets
+   cp server/.env.example server/.env         # fill in shared credentials
    cp client/.env.example client/.env         # local Vite config
    ```
    - `.env.example` files are just templates. The app only reads `.env`/`.env.local`, so be sure to copy and edit your personal versions.
@@ -333,16 +315,16 @@ When you create a feature branch off `live`, follow this checklist so local work
    ```
    Open a PR into `live`. Merging the PR triggers the GitHub Actions workflow which builds and deploys automatically.
 
-> 🔐 Keep secrets out of git. Runtime credentials live in Firebase Secret Manager and personal `.env` files. The only public env file committed to the repo is `client/.env.production` because it contains public-only values.
+> Keep secrets out of git. Runtime credentials should live in Cloud Run variables or personal `.env` files. The only env file committed to the repo is `client/.env.production` because it contains public-only values.
 
 #### Adding new environment variables
-- **Server-side values**: add placeholders to `server/.env`, document them, and set them via `firebase functions:secrets:set`. Update `functions/index.js` to load the new secret into `process.env` if the Express app needs it.
+- **Server-side values**: add placeholders to `server/.env.example` and `functions/.env.example`, document them, and ensure `functions/index.js` forwards the variable into `process.env` if the Express app needs it.
 - **Client-side (`VITE_*`) values**: update `client/.env` for local dev and ensure `client/.env.production` contains the production-safe value. Never commit private keys.
 
 ### Troubleshooting
-- **Function crashes at startup**: Ensure all secrets above are set; missing Firebase admin credentials are the most common cause.
-- **Need to rotate secrets**: Re-run the `firebase functions:secrets:set` command. Deploying the function pulls the latest version automatically.
-- **Local emulation**: `firebase emulators:start --only functions,hosting` uses the same rewrite rules and will load secrets if you export them to `.env.local`.
+- **Function crashes at startup**: Ensure every required variable exists in Cloud Run (or, if you deploy from `.env`, that the file is up to date). Missing Firebase admin credentials are the most common cause.
+- **Need to rotate credentials**: Update the Cloud Run variables (or your `.env` files) and redeploy so the new values ship with the bundle.
+- **Local emulation**: `firebase emulators:start --only functions,hosting` uses the same rewrite rules and reads the same `.env` files (it prefers `.env.local` if present).
 
 With this setup, teammates can:
 1. Branch from `live`, run locally (`npm run dev --prefix server` & `npm run dev --prefix client`), and validate against Firestore.

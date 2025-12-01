@@ -13,8 +13,11 @@ client/dist/
 .env
 client/.env
 server/.env
+functions/.env
+functions/.env.*
 
 # Keep the example files
 !.env.example
 !client/.env.example
 !server/.env.example
+!functions/.env.example

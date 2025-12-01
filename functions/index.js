@@ -1,92 +1,86 @@
+import "dotenv/config";
 import { onRequest } from "firebase-functions/v2/https";
 import { setGlobalOptions } from "firebase-functions/v2/options";
-import { defineSecret } from "firebase-functions/params";
-
-const secretParams = {
-  prototype: defineSecret("PROTOTYPE"),
-  appName: defineSecret("APP_NAME"),
-  appUrl: defineSecret("APP_URL"),
-  emailVerificationRedirect: defineSecret("EMAIL_VERIFICATION_REDIRECT"),
-  duoClientId: defineSecret("DUO_CLIENT_ID"),
-  duoClientSecret: defineSecret("DUO_CLIENT_SECRET"),
-  duoApiHost: defineSecret("DUO_API_HOST"),
-  duoRedirectUri: defineSecret("DUO_REDIRECT_URI"),
-  stripeSecretKeyForTesting: defineSecret("STRIPE_SECRET_KEY_FOR_TESTING"),
-  stripeSecretKeyForProd: defineSecret("STRIPE_SECRET_KEY_FOR_PROD"),
-  stripeWebhookSecret: defineSecret("STRIPE_WEBHOOK_SECRET"),
-  firebaseProjectId: defineSecret("APP_FIREBASE_PROJECT_ID"),
-  firebaseClientEmail: defineSecret("APP_FIREBASE_CLIENT_EMAIL"),
-  firebasePrivateKey: defineSecret("APP_FIREBASE_PRIVATE_KEY"),
-  firebaseWebApiKey: defineSecret("APP_FIREBASE_WEB_API_KEY"),
-};
-
-const secretList = Object.values(secretParams);
 
 setGlobalOptions({
   region: "us-central1",
   memory: "1GiB",
   timeoutSeconds: 120,
-  secrets: secretList,
 });
 
 let cachedApp;
-let secretsLoaded = false;
+let envLoaded = false;
 
-function loadSecrets() {
-  if (secretsLoaded) return;
+const envMappings = [
+  { target: "PROTOTYPE", sources: ["PROTOTYPE"] },
+  { target: "APP_NAME", sources: ["APP_NAME"] },
+  { target: "APP_URL", sources: ["APP_URL"] },
+  {
+    target: "EMAIL_VERIFICATION_REDIRECT",
+    sources: ["EMAIL_VERIFICATION_REDIRECT"],
+  },
+  { target: "DUO_CLIENT_ID", sources: ["DUO_CLIENT_ID"] },
+  { target: "DUO_CLIENT_SECRET", sources: ["DUO_CLIENT_SECRET"] },
+  { target: "DUO_API_HOST", sources: ["DUO_API_HOST"] },
+  { target: "DUO_REDIRECT_URI", sources: ["DUO_REDIRECT_URI"] },
+  {
+    target: "STRIPE_SECRET_KEY_FOR_TESTING",
+    sources: ["STRIPE_SECRET_KEY_FOR_TESTING"],
+  },
+  {
+    target: "STRIPE_SECRET_KEY_FOR_PROD",
+    sources: ["STRIPE_SECRET_KEY_FOR_PROD"],
+  },
+  {
+    target: "STRIPE_WEBHOOK_SECRET",
+    sources: ["STRIPE_WEBHOOK_SECRET"],
+  },
+  {
+    target: "FIREBASE_PROJECT_ID",
+    sources: ["FIREBASE_PROJECT_ID", "APP_FIREBASE_PROJECT_ID"],
+  },
+  {
+    target: "FIREBASE_CLIENT_EMAIL",
+    sources: ["FIREBASE_CLIENT_EMAIL", "APP_FIREBASE_CLIENT_EMAIL"],
+  },
+  {
+    target: "FIREBASE_PRIVATE_KEY",
+    sources: ["FIREBASE_PRIVATE_KEY", "APP_FIREBASE_PRIVATE_KEY"],
+  },
+  {
+    target: "FIREBASE_WEB_API_KEY",
+    sources: ["FIREBASE_WEB_API_KEY", "APP_FIREBASE_WEB_API_KEY"],
+  },
+];
 
-  const setIfValue = (key, value) => {
-    if (value !== undefined && value !== null) {
-      process.env[key] = value;
+function loadEnv() {
+  if (envLoaded) return;
+
+  const setIfMissing = (target, value) => {
+    if (
+      process.env[target] === undefined &&
+      value !== undefined &&
+      value !== null &&
+      value !== ""
+    ) {
+      process.env[target] = value;
     }
   };
 
-  setIfValue("PROTOTYPE", secretParams.prototype.value());
-  setIfValue("APP_NAME", secretParams.appName.value());
-  setIfValue("APP_URL", secretParams.appUrl.value());
-  setIfValue(
-    "EMAIL_VERIFICATION_REDIRECT",
-    secretParams.emailVerificationRedirect.value()
-  );
-  setIfValue("DUO_CLIENT_ID", secretParams.duoClientId.value());
-  setIfValue("DUO_CLIENT_SECRET", secretParams.duoClientSecret.value());
-  setIfValue("DUO_API_HOST", secretParams.duoApiHost.value());
-  setIfValue("DUO_REDIRECT_URI", secretParams.duoRedirectUri.value());
-  setIfValue(
-    "STRIPE_SECRET_KEY_FOR_TESTING",
-    secretParams.stripeSecretKeyForTesting.value()
-  );
-  setIfValue(
-    "STRIPE_SECRET_KEY_FOR_PROD",
-    secretParams.stripeSecretKeyForProd.value()
-  );
-  setIfValue(
-    "STRIPE_WEBHOOK_SECRET",
-    secretParams.stripeWebhookSecret.value()
-  );
-  setIfValue(
-    "FIREBASE_PROJECT_ID",
-    secretParams.firebaseProjectId.value()
-  );
-  setIfValue(
-    "FIREBASE_CLIENT_EMAIL",
-    secretParams.firebaseClientEmail.value()
-  );
-  setIfValue(
-    "FIREBASE_PRIVATE_KEY",
-    secretParams.firebasePrivateKey.value()
-  );
-  setIfValue(
-    "FIREBASE_WEB_API_KEY",
-    secretParams.firebaseWebApiKey.value()
-  );
+  envMappings.forEach(({ target, sources }) => {
+    sources.some((source) => {
+      const value = process.env[source];
+      setIfMissing(target, value);
+      return process.env[target] !== undefined;
+    });
+  });
 
-  secretsLoaded = true;
+  envLoaded = true;
 }
 
 async function getApp() {
   if (!cachedApp) {
-    loadSecrets();
+    loadEnv();
     const module = await import("openbid-server/src/app.serverless.js");
     cachedApp = module.app;
   }
