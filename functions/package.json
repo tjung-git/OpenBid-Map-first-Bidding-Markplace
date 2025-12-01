@@ -1,0 +1,16 @@
+{
+  "name": "openbid-functions",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-functions": "^4.8.0",
+    "openbid-server": "file:./server"
+  },
+  "scripts": {
+    "copy-server": "node ./scripts/prepare-server.mjs"
+  }
+}
