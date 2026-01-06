@@ -14,6 +14,11 @@ export const config = {
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
     privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
     apiKey: process.env.FIREBASE_WEB_API_KEY,
+    storageBucket:
+      process.env.FIREBASE_STORAGE_BUCKET ||
+      (process.env.FIREBASE_PROJECT_ID
+        ? `${process.env.FIREBASE_PROJECT_ID}.appspot.com`
+        : undefined),
   },
 
   emailVerificationRedirect:
