@@ -21,6 +21,7 @@ const state = {
       updatedAt: new Date().toISOString()
     }]
   ]), // key: uid -> user { uid, email, name, kycStatus, kycSessionId }
+  profiles: new Map(), // key: uid -> profile { uid, avatarUrl, ... }
   jobs: new Map(), // jobId -> job
   bids: new Map(), // bidId -> bid
 };
@@ -60,6 +61,24 @@ export const db = {
         }
       }
       return null;
+    },
+  },
+  profile: {
+    async upsert(p) {
+      const current = state.profiles.get(p.uid) || {};
+      const merged = { ...current, ...p };
+      state.profiles.set(p.uid, merged);
+      return merged;
+    },
+    async get(uid) {
+      return state.profiles.get(uid) || null;
+    },
+    async update(uid, patch) {
+      const current = state.profiles.get(uid);
+      if (!current) return null;
+      const updated = { ...current, ...patch };
+      state.profiles.set(uid, updated);
+      return updated;
     },
   },
   job: {

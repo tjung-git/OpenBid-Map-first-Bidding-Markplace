@@ -50,6 +50,20 @@ async function persistAvatar(session, file) {
   }
 }
 
+async function resolveUser(req, session) {
+  let user = null;
+  if (session.uid) {
+    user = await db.user.get(session.uid);
+  }
+  if (!user && session.email) {
+    user = await db.user.findByEmail(session.email.toLowerCase());
+  }
+  if (!user && req.header("x-user-id")) {
+    user = await db.user.get(req.header("x-user-id"));
+  }
+  return user;
+}
+
 router.post("/avatar", upload.single("avatar"), async (req, res, next) => {
   try {
     const session = await auth.verify(req);
@@ -59,22 +73,20 @@ router.post("/avatar", upload.single("avatar"), async (req, res, next) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const user =
-      (await db.user.get(session.uid)) ||
-      ({
-        uid: session.uid,
-        email: session.email || null,
-        createdAt: new Date().toISOString(),
-      });
-    const avatarUrl = await persistAvatar(session, req.file);
+    const user = await resolveUser(req, session);
+    if (!user) {
+      return res.status(404).json({ error: "user_not_found" });
+    }
 
-    const updated = await db.user.upsert({
-      ...user,
+    const avatarUrl = await persistAvatar({ ...session, uid: user.uid }, req.file);
+
+    const updatedProfile = await db.profile.upsert({
       avatarUrl,
+      uid: user.uid,
       updatedAt: new Date().toISOString(),
     });
 
-    res.json({ avatarUrl: updated?.avatarUrl || avatarUrl });
+    res.json({ avatarUrl: updatedProfile?.avatarUrl || avatarUrl });
   } catch (error) {
     console.error("Avatar upload error:", error);
     if (error.message === "Only image files are allowed") {

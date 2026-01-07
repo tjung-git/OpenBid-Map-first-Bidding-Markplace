@@ -3,6 +3,7 @@ import { getDb } from "../lib/firebase.js";
 
 const collections = {
   users: "users",
+  profiles: "profiles",
   jobs: "jobs",
   bids: "bids",
 };
@@ -28,7 +29,8 @@ const withTimestamps = (payload, { isNew } = {}) => {
   const data = { ...payload };
   if (isNew) {
     data.createdAt = FieldValue.serverTimestamp();
-  } else if (data.createdAt === undefined) {
+  } else {
+    // createdAt is immutable; never allow callers to overwrite it.
     delete data.createdAt;
   }
   data.updatedAt = FieldValue.serverTimestamp();
@@ -103,6 +105,33 @@ export const db = {
         .get();
       if (snapshot.empty) return null;
       return toRecord(snapshot.docs[0], "uid");
+    },
+  },
+  profile: {
+    async upsert(profile) {
+      const ref = firestore().collection(collections.profiles).doc(profile.uid);
+      const snapshot = await ref.get();
+      const data = clean(withTimestamps({ ...profile }, { isNew: !snapshot.exists }));
+      await ref.set(data, { merge: true });
+      const updated = await ref.get();
+      return toRecord(updated, "uid");
+    },
+    async update(uid, patch) {
+      const ref = firestore().collection(collections.profiles).doc(uid);
+      const snapshot = await ref.get();
+      if (!snapshot.exists) return null;
+      const data = clean(withTimestamps({ ...patch }, { isNew: false }));
+      await ref.update(data);
+      const updated = await ref.get();
+      return toRecord(updated, "uid");
+    },
+    async get(uid) {
+      if (!uid) return null;
+      const doc = await firestore()
+        .collection(collections.profiles)
+        .doc(uid)
+        .get();
+      return toRecord(doc, "uid");
     },
   },
   job: {
