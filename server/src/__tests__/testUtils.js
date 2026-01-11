@@ -12,9 +12,32 @@ const isServerTimestamp = (value) =>
   value.constructor &&
   value.constructor.name === "ServerTimestampTransform";
 
-const normalizeValue = (value) => {
+const isArrayUnion = (value) =>
+  value &&
+  typeof value === "object" &&
+  value.constructor &&
+  value.constructor.name === "ArrayUnionTransform";
+
+const isArrayRemove = (value) =>
+  value &&
+  typeof value === "object" &&
+  value.constructor &&
+  value.constructor.name === "ArrayRemoveTransform";
+
+const normalizeValue = (value, existingValue) => {
   if (isServerTimestamp(value)) {
     return new Date().toISOString();
+  }
+  if (isArrayUnion(value)) {
+    // value.elements contains the items to add
+    const current = Array.isArray(existingValue) ? existingValue : [];
+    const newElems = value.elements.filter(e => !current.includes(e));
+    return [...current, ...newElems];
+  }
+  if (isArrayRemove(value)) {
+    // value.elements contains the items to remove
+    const current = Array.isArray(existingValue) ? existingValue : [];
+    return current.filter(e => !value.elements.includes(e));
   }
   if (Array.isArray(value)) {
     return value.map((entry) => normalizeValue(entry));
@@ -25,6 +48,21 @@ const normalizeValue = (value) => {
     );
   }
   return value;
+};
+
+// Helper to set nested properties via dot notation
+const setDeep = (obj, path, value) => {
+  const keys = path.split('.');
+  let current = obj;
+  for (let i = 0; i < keys.length - 1; i++) {
+    const key = keys[i];
+    if (!current[key] || typeof current[key] !== 'object') {
+      current[key] = {};
+    }
+    current = current[key];
+  }
+  const lastKey = keys[keys.length - 1];
+  current[lastKey] = normalizeValue(value, current[lastKey]);
 };
 
 class InMemoryDocumentSnapshot {
@@ -67,13 +105,25 @@ class InMemoryDocRef {
 
   async set(data, options = {}) {
     const store = this.firestore._ensureCollection(this.collectionName);
-    const normalized = this.firestore._normalizeData(data);
+
+    let target = {};
     if (options.merge && store.has(this.id)) {
-      const existing = store.get(this.id) || {};
-      store.set(this.id, { ...existing, ...normalized });
-    } else {
-      store.set(this.id, normalized);
+      target = JSON.parse(JSON.stringify(store.get(this.id)));
     }
+
+    const applyObject = (tgt, src) => {
+      for (const [key, val] of Object.entries(src)) {
+        tgt[key] = normalizeValue(val, tgt[key]);
+      }
+    };
+
+    if (!options.merge) {
+      // Complete replacement
+      target = {};
+    }
+
+    applyObject(target, data);
+    store.set(this.id, target);
   }
 
   async update(data) {
@@ -81,9 +131,15 @@ class InMemoryDocRef {
     if (!store.has(this.id)) {
       throw new Error("not-found");
     }
-    const normalized = this.firestore._normalizeData(data);
-    const existing = store.get(this.id) || {};
-    store.set(this.id, { ...existing, ...normalized });
+
+    const target = JSON.parse(JSON.stringify(store.get(this.id)));
+
+    for (const [key, val] of Object.entries(data)) {
+      // Update supports dot notation
+      setDeep(target, key, val);
+    }
+
+    store.set(this.id, target);
   }
 
   async delete() {
@@ -126,11 +182,11 @@ class InMemoryQuery {
   }
 
   where(field, op, value) {
-    if (op !== "==") {
+    if (op !== "==" && op !== "array-contains") {
       throw new Error(`Unsupported operator "${op}" in InMemoryFirestore`);
     }
     return new InMemoryQuery(this.firestore, this.collectionName, {
-      filters: [...this._filters, { field, value }],
+      filters: [...this._filters, { field, op, value }],
       orderBy: this._orderBy,
       limit: this._limit,
     });
@@ -161,7 +217,13 @@ class InMemoryQuery {
 
     if (this._filters.length > 0) {
       entries = entries.filter(([_, data]) =>
-        this._filters.every(({ field, value }) => data[field] === value)
+        this._filters.every(({ field, op, value }) => {
+          if (op === "array-contains") {
+            return Array.isArray(data[field]) && data[field].includes(value);
+          }
+          // default is "=="
+          return data[field] === value;
+        })
       );
     }
 
@@ -440,6 +502,7 @@ export async function createRealApp({
   bids = false,
   kyc = false,
   password = false,
+  messages = false,
   verifySession,
   identityOverrides = {},
 } = {}) {
@@ -584,6 +647,11 @@ export async function createRealApp({
   if (password) {
     const { default: passwordRoutes } = await import("../routes/password.routes.js");
     app.use("/api/password", passwordRoutes);
+  }
+
+  if (messages) {
+    const { default: messagesRoutes } = await import("../routes/messages.routes.js");
+    app.use("/api/messages", messagesRoutes);
   }
 
   return {
