@@ -1,9 +1,9 @@
 // in-memory store
 const state = {
   users: new Map([
-    ['u_testexamplec', { 
-      uid: 'u_testexamplec', 
-      email: 'test@example.com', 
+    ['u_testexamplec', {
+      uid: 'u_testexamplec',
+      email: 'test@example.com',
       kycStatus: 'pending',
       kycSessionId: null
     }],
@@ -23,6 +23,8 @@ const state = {
   ]), // key: uid -> user { uid, email, name, kycStatus, kycSessionId }
   jobs: new Map(), // jobId -> job
   bids: new Map(), // bidId -> bid
+  conversations: new Map(), // conversationId -> conversation
+  messages: new Map(), // messageId -> message
 };
 
 let seq = 1;
@@ -172,4 +174,81 @@ export const db = {
       return count;
     },
   },
+  conversations: {
+    async create(data) {
+      const convId = id("conv");
+      const conv = { id: convId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...data };
+      state.conversations.set(convId, conv);
+      return conv;
+    },
+    async get(id) {
+      return state.conversations.get(id) || null;
+    },
+    async find(jobId, uid1, uid2) {
+      return Array.from(state.conversations.values()).find(c =>
+        c.jobId === jobId &&
+        c.participants.includes(uid1) &&
+        c.participants.includes(uid2)
+      ) || null;
+    },
+    async listByUser(uid) {
+      return Array.from(state.conversations.values()).filter(c => c.participants.includes(uid));
+    },
+    async update(id, patch) {
+      const cur = state.conversations.get(id);
+      if (!cur) return null;
+      const updated = { ...cur, ...patch, updatedAt: new Date().toISOString() };
+      state.conversations.set(id, updated);
+      return updated;
+    },
+    async markRead(id, uid) {
+      const cur = state.conversations.get(id);
+      if (!cur) return null;
+      const readBy = cur.readBy || {};
+      readBy[uid] = new Date().toISOString();
+      const updated = { ...cur, readBy, updatedAt: new Date().toISOString() };
+      state.conversations.set(id, updated);
+      return updated;
+    },
+    async hide(id, uid) {
+      const cur = state.conversations.get(id);
+      if (!cur) return null;
+      const hiddenBy = cur.hiddenBy || [];
+      if (!hiddenBy.includes(uid)) hiddenBy.push(uid);
+      const updated = { ...cur, hiddenBy, updatedAt: new Date().toISOString() };
+      state.conversations.set(id, updated);
+      return updated;
+    },
+    async unhide(id, uid) {
+      const cur = state.conversations.get(id);
+      if (!cur) return null;
+      const hiddenBy = (cur.hiddenBy || []).filter(u => u !== uid);
+      const updated = { ...cur, hiddenBy, updatedAt: new Date().toISOString() };
+      state.conversations.set(id, updated);
+      return updated;
+    },
+    async delete(id) {
+      // Delete all messages in this conversation
+      for (const [msgId, msg] of Array.from(state.messages.entries())) {
+        if (msg.conversationId === id) {
+          state.messages.delete(msgId);
+        }
+      }
+      // Delete the conversation
+      return state.conversations.delete(id);
+    }
+  },
+  messages: {
+    async create(data) {
+      const msgId = id("msg");
+      const msg = { id: msgId, createdAt: new Date().toISOString(), ...data };
+      state.messages.set(msgId, msg);
+      return msg;
+    },
+    async list(conversationId) {
+      return Array.from(state.messages.values())
+        .filter(m => m.conversationId === conversationId)
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    }
+  }
 };
