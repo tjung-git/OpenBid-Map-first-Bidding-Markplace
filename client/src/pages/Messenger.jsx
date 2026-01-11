@@ -135,9 +135,6 @@ export default function Messenger() {
 
         // Mark as read
         api.messagesMarkRead(conversationId).then(updatedConv => {
-            // We update the global conversations list to reflect the "read" status
-            // This WILL trigger a re-render, but since this effect no longer depends on 'conversations',
-            // it won't loop.
             setConversations(prev => prev.map(c => {
                 if (c.id === conversationId) {
                     // Update read status locally
@@ -166,7 +163,6 @@ export default function Messenger() {
         const messageContent = newMessage.trim();
         try {
             const resp = await api.messagesSend(conversationId, messageContent);
-            // Add message to local state immediately (fallback if Firebase isn't configured)
             if (resp.message) {
                 setMessages(prev => [...prev, resp.message]);
             } else {
