@@ -5,6 +5,8 @@ const collections = {
   users: "users",
   jobs: "jobs",
   bids: "bids",
+  conversations: "conversations",
+  messages: "messages",
 };
 
 const firestore = () => getDb();
@@ -249,4 +251,110 @@ export const db = {
       return snapshot.size;
     },
   },
+  conversations: {
+    async create(data) {
+      const ref = await firestore()
+        .collection(collections.conversations)
+        .add(clean(withTimestamps(data, { isNew: true })));
+      const doc = await ref.get();
+      return toRecord(doc);
+    },
+    async get(id) {
+      if (!id) return null;
+      const doc = await firestore().collection(collections.conversations).doc(id).get();
+      return toRecord(doc);
+    },
+    async find(jobId, uid1, uid2) {
+      const snapshot = await firestore()
+        .collection(collections.conversations)
+        .where("jobId", "==", jobId)
+        .where("participants", "array-contains", uid1)
+        .get();
+
+      const found = snapshot.docs.find(doc => {
+        const data = doc.data();
+        return data.participants && data.participants.includes(uid2);
+      });
+      return found ? toRecord(found) : null;
+    },
+    async listByUser(uid) {
+      // Firestore array-contains
+      const snapshot = await firestore()
+        .collection(collections.conversations)
+        .where("participants", "array-contains", uid)
+        .get();
+      return snapshot.docs.map(doc => toRecord(doc));
+    },
+    async update(id, patch) {
+      const ref = firestore().collection(collections.conversations).doc(id);
+      await ref.update(clean(withTimestamps(patch, { isNew: false })));
+      const updated = await ref.get();
+      return toRecord(updated);
+    },
+    async markRead(id, uid) {
+      const ref = firestore().collection(collections.conversations).doc(id);
+      await ref.update({
+        [`readBy.${uid}`]: new Date().toISOString(),
+        updatedAt: FieldValue.serverTimestamp()
+      });
+      const updated = await ref.get();
+      return toRecord(updated);
+    },
+    async hide(id, uid) {
+      const ref = firestore().collection(collections.conversations).doc(id);
+      await ref.update({
+        hiddenBy: FieldValue.arrayUnion(uid),
+        updatedAt: FieldValue.serverTimestamp()
+      });
+      const updated = await ref.get();
+      return toRecord(updated);
+    },
+    async unhide(id, uid) {
+      const ref = firestore().collection(collections.conversations).doc(id);
+      await ref.update({
+        hiddenBy: FieldValue.arrayRemove(uid),
+        updatedAt: FieldValue.serverTimestamp()
+      });
+      const updated = await ref.get();
+      return toRecord(updated);
+    },
+    async delete(id) {
+      const dbRef = firestore();
+      // Delete all messages in this conversation
+      const messagesSnapshot = await dbRef
+        .collection(collections.messages)
+        .where("conversationId", "==", id)
+        .get();
+
+      if (!messagesSnapshot.empty) {
+        const batch = dbRef.batch();
+        messagesSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+      }
+
+      // Delete the conversation itself
+      await dbRef.collection(collections.conversations).doc(id).delete();
+      return true;
+    }
+  },
+  messages: {
+    async create(data) {
+      const ref = await firestore()
+        .collection(collections.messages)
+        .add(clean(withTimestamps(data, { isNew: true })));
+      const doc = await ref.get();
+      return toRecord(doc);
+    },
+    async list(conversationId) {
+      const snapshot = await firestore()
+        .collection(collections.messages)
+        .where("conversationId", "==", conversationId)
+        // .orderBy("createdAt", "asc") // Index might be required
+        .get();
+      return snapshot.docs.map(doc => toRecord(doc)).sort((a, b) => {
+        // Manual sort to avoid needing immediate index creation for prototype
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      });
+    }
+  }
 };

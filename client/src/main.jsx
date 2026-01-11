@@ -15,10 +15,11 @@ import BidDetail from "./pages/BidDetail.jsx";
 import MyBids from "./pages/MyBids.jsx";
 import ProtectedApp from "./components/ProtectedApp.jsx";
 import LoginFinish from "./pages/LoginFinish";
+import Messenger from "./pages/Messenger";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
@@ -37,7 +38,8 @@ createRoot(document.getElementById("root")).render(
           />
           <Route path="/new-job" element={<NewJob />} />
           <Route path="/login/finish" element={<LoginFinish />} />
-          
+          <Route path="/messages" element={<Messenger />} />
+          <Route path="/messages/:conversationId" element={<Messenger />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
