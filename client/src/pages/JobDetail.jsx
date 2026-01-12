@@ -4,14 +4,22 @@ import {
   Form,
   NumberInput,
   TextInput,
+  TextArea,
   Button,
   InlineNotification,
+  ComposedModal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  InlineLoading,
 } from "@carbon/react";
+import { StarFilled, Star } from "@carbon/icons-react";
 import { api } from "../services/api";
 import { useSessionUser } from "../hooks/useSession";
 import MapView from "../components/MapView";
 import SearchAutocomplete from "../components/SearchAutocomplete";
 import "../styles/pages/jobs.css";
+import "../styles/components/pagination.css";
 import { cfg } from "../services/config";
 
 const sortBidsByCreated = (list) =>
@@ -38,6 +46,26 @@ export default function JobDetail() {
   const [deleting, setDeleting] = useState(false);
   const [acceptingBidId, setAcceptingBidId] = useState(null);
   const [address, setAddress] = useState("Toronto, ON, Canada");
+  const [reviewsOpen, setReviewsOpen] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsError, setReviewsError] = useState("");
+  const [selectedBidder, setSelectedBidder] = useState(null);
+  const [reviewsData, setReviewsData] = useState(null);
+  const [reviewsCache, setReviewsCache] = useState({});
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [reviewComposeOpen, setReviewComposeOpen] = useState(false);
+  const [reviewComposeBid, setReviewComposeBid] = useState(null);
+  const [reviewComposeLoading, setReviewComposeLoading] = useState(false);
+  const [existingReview, setExistingReview] = useState(null);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewDescription, setReviewDescription] = useState("");
+  const [reviewPhotos, setReviewPhotos] = useState([]);
+  const [reviewPhotoPreviews, setReviewPhotoPreviews] = useState([]);
+  const [reviewExistingPhotos, setReviewExistingPhotos] = useState([]);
+  const [reviewRemovePhotoUrls, setReviewRemovePhotoUrls] = useState([]);
+  const [reviewSubmitError, setReviewSubmitError] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewDeleting, setReviewDeleting] = useState(false);
 
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
@@ -107,6 +135,31 @@ export default function JobDetail() {
   const jobStatus = (job?.status || "open").toLowerCase();
   const biddingClosed = jobStatus !== "open";
   const jobLocked = jobStatus !== "open";
+  const awardedProviderId = job?.awardedProviderId || null;
+  const hasCachedAwardedReviews = awardedProviderId
+    ? Boolean(reviewsCache[awardedProviderId])
+    : false;
+
+  useEffect(() => {
+    if (!isOwner || !awardedProviderId) return;
+    if (jobStatus !== "awarded") return;
+    if (hasCachedAwardedReviews) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await api.reviewsForUser(awardedProviderId);
+        if (cancelled) return;
+        setReviewsCache((prev) => ({ ...prev, [awardedProviderId]: data }));
+      } catch {
+        // ignore prefetch failures; user can still open modal
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwner, jobStatus, awardedProviderId, hasCachedAwardedReviews]);
 
   const displayLat = isOwner ? editLat : job?.location?.lat;
   const displayLng = isOwner ? editLng : job?.location?.lng;
@@ -246,6 +299,307 @@ export default function JobDetail() {
       setAcceptingBidId(null);
     }
   }
+
+  const renderStars = (value) => {
+    const rating = Math.max(0, Math.min(5, Number(value) || 0));
+    const stars = [];
+    for (let i = 1; i <= 5; i += 1) {
+      stars.push(
+        i <= rating ? (
+          <StarFilled key={i} size={16} />
+        ) : (
+          <Star key={i} size={16} />
+        )
+      );
+    }
+    return <span className="review-stars">{stars}</span>;
+  };
+
+  const getMyReviewFor = (providerId) => {
+    if (!providerId || !user?.uid) return null;
+    const cached = reviewsCache[providerId];
+    const list = cached?.reviews;
+    if (!Array.isArray(list)) return null;
+    return (
+      list.find((r) => r?.jobId === jobId && r?.reviewerId === user.uid) || null
+    );
+  };
+
+  const renderSelectableStars = (value, onChange) => {
+    const rating = Math.max(0, Math.min(5, Number(value) || 0));
+    const stars = [];
+    for (let i = 1; i <= 5; i += 1) {
+      const filled = i <= rating;
+      stars.push(
+        <button
+          key={i}
+          type="button"
+          className="review-star-button"
+          onClick={() => onChange(i)}
+          aria-label={`${i} star${i === 1 ? "" : "s"}`}
+        >
+          {filled ? <StarFilled size={20} /> : <Star size={20} />}
+        </button>
+      );
+    }
+    return <div className="review-compose-stars">{stars}</div>;
+  };
+
+  const openReviews = async (bid) => {
+    if (!bid?.providerId) return;
+    const bidder = {
+      uid: bid.providerId,
+      bidderName: bid.bidderName || "Bidder",
+    };
+    setSelectedBidder(bidder);
+    setReviewsError("");
+    setReviewsOpen(true);
+    setReviewsPage(1);
+
+    const cached = reviewsCache[bidder.uid];
+    if (cached) {
+      setReviewsData(cached);
+      return;
+    }
+
+    setReviewsLoading(true);
+    setReviewsData(null);
+    try {
+      const data = await api.reviewsForUser(bidder.uid);
+      setReviewsCache((prev) => ({ ...prev, [bidder.uid]: data }));
+      setReviewsData(data);
+    } catch (err) {
+      setReviewsError(err?.data?.error || "Unable to load reviews.");
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const clearReviewPhotos = useCallback(() => {
+    reviewPhotoPreviews.forEach((url) => {
+      try {
+        URL.revokeObjectURL(url);
+      } catch {
+        // ignore
+      }
+    });
+    setReviewPhotoPreviews([]);
+    setReviewPhotos([]);
+  }, [reviewPhotoPreviews]);
+
+  const closeReviewComposer = useCallback(() => {
+    setReviewComposeOpen(false);
+    setReviewComposeBid(null);
+    setReviewComposeLoading(false);
+    setExistingReview(null);
+    setReviewRating(0);
+    setReviewDescription("");
+    setReviewExistingPhotos([]);
+    setReviewRemovePhotoUrls([]);
+    setReviewSubmitError("");
+    setReviewSubmitting(false);
+    setReviewDeleting(false);
+    clearReviewPhotos();
+  }, [clearReviewPhotos]);
+
+  const openReviewComposer = async (bid) => {
+    if (!bid?.providerId) return;
+    setReviewComposeBid(bid);
+    setReviewComposeOpen(true);
+    setReviewComposeLoading(true);
+    setExistingReview(null);
+    setReviewSubmitError("");
+    setReviewSubmitting(false);
+    setReviewDeleting(false);
+    setReviewRating(5);
+    setReviewDescription("");
+    setReviewExistingPhotos([]);
+    setReviewRemovePhotoUrls([]);
+    clearReviewPhotos();
+
+    const providerId = bid.providerId;
+    const cached = reviewsCache[providerId];
+    try {
+      const data = cached || (await api.reviewsForUser(providerId));
+      if (!cached) {
+        setReviewsCache((prev) => ({ ...prev, [providerId]: data }));
+      }
+      const mine = (data?.reviews || []).find(
+        (r) => r?.jobId === jobId && r?.reviewerId === user?.uid
+      );
+      setExistingReview(mine || null);
+      if (mine) {
+        setReviewRating(Number(mine.rating) || 0);
+        setReviewDescription(String(mine.description || ""));
+        const urls = Array.isArray(mine.photoUrls) ? mine.photoUrls : [];
+        const thumbs = Array.isArray(mine.photoThumbUrls)
+          ? mine.photoThumbUrls
+          : [];
+        setReviewExistingPhotos(
+          urls
+            .map((url, idx) => ({
+              url,
+              thumbUrl: thumbs[idx] || null,
+            }))
+            .filter((p) => Boolean(p.url))
+        );
+      }
+    } catch (err) {
+      setReviewSubmitError(err?.data?.error || "Unable to check existing review.");
+    } finally {
+      setReviewComposeLoading(false);
+    }
+  };
+
+  const submitReview = async () => {
+    if (!reviewComposeBid?.providerId) return;
+    if (reviewSubmitting) return;
+    setReviewSubmitError("");
+
+    const providerId = reviewComposeBid.providerId;
+    const hasExisting = Boolean(existingReview?.id);
+
+    if (!reviewRating || reviewRating < 1) {
+      setReviewSubmitError("Please select a star rating.");
+      return;
+    }
+    if (providerId === user?.uid) {
+      setReviewSubmitError("You cannot review yourself.");
+      return;
+    }
+
+    setReviewSubmitting(true);
+    try {
+      let reviewId = existingReview?.id || null;
+      if (!reviewId) {
+        const resp = await api.reviewCreate({
+          jobId,
+          reviewedId: providerId,
+          rating: reviewRating,
+          description: reviewDescription,
+        });
+        reviewId = resp?.review?.id;
+      }
+
+      if (!reviewId) {
+        throw new Error("Missing review id.");
+      }
+
+      if (existingReview?.id) {
+        await api.reviewUpdate(reviewId, {
+          rating: reviewRating,
+          description: reviewDescription,
+        });
+      }
+
+      if (existingReview?.id && reviewRemovePhotoUrls.length > 0) {
+        await api.reviewDeletePhotos(reviewId, reviewRemovePhotoUrls);
+        setReviewRemovePhotoUrls([]);
+      }
+
+      if (reviewPhotos.length > 0) {
+        await api.reviewUploadPhotos(reviewId, reviewPhotos);
+      }
+
+      const refreshed = await api.reviewsForUser(providerId);
+      setReviewsCache((prev) => ({ ...prev, [providerId]: refreshed }));
+      if (reviewsOpen && selectedBidder?.uid === providerId) {
+        setReviewsData(refreshed);
+      }
+      const mine = (refreshed?.reviews || []).find(
+        (r) => r?.jobId === jobId && r?.reviewerId === user?.uid
+      );
+      setExistingReview(mine || null);
+      if (mine) {
+        const urls = Array.isArray(mine.photoUrls) ? mine.photoUrls : [];
+        const thumbs = Array.isArray(mine.photoThumbUrls)
+          ? mine.photoThumbUrls
+          : [];
+        setReviewExistingPhotos(
+          urls
+            .map((url, idx) => ({
+              url,
+              thumbUrl: thumbs[idx] || null,
+            }))
+            .filter((p) => Boolean(p.url))
+        );
+      } else {
+        setReviewExistingPhotos([]);
+      }
+      clearReviewPhotos();
+      setFlash(existingReview?.id ? "Review updated." : "Review submitted.");
+      closeReviewComposer();
+    } catch (err) {
+      const code = err?.data?.error;
+      if (code === "review_already_exists") {
+        try {
+          const refreshed = await api.reviewsForUser(providerId);
+          setReviewsCache((prev) => ({ ...prev, [providerId]: refreshed }));
+          const mine = (refreshed?.reviews || []).find(
+            (r) => r?.jobId === jobId && r?.reviewerId === user?.uid
+          );
+          setExistingReview(mine || null);
+          setReviewSubmitError("You already submitted a review for this job.");
+        } catch {
+          setReviewSubmitError("You already submitted a review for this job.");
+        }
+      } else if (code === "storage_unavailable") {
+        const extra = err?.data?.details ? ` (${err.data.details})` : "";
+        setReviewSubmitError(
+          `Photo upload is unavailable right now. Your review text was saved; try photos again later.${extra}`
+        );
+      } else {
+        const details = [
+          code,
+          err?.data?.message,
+          err?.message,
+          err?.status ? `HTTP ${err.status}` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
+        setReviewSubmitError(
+          details || "Unable to submit review. Please try again."
+        );
+      }
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  const deleteReview = async () => {
+    if (!existingReview?.id) return;
+    if (reviewDeleting) return;
+    const confirmed = window.confirm(
+      "Delete this review? This will remove the rating, description, and all uploaded photos."
+    );
+    if (!confirmed) return;
+    setReviewSubmitError("");
+    setReviewDeleting(true);
+    try {
+      await api.reviewDelete(existingReview.id);
+      const providerId = reviewComposeBid?.providerId;
+      if (providerId) {
+        const refreshed = await api.reviewsForUser(providerId);
+        setReviewsCache((prev) => ({ ...prev, [providerId]: refreshed }));
+        if (reviewsOpen && selectedBidder?.uid === providerId) {
+          setReviewsData(refreshed);
+        }
+      }
+      closeReviewComposer();
+    } catch (err) {
+      setReviewSubmitError(err?.data?.error || "Unable to delete review.");
+      setReviewDeleting(false);
+    }
+  };
+
+  const closeReviews = () => {
+    setReviewsOpen(false);
+    setReviewsError("");
+    setReviewsLoading(false);
+    setSelectedBidder(null);
+    setReviewsData(null);
+    setReviewsPage(1);
+  };
 
   if (!job) return null;
 
@@ -470,6 +824,21 @@ export default function JobDetail() {
             if (["accepted", "rejected", "active"].includes(status)) {
               itemClassNames.push(`job-bid-item--${status}`);
             }
+            const canViewReviews = isOwner && Boolean(bid.providerId);
+            const canViewProfile = isOwner && Boolean(bid.providerId);
+            const isAwardedBid =
+              (jobStatus === "awarded" &&
+                (bid.providerId === job.awardedProviderId ||
+                  bid.id === job.awardedBidId)) ||
+              bid.status === "accepted";
+            const canLeaveReview =
+              isOwner &&
+              isAwardedBid &&
+              Boolean(bid.providerId) &&
+              bid.providerId !== user?.uid;
+            const hasMyReview = canLeaveReview
+              ? Boolean(getMyReviewFor(bid.providerId))
+              : false;
             return (
               <li key={bid.id}>
                 <div className={itemClassNames.join(" ")}>
@@ -493,17 +862,47 @@ export default function JobDetail() {
                       {bid.statusNote}
                     </p>
                   )}
-                  {canAccept && (
+                  {(canAccept || canViewReviews || canLeaveReview || canViewProfile) && (
                     <div className="job-bid-actions">
-                      <Button
-                        size="sm"
-                        onClick={() => handleAccept(bid.id)}
-                        disabled={acceptingBidId === bid.id}
-                      >
-                        {acceptingBidId === bid.id
-                          ? "Accepting…"
-                          : "Accept Bid"}
-                      </Button>
+                      {canViewReviews && (
+                        <Button
+                          size="sm"
+                          kind="ghost"
+                          onClick={() => openReviews(bid)}
+                          disabled={reviewsLoading && selectedBidder?.uid === bid.providerId}
+                        >
+                          View Reviews
+                        </Button>
+                      )}
+                      {canViewProfile && (
+                        <Button
+                          size="sm"
+                          kind="ghost"
+                          onClick={() => navigate(`/users/${bid.providerId}/portfolio`)}
+                        >
+                          View Profile
+                        </Button>
+                      )}
+                      {canLeaveReview && (
+                        <Button
+                          size="sm"
+                          kind="secondary"
+                          onClick={() => openReviewComposer(bid)}
+                        >
+                          {hasMyReview ? "Edit Review" : "Leave Review"}
+                        </Button>
+                      )}
+                      {canAccept && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleAccept(bid.id)}
+                          disabled={acceptingBidId === bid.id}
+                        >
+                          {acceptingBidId === bid.id
+                            ? "Accepting…"
+                            : "Accept Bid"}
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -512,6 +911,374 @@ export default function JobDetail() {
           })}
         </ul>
       )}
+
+      <ComposedModal
+        open={reviewsOpen}
+        onClose={closeReviews}
+        size="lg"
+        className="reviews-modal"
+      >
+        <ModalHeader
+          title="Bidder Reviews"
+          label={selectedBidder?.uid ? `User: ${selectedBidder.uid}` : undefined}
+          buttonOnClick={closeReviews}
+        />
+        <ModalBody>
+          {reviewsLoading ? (
+            <InlineLoading
+              description="Loading reviews…"
+              className="reviews-loading"
+            />
+          ) : reviewsError ? (
+            <InlineNotification
+              title="Error"
+              subtitle={reviewsError}
+              kind="error"
+              lowContrast
+            />
+          ) : reviewsData ? (
+            <div className="reviews-modal-content">
+              <div className="reviews-bidder-card">
+                <div className="reviews-bidder-avatar">
+                  {reviewsData.reviewedUser?.avatarUrl ? (
+                    <img
+                      src={reviewsData.reviewedUser.avatarUrl}
+                      alt="Bidder avatar"
+                      className="reviews-avatar-image"
+                    />
+                  ) : (
+                    <div className="reviews-avatar-fallback">
+                      {String(
+                        reviewsData.reviewedUser?.firstName ||
+                          reviewsData.reviewedUser?.email ||
+                          selectedBidder?.bidderName ||
+                          "B"
+                      )
+                        .trim()
+                        .charAt(0)
+                        .toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="reviews-bidder-meta">
+                  <div className="reviews-bidder-name">
+                    {[
+                      reviewsData.reviewedUser?.firstName,
+                      reviewsData.reviewedUser?.lastName,
+                    ]
+                      .filter(Boolean)
+                      .join(" ") ||
+                      selectedBidder?.bidderName ||
+                      "Bidder"}
+                  </div>
+                  <div className="reviews-bidder-email">
+                    {reviewsData.reviewedUser?.email || "—"}
+                  </div>
+                  <div className="reviews-summary">
+                    {renderStars(reviewsData.summary?.avgRating)}
+                    <span className="reviews-summary-text">
+                      {reviewsData.summary?.count || 0} review
+                      {(reviewsData.summary?.count || 0) === 1 ? "" : "s"}
+                      {reviewsData.summary?.avgRating
+                        ? ` · ${reviewsData.summary.avgRating} / 5`
+                        : ""}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {(reviewsData.summary?.count || 0) === 0 ? (
+                <InlineNotification
+                  title="No Reviews Yet"
+                  subtitle="This bidder has not received any reviews yet."
+                  kind="info"
+                  lowContrast
+                />
+              ) : (
+                <div className="reviews-list">
+                  {(() => {
+                    const pageSize = 5;
+                    const total = Array.isArray(reviewsData.reviews)
+                      ? reviewsData.reviews.length
+                      : 0;
+                    const pages = Math.max(1, Math.ceil(total / pageSize));
+                    const safePage = Math.min(Math.max(1, reviewsPage), pages);
+                    const start = (safePage - 1) * pageSize;
+                    const pageItems = (reviewsData.reviews || []).slice(
+                      start,
+                      start + pageSize
+                    );
+                    return (
+                      <>
+                        {pageItems.map((review) => (
+                    <div key={review.id} className="review-card">
+                      <div className="review-card-header">
+                        <div className="review-card-rating">
+                          {renderStars(review.rating)}
+                        </div>
+                        <div className="review-card-meta">
+                          <div className="review-card-author">
+                            {review.reviewer?.email || "Contractor"}
+                          </div>
+                          <div className="review-card-date">
+                            {review.createdAt
+                              ? new Date(review.createdAt).toLocaleDateString()
+                              : ""}
+                          </div>
+                        </div>
+                      </div>
+                      {review.description && (
+                        <div className="review-card-body">
+                          {review.description}
+                        </div>
+                      )}
+                      {Array.isArray(review.photoUrls) &&
+                        review.photoUrls.length > 0 && (
+                          <div className="review-photos">
+                            {review.photoUrls.map((url, idx) => {
+                              const thumb = Array.isArray(review.photoThumbUrls)
+                                ? review.photoThumbUrls[idx]
+                                : null;
+                              return (
+                              <a
+                                key={`${review.id}-${idx}`}
+                                href={url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="review-photo-link"
+                              >
+                                <img
+                                  src={thumb || url}
+                                  alt="Work photo"
+                                  loading="lazy"
+                                  className="review-photo"
+                                />
+                              </a>
+                              );
+                            })}
+                          </div>
+                        )}
+                    </div>
+                        ))}
+                        {total > pageSize && (
+                          <div className="list-pagination">
+                            <span className="list-pagination-text">
+                              Page {safePage} of {pages}
+                            </span>
+                            <div className="list-pagination-actions">
+                              <Button
+                                size="sm"
+                                kind="ghost"
+                                disabled={safePage <= 1}
+                                onClick={() =>
+                                  setReviewsPage((p) => Math.max(1, p - 1))
+                                }
+                              >
+                                Previous
+                              </Button>
+                              <Button
+                                size="sm"
+                                kind="ghost"
+                                disabled={safePage >= pages}
+                                onClick={() =>
+                                  setReviewsPage((p) => Math.min(pages, p + 1))
+                                }
+                              >
+                                Next
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+          ) : (
+            <InlineNotification
+              title="No Data"
+              subtitle="Select a bidder to view reviews."
+              kind="info"
+              lowContrast
+            />
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button kind="primary" onClick={closeReviews}>
+            Close
+          </Button>
+        </ModalFooter>
+      </ComposedModal>
+
+      <ComposedModal
+        open={reviewComposeOpen}
+        onClose={closeReviewComposer}
+        size="lg"
+        className="review-compose-modal"
+      >
+        <ModalHeader
+          title={existingReview ? "Your Review" : "Leave a Review"}
+          label={
+            reviewComposeBid?.providerId
+              ? `Bidder: ${reviewComposeBid.providerId}`
+              : undefined
+          }
+          buttonOnClick={closeReviewComposer}
+        />
+        <ModalBody>
+          {reviewComposeLoading ? (
+            <InlineLoading
+              description="Preparing review…"
+              className="reviews-loading"
+            />
+          ) : (
+            <div className="review-compose-content">
+              {reviewSubmitError && (
+                <InlineNotification
+                  title="Error"
+                  subtitle={reviewSubmitError}
+                  kind="error"
+                  lowContrast
+                  onClose={() => setReviewSubmitError("")}
+                />
+              )}
+
+              {existingReview && (
+                <InlineNotification
+                  title="Review Already Submitted"
+                  subtitle="You can edit your rating/description and add more photos."
+                  kind="info"
+                  lowContrast
+                />
+              )}
+
+              <div className="review-compose-section">
+                <div className="review-compose-label">Rating</div>
+                {renderSelectableStars(reviewRating, setReviewRating)}
+              </div>
+              <TextArea
+                id="review-description"
+                labelText="Description"
+                value={reviewDescription}
+                onChange={(e) => setReviewDescription(e.target.value)}
+                placeholder="Describe the bidder’s work…"
+              />
+
+              <div className="review-compose-section">
+                <div className="review-compose-label">
+                  Photos (max 6, auto-compressed)
+                </div>
+                {existingReview && reviewExistingPhotos.length > 0 && (
+                  <div className="review-existing-photos">
+                    <div className="review-compose-label">Current photos</div>
+                    <div className="review-photo-previews">
+                      {reviewExistingPhotos.map((p) => {
+                        const pendingRemove = reviewRemovePhotoUrls.includes(p.url);
+                        return (
+                          <div
+                            key={p.url}
+                            className={`review-existing-photo-tile${pendingRemove ? " review-existing-photo-tile--removed" : ""}`}
+                          >
+                            <img
+                              src={p.thumbUrl || p.url}
+                              alt="Existing work photo"
+                              className="review-photo-preview"
+                            />
+                            <Button
+                              size="sm"
+                              kind={pendingRemove ? "secondary" : "danger--tertiary"}
+                              onClick={() => {
+                                setReviewRemovePhotoUrls((prev) => {
+                                  const exists = prev.includes(p.url);
+                                  if (exists) return prev.filter((u) => u !== p.url);
+                                  return [...prev, p.url];
+                                });
+                              }}
+                              disabled={reviewSubmitting}
+                            >
+                              {pendingRemove ? "Undo" : "Remove"}
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                <input
+                  className="review-file-input"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []).slice(0, 6);
+                    reviewPhotoPreviews.forEach((url) => {
+                      try {
+                        URL.revokeObjectURL(url);
+                      } catch {
+                        // ignore
+                      }
+                    });
+                    setReviewPhotos(files);
+                    setReviewPhotoPreviews(
+                      files.map((file) => URL.createObjectURL(file))
+                    );
+                  }}
+                />
+                {reviewPhotoPreviews.length > 0 && (
+                  <>
+                    <div className="review-photo-previews">
+                      {reviewPhotoPreviews.map((url) => (
+                        <img
+                          key={url}
+                          src={url}
+                          alt="Selected"
+                          className="review-photo-preview"
+                        />
+                      ))}
+                    </div>
+                    <Button
+                      size="sm"
+                      kind="ghost"
+                      onClick={clearReviewPhotos}
+                      disabled={reviewSubmitting}
+                    >
+                      Clear photos
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button kind="secondary" onClick={closeReviewComposer}>
+            Close
+          </Button>
+          {existingReview?.id && (
+            <Button
+              kind="danger--tertiary"
+              disabled={reviewComposeLoading || reviewSubmitting || reviewDeleting}
+              onClick={deleteReview}
+            >
+              {reviewDeleting ? "Deleting…" : "Delete Review"}
+            </Button>
+          )}
+          {reviewComposeBid?.providerId && (
+            <Button
+              kind="primary"
+              disabled={reviewComposeLoading || reviewSubmitting || reviewDeleting}
+              onClick={submitReview}
+            >
+              {reviewSubmitting
+                ? "Submitting…"
+                : existingReview
+                  ? "Save Changes"
+                  : "Submit Review"}
+            </Button>
+          )}
+        </ModalFooter>
+      </ComposedModal>
     </div>
   );
 }
