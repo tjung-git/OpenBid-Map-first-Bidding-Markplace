@@ -1,24 +1,55 @@
 import request from "supertest";
-import Jimp from "jimp";
 import {
   createRealApp,
   preserveRealEnv,
   seedRealUser,
-  publishJob,
 } from "./testUtils.js";
 
 preserveRealEnv();
 
 describe("reviews routes (real adapters)", () => {
-  let tinyJpeg;
+  let app;
+  let db;
+  let firestore;
+  const tinyJpeg = Buffer.from(
+    "/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAAQABADASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAAAwQFBv/EAB4QAAICAgMBAAAAAAAAAAAAAAIDBAEFBhIhMVGx/8QAFQEBAQAAAAAAAAAAAAAAAAAAAQL/xAAXEQEBAQEAAAAAAAAAAAAAAAABAgAD/9oADAMBAAIRAxEAPwD1KKKKACiiigAooooAKKKKACiiigAooooA//2Q==",
+    "base64"
+  );
+
+  const seedJob = async ({
+    posterId,
+    status = "open",
+    awardedProviderId,
+  }) => {
+    const created = await db.job.create({
+      posterId,
+      title: "Kitchen Remodel",
+      description: "Full kitchen remodel project",
+      budgetAmount: 25000,
+      location: { lat: 37.7749, lng: -122.4194 },
+    });
+
+    if (status !== "awarded") return created;
+    return db.job.update(created.id, { status: "awarded", awardedProviderId });
+  };
 
   beforeAll(async () => {
-    const img = new Jimp(2, 2, 0xffffffff);
-    tinyJpeg = await img.getBufferAsync(Jimp.MIME_JPEG);
+    ({ app, db, firestore } = await createRealApp({
+      reviews: true,
+    }));
   });
 
+  beforeEach(() => {
+    if (firestore?._collections?.clear) {
+      firestore._collections.clear();
+    }
+    if (typeof firestore?._counter === "number") {
+      firestore._counter = 0;
+    }
+  });
+
+  // Create review only after a bid is accepted and reviewedId matches the awarded bidder.
   test("POST /api/reviews requires awarded job and awarded bidder target", async () => {
-    const { app, db } = await createRealApp({ jobs: true, bids: true, reviews: true });
     const contractor = await seedRealUser(db, {
       userType: "contractor",
       uid: "reviewing-contractor",
@@ -28,16 +59,9 @@ describe("reviews routes (real adapters)", () => {
       uid: "reviewed-bidder",
     });
 
-    const job = await publishJob(app, contractor.uid);
+    const job = await seedJob({ posterId: contractor.uid });
 
-    const bidResponse = await request(app)
-      .post(`/api/bids/${job.id}`)
-      .set("x-mock-uid", bidder.uid)
-      .send({ amount: 123, note: "" });
-    expect(bidResponse.status).toBe(200);
-    const bidId = bidResponse.body.bid.id;
-
-    // Not awarded yet -> cannot review
+    // Not awarded yet; cannot review
     const notAwarded = await request(app)
       .post("/api/reviews")
       .set("x-mock-uid", contractor.uid)
@@ -50,13 +74,12 @@ describe("reviews routes (real adapters)", () => {
     expect(notAwarded.status).toBe(409);
     expect(notAwarded.body).toEqual({ error: "job_not_awarded" });
 
-    // Award the job to bidder
-    const accept = await request(app)
-      .post(`/api/bids/${job.id}/${bidId}/accept`)
-      .set("x-mock-uid", contractor.uid);
-    expect(accept.status).toBe(200);
+    await db.job.update(job.id, {
+      status: "awarded",
+      awardedProviderId: bidder.uid,
+    });
 
-    // Wrong reviewedId -> rejected
+    // Wrong reviewedId; rejected
     const wrongTarget = await request(app)
       .post("/api/reviews")
       .set("x-mock-uid", contractor.uid)
@@ -89,8 +112,8 @@ describe("reviews routes (real adapters)", () => {
     });
   });
 
+  // Block self-review, non-contractor reviewers, and duplicate reviews for the same job and user pair.
   test("POST /api/reviews rejects self-review, bidder reviewers, and duplicates", async () => {
-    const { app, db } = await createRealApp({ jobs: true, bids: true, reviews: true });
     const contractor = await seedRealUser(db, {
       userType: "contractor",
       uid: "contractor-2",
@@ -104,16 +127,11 @@ describe("reviews routes (real adapters)", () => {
       uid: "outsider-2",
     });
 
-    const job = await publishJob(app, contractor.uid);
-    const bidResponse = await request(app)
-      .post(`/api/bids/${job.id}`)
-      .set("x-mock-uid", bidder.uid)
-      .send({ amount: 200, note: "" });
-    const bidId = bidResponse.body.bid.id;
-
-    await request(app)
-      .post(`/api/bids/${job.id}/${bidId}/accept`)
-      .set("x-mock-uid", contractor.uid);
+    const job = await seedJob({
+      posterId: contractor.uid,
+      status: "awarded",
+      awardedProviderId: bidder.uid,
+    });
 
     const selfReview = await request(app)
       .post("/api/reviews")
@@ -175,8 +193,8 @@ describe("reviews routes (real adapters)", () => {
     expect(dup.body).toEqual({ error: "review_already_exists" });
   });
 
+  // Upload review photos and verify we store https URLs and generated thumbnail URLs.
   test("POST /api/reviews/:reviewId/photos appends resized photo urls", async () => {
-    const { app, db } = await createRealApp({ jobs: true, bids: true, reviews: true });
     const contractor = await seedRealUser(db, {
       userType: "contractor",
       uid: "contractor-photos",
@@ -186,16 +204,11 @@ describe("reviews routes (real adapters)", () => {
       uid: "bidder-photos",
     });
 
-    const job = await publishJob(app, contractor.uid);
-    const bidResponse = await request(app)
-      .post(`/api/bids/${job.id}`)
-      .set("x-mock-uid", bidder.uid)
-      .send({ amount: 100, note: "" });
-    const bidId = bidResponse.body.bid.id;
-
-    await request(app)
-      .post(`/api/bids/${job.id}/${bidId}/accept`)
-      .set("x-mock-uid", contractor.uid);
+    const job = await seedJob({
+      posterId: contractor.uid,
+      status: "awarded",
+      awardedProviderId: bidder.uid,
+    });
 
     const createReview = await request(app)
       .post("/api/reviews")
@@ -235,8 +248,8 @@ describe("reviews routes (real adapters)", () => {
     expect(list.body.reviews[0].photoUrls.length).toBe(1);
   });
 
+  // Allow only the original reviewer to edit rating and description (including clearing description).
   test("PATCH /api/reviews/:reviewId updates rating/description for reviewer only", async () => {
-    const { app, db } = await createRealApp({ jobs: true, bids: true, reviews: true });
     const contractor = await seedRealUser(db, {
       userType: "contractor",
       uid: "contractor-edit",
@@ -246,16 +259,11 @@ describe("reviews routes (real adapters)", () => {
       uid: "bidder-edit",
     });
 
-    const job = await publishJob(app, contractor.uid);
-    const bidResponse = await request(app)
-      .post(`/api/bids/${job.id}`)
-      .set("x-mock-uid", bidder.uid)
-      .send({ amount: 100, note: "" });
-    const bidId = bidResponse.body.bid.id;
-
-    await request(app)
-      .post(`/api/bids/${job.id}/${bidId}/accept`)
-      .set("x-mock-uid", contractor.uid);
+    const job = await seedJob({
+      posterId: contractor.uid,
+      status: "awarded",
+      awardedProviderId: bidder.uid,
+    });
 
     const createReview = await request(app)
       .post("/api/reviews")
@@ -298,8 +306,8 @@ describe("reviews routes (real adapters)", () => {
     expect(clearDescription.body.review.description).toBe("");
   });
 
+  // Remove specific photo URLs from a review and keep the remaining review data intact.
   test("DELETE /api/reviews/:reviewId/photos removes selected photos", async () => {
-    const { app, db } = await createRealApp({ jobs: true, bids: true, reviews: true });
     const contractor = await seedRealUser(db, {
       userType: "contractor",
       uid: "contractor-delete-photos",
@@ -309,16 +317,11 @@ describe("reviews routes (real adapters)", () => {
       uid: "bidder-delete-photos",
     });
 
-    const job = await publishJob(app, contractor.uid);
-    const bidResponse = await request(app)
-      .post(`/api/bids/${job.id}`)
-      .set("x-mock-uid", bidder.uid)
-      .send({ amount: 100, note: "" });
-    const bidId = bidResponse.body.bid.id;
-
-    await request(app)
-      .post(`/api/bids/${job.id}/${bidId}/accept`)
-      .set("x-mock-uid", contractor.uid);
+    const job = await seedJob({
+      posterId: contractor.uid,
+      status: "awarded",
+      awardedProviderId: bidder.uid,
+    });
 
     const createReview = await request(app)
       .post("/api/reviews")
@@ -351,8 +354,8 @@ describe("reviews routes (real adapters)", () => {
     expect(del.body.review.photoUrls.length).toBe(0);
   });
 
+  // Delete a whole review (only reviewer can delete) and verify it disappears from listings.
   test("DELETE /api/reviews/:reviewId removes the entire review", async () => {
-    const { app, db } = await createRealApp({ jobs: true, bids: true, reviews: true });
     const contractor = await seedRealUser(db, {
       userType: "contractor",
       uid: "contractor-delete-review",
@@ -362,16 +365,11 @@ describe("reviews routes (real adapters)", () => {
       uid: "bidder-delete-review",
     });
 
-    const job = await publishJob(app, contractor.uid);
-    const bidResponse = await request(app)
-      .post(`/api/bids/${job.id}`)
-      .set("x-mock-uid", bidder.uid)
-      .send({ amount: 100, note: "" });
-    const bidId = bidResponse.body.bid.id;
-
-    await request(app)
-      .post(`/api/bids/${job.id}/${bidId}/accept`)
-      .set("x-mock-uid", contractor.uid);
+    const job = await seedJob({
+      posterId: contractor.uid,
+      status: "awarded",
+      awardedProviderId: bidder.uid,
+    });
 
     const createReview = await request(app)
       .post("/api/reviews")
@@ -403,8 +401,8 @@ describe("reviews routes (real adapters)", () => {
     expect(list.body.summary.count).toBe(0);
   });
 
+  // Fetch reviews for a user and verify summary stats plus reviewer profile enrichment.
   test("GET /api/reviews/user/:uid returns reviewer identity and summary", async () => {
-    const { app, db } = await createRealApp({ jobs: true, bids: true, reviews: true });
     const contractor = await seedRealUser(db, {
       userType: "contractor",
       uid: "contractor-3",
@@ -423,16 +421,11 @@ describe("reviews routes (real adapters)", () => {
     await db.profile.upsert({ uid: contractor.uid, avatarUrl: "https://example.com/c.png" });
     await db.profile.upsert({ uid: bidder.uid, avatarUrl: "https://example.com/b.png" });
 
-    const job = await publishJob(app, contractor.uid);
-    const bidResponse = await request(app)
-      .post(`/api/bids/${job.id}`)
-      .set("x-mock-uid", bidder.uid)
-      .send({ amount: 300, note: "" });
-    const bidId = bidResponse.body.bid.id;
-
-    await request(app)
-      .post(`/api/bids/${job.id}/${bidId}/accept`)
-      .set("x-mock-uid", contractor.uid);
+    const job = await seedJob({
+      posterId: contractor.uid,
+      status: "awarded",
+      awardedProviderId: bidder.uid,
+    });
 
     await request(app)
       .post("/api/reviews")

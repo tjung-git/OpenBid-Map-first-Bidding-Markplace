@@ -20,12 +20,12 @@ const state = {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }]
-  ]), // key: uid -> user { uid, email, name, kycStatus, kycSessionId }
-  profiles: new Map(), // key: uid -> profile { uid, avatarUrl, ... }
-  reviews: new Map(), // key: reviewId -> review { ... }
-  portfolioItems: new Map(), // key: portfolioId -> item { ... }
-  jobs: new Map(), // jobId -> job
-  bids: new Map(), // bidId -> bid
+  ]), // key: uid maps to user { uid, email, name, kycStatus, kycSessionId }
+  profiles: new Map(), // key: uid maps to profile { uid, avatarUrl, ... }
+  reviews: new Map(), // key: reviewId maps to review { ... }
+  portfolioItems: new Map(), // key: portfolioId maps to item { ... }
+  jobs: new Map(), // jobId maps to job
+  bids: new Map(), // bidId maps to bid
 };
 
 let seq = 1;

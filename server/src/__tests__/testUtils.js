@@ -447,6 +447,7 @@ export async function createRealApp({
   kyc = false,
   password = false,
   reviews = false,
+  portfolio = false,
   verifySession,
   identityOverrides = {},
 } = {}) {
@@ -568,6 +569,42 @@ export async function createRealApp({
     },
   }));
 
+  // Jimp is heavy to load and slow to run in tests. Mock it so route tests can
+  // focus on auth/validation/storage wiring rather than image processing speed.
+  jest.doMock("jimp", () => {
+    const JimpMock = function () {
+      return {
+        quality() {
+          return this;
+        },
+        async getBufferAsync() {
+          return Buffer.from("test-jpeg");
+        },
+      };
+    };
+
+    JimpMock.MIME_JPEG = "image/jpeg";
+    JimpMock.read = async (buffer) => {
+      const out = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer || "");
+      return {
+        scaleToFit() {
+          return this;
+        },
+        quality() {
+          return this;
+        },
+        async getBufferAsync() {
+          return out.length > 0 ? out : Buffer.from("test-jpeg");
+        },
+      };
+    };
+
+    return {
+      default: JimpMock,
+      MIME_JPEG: JimpMock.MIME_JPEG,
+    };
+  });
+
   const { db } = await import("../adapters/db.real.js");
 
   const app = express();
@@ -601,6 +638,11 @@ export async function createRealApp({
   if (reviews) {
     const { default: reviewsRoutes } = await import("../routes/reviews.routes.js");
     app.use("/api/reviews", reviewsRoutes);
+  }
+
+  if (portfolio) {
+    const { default: portfolioRoutes } = await import("../routes/portfolio.routes.js");
+    app.use("/api/portfolio", portfolioRoutes);
   }
 
   return {
