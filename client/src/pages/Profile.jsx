@@ -305,6 +305,30 @@ export default function Profile() {
     }
   };
 
+  const handleAvatarRemove = async () => {
+    if (!user?.uid) return;
+    if (uploading) return;
+    const confirmed = window.confirm("Remove your profile photo?");
+    if (!confirmed) return;
+    setNotice("");
+    setUploading(true);
+    try {
+      await api.deleteAvatar();
+      const updatedUser = { ...user, avatarUrl: null };
+      setUser(updatedUser, requirements);
+      setAvatarPreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      setNotice("Avatar removed.");
+    } catch (error) {
+      console.error("Avatar delete error:", error);
+      setNotice(error?.data?.error || "Failed to remove avatar");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const renderStars = (value) => {
     const rating = Math.max(0, Math.min(5, Number(value) || 0));
     const stars = [];
@@ -406,15 +430,27 @@ export default function Profile() {
             onChange={handleAvatarChange}
             style={{ display: 'none' }}
           />
-          <Button
-            size="sm"
-            kind="tertiary"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            renderIcon={Upload}
-          >
-            {uploading ? "Uploading..." : "Change Avatar"}
-          </Button>
+          <div className="profile-avatar-actions">
+            <Button
+              size="sm"
+              kind="tertiary"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              renderIcon={Upload}
+            >
+              {uploading ? "Uploading..." : "Change Avatar"}
+            </Button>
+            {avatarPreview ? (
+              <Button
+                size="sm"
+                kind="danger--ghost"
+                onClick={handleAvatarRemove}
+                disabled={uploading}
+              >
+                Remove
+              </Button>
+            ) : null}
+          </div>
         </div>
         <div className="profile-info">
           <h2>{displayName}</h2>

@@ -20,6 +20,13 @@
   gap: 0.5rem;
 }
 
+.profile-avatar-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .profile-avatar {
   flex-shrink: 0;
   width: 80px;
