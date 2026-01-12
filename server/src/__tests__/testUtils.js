@@ -309,6 +309,7 @@ export async function createPrototypeApp({
   bids = false,
   kyc = false,
   password = false,
+  reviews = false,
 } = {}) {
   jest.resetModules();
   process.env.PROTOTYPE = "TRUE";
@@ -339,6 +340,11 @@ export async function createPrototypeApp({
   if (password) {
     const { default: passwordRoutes } = await import("../routes/password.routes.js");
     app.use("/api/password", passwordRoutes);
+  }
+
+  if (reviews) {
+    const { default: reviewsRoutes } = await import("../routes/reviews.routes.js");
+    app.use("/api/reviews", reviewsRoutes);
   }
 
   return app;
@@ -440,6 +446,7 @@ export async function createRealApp({
   bids = false,
   kyc = false,
   password = false,
+  reviews = false,
   verifySession,
   identityOverrides = {},
 } = {}) {
@@ -540,11 +547,19 @@ export async function createRealApp({
 
   jest.doMock("../lib/firebase.js", () => {
     const actual = jest.requireActual("../lib/firebase.js");
+    const bucket = {
+      name: "openbid-test-bucket",
+      file: jest.fn(() => ({
+        save: jest.fn(async () => undefined),
+        delete: jest.fn(async () => undefined),
+      })),
+    };
     return {
       __esModule: true,
       ...actual,
       getDb: jest.fn(() => firestore),
       getAuthClient: jest.fn(() => firebaseAuthClient),
+      getStorageBucket: jest.fn(() => bucket),
     };
   });
 
@@ -584,6 +599,11 @@ export async function createRealApp({
   if (password) {
     const { default: passwordRoutes } = await import("../routes/password.routes.js");
     app.use("/api/password", passwordRoutes);
+  }
+
+  if (reviews) {
+    const { default: reviewsRoutes } = await import("../routes/reviews.routes.js");
+    app.use("/api/reviews", reviewsRoutes);
   }
 
   return {
