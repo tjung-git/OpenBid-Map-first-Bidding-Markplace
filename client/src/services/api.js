@@ -209,4 +209,184 @@ export const api = {
     if (!r.ok) throw { status: r.status, data };
     return data;
   },
+  async reviewsForUser(uid) {
+    const safeUid = encodeURIComponent(String(uid || "").trim());
+    const r = await fetch(`${base}/api/reviews/user/${safeUid}`, {
+      headers: headers(),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async portfolioForUser(uid) {
+    const safeUid = encodeURIComponent(String(uid || "").trim());
+    const r = await fetch(`${base}/api/portfolio/user/${safeUid}`, {
+      headers: headers(),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async portfolioCreate(payload) {
+    const r = await fetch(`${base}/api/portfolio`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify(payload || {}),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async portfolioUpdate(itemId, payload) {
+    const safeItemId = encodeURIComponent(String(itemId || "").trim());
+    const r = await fetch(`${base}/api/portfolio/${safeItemId}`, {
+      method: "PATCH",
+      headers: headers(),
+      body: JSON.stringify(payload || {}),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async portfolioUploadPhotos(itemId, files) {
+    const safeItemId = encodeURIComponent(String(itemId || "").trim());
+    const formData = new FormData();
+    (Array.isArray(files) ? files : []).forEach((file) => {
+      if (file) formData.append("photos", file);
+    });
+    const session = getSession();
+    const authToken = session?.session?.token || session?.session?.idToken;
+    const h = {};
+    if (authToken) {
+      h.Authorization = `Bearer ${authToken}`;
+    }
+    if (session?.user?.uid) {
+      h["x-user-id"] = session.user.uid;
+    }
+    if (cfg.prototype && session?.user?.uid) {
+      h["x-mock-uid"] = session.user.uid;
+    }
+    const r = await fetch(`${base}/api/portfolio/${safeItemId}/photos`, {
+      method: "POST",
+      headers: h,
+      body: formData,
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async portfolioDeletePhotos(itemId, photoUrls) {
+    const safeItemId = encodeURIComponent(String(itemId || "").trim());
+    const r = await fetch(`${base}/api/portfolio/${safeItemId}/photos`, {
+      method: "DELETE",
+      headers: headers(),
+      body: JSON.stringify({ photoUrls: Array.isArray(photoUrls) ? photoUrls : [] }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async portfolioDelete(itemId) {
+    const safeItemId = encodeURIComponent(String(itemId || "").trim());
+    const r = await fetch(`${base}/api/portfolio/${safeItemId}`, {
+      method: "DELETE",
+      headers: headers(),
+    });
+    if (r.status === 204) return true;
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return true;
+  },
+  async reviewCreate(payload) {
+    const r = await fetch(`${base}/api/reviews`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify(payload || {}),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async reviewUploadPhotos(reviewId, files) {
+    const safeReviewId = encodeURIComponent(String(reviewId || "").trim());
+    const formData = new FormData();
+    (Array.isArray(files) ? files : []).forEach((file) => {
+      if (file) formData.append("photos", file);
+    });
+    const session = getSession();
+    const authToken = session?.session?.token || session?.session?.idToken;
+    const h = {};
+    if (authToken) {
+      h.Authorization = `Bearer ${authToken}`;
+    }
+    if (session?.user?.uid) {
+      h["x-user-id"] = session.user.uid;
+    }
+    if (cfg.prototype && session?.user?.uid) {
+      h["x-mock-uid"] = session.user.uid;
+    }
+    const r = await fetch(`${base}/api/reviews/${safeReviewId}/photos`, {
+      method: "POST",
+      headers: h,
+      body: formData,
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async reviewUpdate(reviewId, payload) {
+    const safeReviewId = encodeURIComponent(String(reviewId || "").trim());
+    const r = await fetch(`${base}/api/reviews/${safeReviewId}`, {
+      method: "PATCH",
+      headers: headers(),
+      body: JSON.stringify(payload || {}),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async reviewDeletePhotos(reviewId, photoUrls) {
+    const safeReviewId = encodeURIComponent(String(reviewId || "").trim());
+    const r = await fetch(`${base}/api/reviews/${safeReviewId}/photos`, {
+      method: "DELETE",
+      headers: headers(),
+      body: JSON.stringify({
+        photoUrls: Array.isArray(photoUrls) ? photoUrls : [],
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async reviewDelete(reviewId) {
+    const safeReviewId = encodeURIComponent(String(reviewId || "").trim());
+    const r = await fetch(`${base}/api/reviews/${safeReviewId}`, {
+      method: "DELETE",
+      headers: headers(),
+    });
+    if (r.status === 204) return true;
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return true;
+  },
 };
