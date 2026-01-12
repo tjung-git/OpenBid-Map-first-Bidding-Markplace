@@ -16,6 +16,7 @@ import {
   CheckmarkOutline,
   WarningAlt,
   Upload,
+  TrashCan,
   StarFilled,
   Star,
 } from "@carbon/icons-react";
@@ -433,22 +434,23 @@ export default function Profile() {
           <div className="profile-avatar-actions">
             <Button
               size="sm"
-              kind="tertiary"
+              kind="ghost"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
               renderIcon={Upload}
-            >
-              {uploading ? "Uploading..." : "Change Avatar"}
-            </Button>
+              hasIconOnly
+              iconDescription="Update photo"
+            />
             {avatarPreview ? (
               <Button
                 size="sm"
                 kind="danger--ghost"
                 onClick={handleAvatarRemove}
                 disabled={uploading}
-              >
-                Remove
-              </Button>
+                renderIcon={TrashCan}
+                hasIconOnly
+                iconDescription="Remove photo"
+              />
             ) : null}
           </div>
         </div>
