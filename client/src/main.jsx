@@ -15,6 +15,8 @@ import BidDetail from "./pages/BidDetail.jsx";
 import MyBids from "./pages/MyBids.jsx";
 import ProtectedApp from "./components/ProtectedApp.jsx";
 import LoginFinish from "./pages/LoginFinish";
+import UserReviews from "./pages/UserReviews.jsx";
+import UserPortfolio from "./pages/UserPortfolio.jsx";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -31,6 +33,8 @@ createRoot(document.getElementById("root")).render(
           <Route path="/jobs/:jobId/bid" element={<JobBid />} />
           <Route path="/bids/:jobId" element={<BidDetail />} />
           <Route path="/jobs/myBids" element={<MyBids />} />
+          <Route path="/users/:uid/reviews" element={<UserReviews />} />
+          <Route path="/users/:uid/portfolio" element={<UserPortfolio />} />
           <Route
             path="/jobs/myBids/bidDetails/:jobId"
             element={<BidDetail />}
