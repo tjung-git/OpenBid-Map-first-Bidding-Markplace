@@ -199,6 +199,30 @@ export const api = {
     }
     return r.json();
   },
+  async deleteAvatar() {
+    const session = getSession();
+    const authToken = session?.session?.token || session?.session?.idToken;
+    const h = {};
+    if (authToken) {
+      h.Authorization = `Bearer ${authToken}`;
+    }
+    if (session?.user?.uid) {
+      h["x-user-id"] = session.user.uid;
+    }
+    if (cfg.prototype && session?.user?.uid) {
+      h["x-mock-uid"] = session.user.uid;
+    }
+
+    const r = await fetch(`${base}/api/upload/avatar`, {
+      method: "DELETE",
+      headers: h,
+    });
+    if (!r.ok && r.status !== 204) {
+      const data = await r.json().catch(() => ({}));
+      throw { status: r.status, data };
+    }
+    return true;
+  },
   async duoFinalize(code) {
     const r = await fetch(`${base}/api/auth/duo/finalize`, {
       method: "POST",
