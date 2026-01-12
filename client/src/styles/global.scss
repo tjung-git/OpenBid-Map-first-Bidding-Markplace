@@ -22,3 +22,21 @@ body {
   background: var(--cds-background, #161616);   /* g100 background */
   color: var(--cds-text-primary, #f4f4f4);
 }
+
+/* Layout helpers (ProtectedApp pages) */
+main.container {
+  min-height: calc(100vh - 3rem);
+}
+
+/* JobList is rendered without a page wrapper class. */
+main.container > div:not([class]) {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: 1.25rem 1rem 2.5rem;
+}
+
+@media (min-width: 672px) {
+  main.container > div:not([class]) {
+    padding: 1.5rem 1.5rem 3rem;
+  }
+}

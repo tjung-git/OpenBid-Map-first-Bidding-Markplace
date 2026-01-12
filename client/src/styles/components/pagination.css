@@ -9,11 +9,10 @@
 
 .list-pagination-text {
   font-size: 0.875rem;
-  color: var(--cds-text-secondary, #6f6f6f);
+  color: var(--cds-text-secondary, #c6c6c6);
 }
 
 .list-pagination-actions {
   display: flex;
   gap: 0.5rem;
 }
-

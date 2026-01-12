@@ -535,7 +535,6 @@ export async function createRealApp({
     const actual = jest.requireActual("../lib/firebaseIdentity.js");
     FirebaseIdentityErrorClass = actual.FirebaseIdentityError;
     return {
-      __esModule: true,
       FirebaseIdentityError: actual.FirebaseIdentityError,
       signUpWithEmailPassword: signUpWithEmailPasswordMock,
       signInWithEmailPassword: signInWithEmailPasswordMock,
@@ -555,7 +554,6 @@ export async function createRealApp({
       })),
     };
     return {
-      __esModule: true,
       ...actual,
       getDb: jest.fn(() => firestore),
       getAuthClient: jest.fn(() => firebaseAuthClient),
@@ -564,7 +562,6 @@ export async function createRealApp({
   });
 
   jest.doMock("../adapters/auth.real.js", () => ({
-    __esModule: true,
     auth: {
       signIn: authSignInMock,
       verify: verifyMock,

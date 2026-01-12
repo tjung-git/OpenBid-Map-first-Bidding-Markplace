@@ -7,6 +7,8 @@ import {
   TextArea,
   Button,
   InlineNotification,
+  Tile,
+  Tag,
   ComposedModal,
   ModalHeader,
   ModalBody,
@@ -20,6 +22,7 @@ import MapView from "../components/MapView";
 import SearchAutocomplete from "../components/SearchAutocomplete";
 import "../styles/pages/jobs.css";
 import "../styles/components/pagination.css";
+import "../styles/components/page-shell.css";
 import { cfg } from "../services/config";
 
 const sortBidsByCreated = (list) =>
@@ -603,20 +606,43 @@ export default function JobDetail() {
 
   if (!job) return null;
 
+  const budgetDisplay =
+    typeof job.budgetAmount === "number"
+      ? `$${job.budgetAmount.toLocaleString()}`
+      : job.budgetAmount ?? "-";
+  const createdDisplay = job.createdAt
+    ? new Date(job.createdAt).toLocaleString()
+    : "Unknown";
+  const locationDisplay =
+    job.location?.address ||
+    (job.location?.lat != null && job.location?.lng != null
+      ? `${job.location.lat}, ${job.location.lng}`
+      : "—");
+
+  const statusTagType =
+    jobStatus === "open" ? "blue" : jobStatus === "awarded" ? "green" : "cool-gray";
+
   return (
-    <div className="container job-detail-container">
-      <div className="job-detail-header">
-        <Button kind="ghost" onClick={() => navigate("/jobs")}>
-          Back to Job List
-        </Button>
-        <div>
-          <h2>{job.title}</h2>
-          <p className="job-detail-meta">
-            Status: {job.status || "open"} · Created{" "}
-            {job.createdAt
-              ? new Date(job.createdAt).toLocaleString()
-              : "Unknown"}
-          </p>
+    <div className="page-shell job-detail-page">
+      <div className="page-hero">
+        <div className="page-hero-left">
+          <Button kind="ghost" onClick={() => navigate("/jobs")}>
+            Back to Job List
+          </Button>
+          <div className="page-hero-titles">
+            <h2 className="page-hero-title">{job.title}</h2>
+            <p className="page-hero-subtitle">
+              Created {createdDisplay} · Location: {locationDisplay}
+            </p>
+          </div>
+        </div>
+        <div className="page-hero-actions">
+          <Tag type={statusTagType}>
+            {(job.status || "open").toString().toUpperCase()}
+          </Tag>
+          {budgetDisplay !== "-" && (
+            <Tag type="outline">Budget: {budgetDisplay}</Tag>
+          )}
         </div>
       </div>
 
@@ -639,278 +665,331 @@ export default function JobDetail() {
         />
       )}
 
-      <MapView center={mapCenter} markers={mapMarkers} />
-
-      {isOwner ? (
-        <>
-          {jobLocked && (
-            <InlineNotification
-              title="Job Locked"
-              subtitle="You accepted a bid. Finish your job and get paid."
-              kind="info"
-              lowContrast
-            />
-          )}
-          <h3 className="job-section-title">Job Details</h3>
-          <Form onSubmit={handleUpdate}>
-            <TextInput
-              id="job-title"
-              labelText="Job Title"
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-              disabled={jobLocked}
-              required
-            />
-            <TextInput
-              id="job-desc"
-              labelText="Job Description"
-              value={editDesc}
-              onChange={(e) => setEditDesc(e.target.value)}
-              disabled={jobLocked}
-            />
-            <TextInput
-              id="job-budget"
-              type="text"
-              labelText="Job Budget"
-              value={editBudget}
-              onChange={(e) => {
-                const raw = e.target.value;
-                const cleaned = raw.replace(/[^0-9.]/g, "");
-                const normalized = cleaned.replace(/^0+(?=\d)/, "");
-                setEditBudget(normalized);
-              }}
-              placeholder="Enter budget"
-              disabled={jobLocked}
-            />
-            {cfg.prototype ? 
-              <div className="job-form-grid">
-                <NumberInput
-                  key={`lat-${editLat}`}
-                  id="lat"
-                  label="Latitude"
-                  value={editLat}
-                  onChange={(_, { value }) => setEditLat(Number(value))}
-                />
-                <NumberInput
-                  key={`lng-${editLng}`}
-                  id="lng"
-                  label="Longitude"
-                  value={editLng}
-                  onChange={(_, { value }) => setEditLng(Number(value))}
-                />
-                </div> :
-                <div className="job-location-search-container">
-                  <SearchAutocomplete onSelectPlace={handlePlaceSelection}/>
-                <div>Selected location: {address}</div>
+      <div className="page-grid">
+        <div className="page-stack">
+          <Tile className="page-card">
+            <h3 className="page-card-title">Overview</h3>
+            <p className="page-card-subtitle">
+              What’s needed, the expected budget, and the current job status.
+            </p>
+            <div className="job-summary-grid">
+              <div className="job-summary-item">
+                <div className="job-summary-label">Description</div>
+                <div className="job-summary-value">
+                  {job.description || "No description provided."}
+                </div>
               </div>
-            }
-            <div className="job-detail-actions">
-              <Button type="submit" disabled={saving || jobLocked}>
-                {saving ? "Updating…" : "Update Job"}
-              </Button>
-              <Button
-                type="button"
-                kind="danger"
-                disabled={deleting || jobLocked}
-                onClick={handleDelete}
-              >
-                {deleting ? "Deleting…" : "Delete Job"}
-              </Button>
+              <div className="job-summary-item">
+                <div className="job-summary-label">Budget</div>
+                <div className="job-summary-value">{budgetDisplay}</div>
+              </div>
+              <div className="job-summary-item">
+                <div className="job-summary-label">Status</div>
+                <div className="job-summary-value">
+                  {(job.status || "open").toString()}
+                </div>
+              </div>
+              <div className="job-summary-item">
+                <div className="job-summary-label">Created</div>
+                <div className="job-summary-value">{createdDisplay}</div>
+              </div>
             </div>
-          </Form>
-        </>
-      ) : (
-        <>
-          <p>{job.description}</p>
-          <p>
-            Budget:{" "}
-            {typeof job.budgetAmount === "number"
-              ? `$${job.budgetAmount.toFixed(2)}`
-              : job.budgetAmount ?? "-"}
-          </p>
-          {isOwnJob ? (
-            <InlineNotification
-              title="Bidding Restricted"
-              subtitle="You posted this job. Switch to contractor view to manage it."
-              kind="info"
-              lowContrast
-            />
-          ) : biddingClosed ? (
-            <InlineNotification
-              title="Bidding Closed"
-              subtitle={
-                bidError || "This job is no longer accepting bids."
-              }
-              kind="info"
-              lowContrast
-            />
-          ) : (
-            <>
-              <h3 className="job-section-title">Place a Bid</h3>
-              {bidError && (
+          </Tile>
+
+          {isOwner ? (
+            <Tile className="page-card">
+              <h3 className="page-card-title">Manage job</h3>
+              <p className="page-card-subtitle">
+                Update details while the job is open.
+              </p>
+              {jobLocked && (
                 <InlineNotification
-                  title="Error"
-                  subtitle={bidError}
-                  kind="error"
+                  title="Job Locked"
+                  subtitle="You accepted a bid. Finish your job and get paid."
+                  kind="info"
                   lowContrast
                 />
               )}
-              <Form onSubmit={placeBid}>
-                <NumberInput
-                  id="bid-amount"
-                  label="Amount"
-                  value={bidAmount === "" ? "" : Number(bidAmount)}
-                  allowEmpty
-                  onChange={(_, { value }) => {
-                    if (value === "" || value == null) {
-                      setBidAmount("");
-                    } else {
-                      const sanitized = String(value).replace(/[^0-9.]/g, "");
-                      setBidAmount(sanitized);
-                    }
-                  }}
-                  disabled={isOwnJob}
+              <div className="page-card-body">
+                <Form onSubmit={handleUpdate} className="page-stack">
+                <TextInput
+                  id="job-title"
+                  labelText="Job Title"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  disabled={jobLocked}
+                  required
+                />
+                <TextArea
+                  id="job-desc"
+                  labelText="Job Description"
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  disabled={jobLocked}
+                  rows={4}
                 />
                 <TextInput
-                  id="bid-note"
-                  labelText="Note"
-                  value={bidNote}
-                  onChange={(e) => setBidNote(e.target.value)}
-                  disabled={isOwnJob}
+                  id="job-budget"
+                  type="text"
+                  labelText="Job Budget"
+                  value={editBudget}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const cleaned = raw.replace(/[^0-9.]/g, "");
+                    const normalized = cleaned.replace(/^0+(?=\d)/, "");
+                    setEditBudget(normalized);
+                  }}
+                  placeholder="Enter budget"
+                  disabled={jobLocked}
                 />
-                <Button
-                  type="submit"
-                  className="job-bid-button"
-                  disabled={isOwnJob}
-                >
-                  Submit Bid
-                </Button>
-              </Form>
-            </>
-          )}
-        </>
-      )}
-
-      <h3 className="job-section-title">Bids</h3>
-      {biddingClosed && job.awardedBidId && (
-        <InlineNotification
-          title="Job Awarded"
-          subtitle="Bidding is closed. The accepted bid is highlighted below."
-          kind="info"
-          lowContrast
-        />
-      )}
-      {bids.length === 0 ? (
-        <InlineNotification
-          title="No Bids Yet"
-          subtitle="Bids from contractors will appear here."
-          kind="info"
-          lowContrast
-        />
-      ) : (
-        <ul className="job-bid-list">
-          {bids.map((bid) => {
-            const amountValue = Number(bid.amount);
-            const amountDisplay = Number.isFinite(amountValue)
-              ? amountValue.toLocaleString()
-              : bid.amount;
-            const createdAt = bid.bidCreatedAt || bid.createdAt;
-            const status = (bid.status || "active").toLowerCase();
-            const statusLabel =
-              status.charAt(0).toUpperCase() + status.slice(1);
-            const statusClass = `job-bid-status job-bid-status--${status}`;
-            const canAccept = isOwner && !biddingClosed && status === "active";
-            const itemClassNames = ["job-bid-item"];
-            if (["accepted", "rejected", "active"].includes(status)) {
-              itemClassNames.push(`job-bid-item--${status}`);
-            }
-            const canViewReviews = isOwner && Boolean(bid.providerId);
-            const canViewProfile = isOwner && Boolean(bid.providerId);
-            const isAwardedBid =
-              (jobStatus === "awarded" &&
-                (bid.providerId === job.awardedProviderId ||
-                  bid.id === job.awardedBidId)) ||
-              bid.status === "accepted";
-            const canLeaveReview =
-              isOwner &&
-              isAwardedBid &&
-              Boolean(bid.providerId) &&
-              bid.providerId !== user?.uid;
-            const hasMyReview = canLeaveReview
-              ? Boolean(getMyReviewFor(bid.providerId))
-              : false;
-            return (
-              <li key={bid.id}>
-                <div className={itemClassNames.join(" ")}>
-                  <div className="job-bid-header">
-                    <span>${amountDisplay}</span>
-                    <span>· {bid.bidderName || "Bidder"}</span>
-                    <span className={statusClass}>
-                      {statusLabel}
-                    </span>
+                {cfg.prototype ? (
+                  <div className="job-form-grid">
+                    <NumberInput
+                      key={`lat-${editLat}`}
+                      id="lat"
+                      label="Latitude"
+                      value={editLat}
+                      onChange={(_, { value }) => setEditLat(Number(value))}
+                    />
+                    <NumberInput
+                      key={`lng-${editLng}`}
+                      id="lng"
+                      label="Longitude"
+                      value={editLng}
+                      onChange={(_, { value }) => setEditLng(Number(value))}
+                    />
                   </div>
-                  <p className="job-bid-meta">
-                    {createdAt
-                      ? new Date(createdAt).toLocaleString()
-                      : "Unknown time"}
-                  </p>
-                  {bid.note && (
-                    <p className="job-bid-note">“{bid.note}”</p>
-                  )}
-                  {bid.statusNote && (
-                    <p className="job-bid-status-note">
-                      {bid.statusNote}
-                    </p>
-                  )}
-                  {(canAccept || canViewReviews || canLeaveReview || canViewProfile) && (
-                    <div className="job-bid-actions">
-                      {canViewReviews && (
-                        <Button
-                          size="sm"
-                          kind="ghost"
-                          onClick={() => openReviews(bid)}
-                          disabled={reviewsLoading && selectedBidder?.uid === bid.providerId}
-                        >
-                          View Reviews
-                        </Button>
-                      )}
-                      {canViewProfile && (
-                        <Button
-                          size="sm"
-                          kind="ghost"
-                          onClick={() => navigate(`/users/${bid.providerId}/portfolio`)}
-                        >
-                          View Profile
-                        </Button>
-                      )}
-                      {canLeaveReview && (
-                        <Button
-                          size="sm"
-                          kind="secondary"
-                          onClick={() => openReviewComposer(bid)}
-                        >
-                          {hasMyReview ? "Edit Review" : "Leave Review"}
-                        </Button>
-                      )}
-                      {canAccept && (
-                        <Button
-                          size="sm"
-                          onClick={() => handleAccept(bid.id)}
-                          disabled={acceptingBidId === bid.id}
-                        >
-                          {acceptingBidId === bid.id
-                            ? "Accepting…"
-                            : "Accept Bid"}
-                        </Button>
-                      )}
-                    </div>
-                  )}
+                ) : (
+                  <div className="job-location-search-container">
+                    <SearchAutocomplete onSelectPlace={handlePlaceSelection} />
+                    <div>Selected location: {address}</div>
+                  </div>
+                )}
+                <div className="job-detail-actions job-detail-actions--tight">
+                  <Button type="submit" disabled={saving || jobLocked}>
+                    {saving ? "Updating…" : "Update Job"}
+                  </Button>
+                  <Button
+                    type="button"
+                    kind="danger"
+                    disabled={deleting || jobLocked}
+                    onClick={handleDelete}
+                  >
+                    {deleting ? "Deleting…" : "Delete Job"}
+                  </Button>
                 </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                </Form>
+              </div>
+            </Tile>
+          ) : (
+            <Tile className="page-card">
+              <h3 className="page-card-title">Bid on this job</h3>
+              <p className="page-card-subtitle">
+                Submit a competitive price and a quick note for the contractor.
+              </p>
+              {isOwnJob ? (
+                <InlineNotification
+                  title="Bidding Restricted"
+                  subtitle="You posted this job. Switch to contractor view to manage it."
+                  kind="info"
+                  lowContrast
+                />
+              ) : biddingClosed ? (
+                <InlineNotification
+                  title="Bidding Closed"
+                  subtitle={bidError || "This job is no longer accepting bids."}
+                  kind="info"
+                  lowContrast
+                />
+              ) : (
+                <>
+                  {bidError && (
+                    <InlineNotification
+                      title="Error"
+                      subtitle={bidError}
+                      kind="error"
+                      lowContrast
+                    />
+                  )}
+                  <div className="page-card-body">
+                    <Form onSubmit={placeBid} className="page-stack">
+                    <NumberInput
+                      id="bid-amount"
+                      label="Bid amount"
+                      value={bidAmount === "" ? "" : Number(bidAmount)}
+                      allowEmpty
+                      onChange={(_, { value }) => {
+                        if (value === "" || value == null) {
+                          setBidAmount("");
+                        } else {
+                          const sanitized = String(value).replace(/[^0-9.]/g, "");
+                          setBidAmount(sanitized);
+                        }
+                      }}
+                      disabled={isOwnJob}
+                    />
+                    <TextInput
+                      id="bid-note"
+                      labelText="Note (optional)"
+                      value={bidNote}
+                      onChange={(e) => setBidNote(e.target.value)}
+                      disabled={isOwnJob}
+                    />
+                    <div className="job-detail-actions job-detail-actions--tight">
+                      <Button type="submit" disabled={isOwnJob}>
+                        Submit Bid
+                      </Button>
+                    </div>
+                    </Form>
+                  </div>
+                </>
+              )}
+            </Tile>
+          )}
+
+          <Tile className="page-card">
+            <h3 className="page-card-title">Bids</h3>
+            <p className="page-card-subtitle">
+              Review offers and manage the winner once you’re ready.
+            </p>
+            {biddingClosed && job.awardedBidId && (
+              <InlineNotification
+                title="Job Awarded"
+                subtitle="Bidding is closed. The accepted bid is highlighted below."
+                kind="info"
+                lowContrast
+              />
+            )}
+            {bids.length === 0 ? (
+              <InlineNotification
+                title="No Bids Yet"
+                subtitle="Bids from contractors will appear here."
+                kind="info"
+                lowContrast
+              />
+            ) : (
+              <ul className="job-bid-list">
+                {bids.map((bid) => {
+                  const amountValue = Number(bid.amount);
+                  const amountDisplay = Number.isFinite(amountValue)
+                    ? amountValue.toLocaleString()
+                    : bid.amount;
+                  const createdAt = bid.bidCreatedAt || bid.createdAt;
+                  const status = (bid.status || "active").toLowerCase();
+                  const statusLabel =
+                    status.charAt(0).toUpperCase() + status.slice(1);
+                  const statusClass = `job-bid-status job-bid-status--${status}`;
+                  const canAccept =
+                    isOwner && !biddingClosed && status === "active";
+                  const itemClassNames = ["job-bid-item"];
+                  if (["accepted", "rejected", "active"].includes(status)) {
+                    itemClassNames.push(`job-bid-item--${status}`);
+                  }
+                  const canViewReviews = isOwner && Boolean(bid.providerId);
+                  const canViewProfile = isOwner && Boolean(bid.providerId);
+                  const isAwardedBid =
+                    (jobStatus === "awarded" &&
+                      (bid.providerId === job.awardedProviderId ||
+                        bid.id === job.awardedBidId)) ||
+                    bid.status === "accepted";
+                  const canLeaveReview =
+                    isOwner &&
+                    isAwardedBid &&
+                    Boolean(bid.providerId) &&
+                    bid.providerId !== user?.uid;
+                  const hasMyReview = canLeaveReview
+                    ? Boolean(getMyReviewFor(bid.providerId))
+                    : false;
+                  return (
+                    <li key={bid.id}>
+                      <div className={itemClassNames.join(" ")}>
+                        <div className="job-bid-header">
+                          <span>${amountDisplay}</span>
+                          <span>· {bid.bidderName || "Bidder"}</span>
+                          <span className={statusClass}>{statusLabel}</span>
+                        </div>
+                        <p className="job-bid-meta">
+                          {createdAt
+                            ? new Date(createdAt).toLocaleString()
+                            : "Unknown time"}
+                        </p>
+                        {bid.note && <p className="job-bid-note">“{bid.note}”</p>}
+                        {bid.statusNote && (
+                          <p className="job-bid-status-note">{bid.statusNote}</p>
+                        )}
+                        {(canAccept ||
+                          canViewReviews ||
+                          canLeaveReview ||
+                          canViewProfile) && (
+                          <div className="job-bid-actions">
+                            {canViewReviews && (
+                              <Button
+                                size="sm"
+                                kind="ghost"
+                                onClick={() => openReviews(bid)}
+                                disabled={
+                                  reviewsLoading &&
+                                  selectedBidder?.uid === bid.providerId
+                                }
+                              >
+                                View Reviews
+                              </Button>
+                            )}
+                            {canViewProfile && (
+                              <Button
+                                size="sm"
+                                kind="ghost"
+                                onClick={() =>
+                                  navigate(`/users/${bid.providerId}/portfolio`)
+                                }
+                              >
+                                View Profile
+                              </Button>
+                            )}
+                            {canLeaveReview && (
+                              <Button
+                                size="sm"
+                                kind="secondary"
+                                onClick={() => openReviewComposer(bid)}
+                              >
+                                {hasMyReview ? "Edit Review" : "Leave Review"}
+                              </Button>
+                            )}
+                            {canAccept && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleAccept(bid.id)}
+                                disabled={acceptingBidId === bid.id}
+                              >
+                                {acceptingBidId === bid.id
+                                  ? "Accepting…"
+                                  : "Accept Bid"}
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </Tile>
+        </div>
+
+        <div className="page-stack">
+          <Tile className="page-card job-map-card">
+            <h3 className="page-card-title">Map</h3>
+            <p className="page-card-subtitle">Confirm the work location.</p>
+            <div className="page-card-body">
+              <MapView center={mapCenter} markers={mapMarkers} />
+            </div>
+            <div className="job-map-meta">
+              {locationDisplay}
+            </div>
+          </Tile>
+        </div>
+      </div>
 
       <ComposedModal
         open={reviewsOpen}

@@ -7,6 +7,7 @@ import {
   Button,
   InlineNotification,
   Tile,
+  Tag,
 } from "@carbon/react";
 import { api } from "../services/api";
 import {
@@ -15,6 +16,7 @@ import {
 } from "../hooks/useSession";
 import MapView from "../components/MapView";
 import "../styles/pages/bid.css";
+import "../styles/components/page-shell.css";
 
 const PAGE_SIZE = 5;
 
@@ -341,7 +343,7 @@ export default function JobBid() {
 
   if (loading) {
     return (
-      <div className="container">
+      <div className="page-shell">
         <p>Loading bid details…</p>
       </div>
     );
@@ -349,7 +351,7 @@ export default function JobBid() {
 
   if (!job) {
     return (
-      <div className="container">
+      <div className="page-shell">
         <InlineNotification
           title="Not Found"
           subtitle="Job could not be found."
@@ -398,19 +400,27 @@ export default function JobBid() {
   };
 
   return (
-    <div className="container bid-detail-container">
-      <div className="bid-detail-header">
-        <Button kind="ghost" onClick={() => nav("/jobs")}>
-          Back to Job List
-        </Button>
-        <div>
-          <h2>{job.title}</h2>
-          <p className="job-detail-meta">
-            Posted by{" "}
-            {[contractor?.firstName, contractor?.lastName]
-              .filter(Boolean)
-              .join(" ") || contractor?.email || "Unknown contractor"}
-          </p>
+    <div className="page-shell bid-detail-container">
+      <div className="page-hero">
+        <div className="page-hero-left">
+          <Button kind="ghost" onClick={() => nav("/jobs")}>
+            Back to Job List
+          </Button>
+          <div className="page-hero-titles">
+            <h2 className="page-hero-title">{job.title}</h2>
+            <p className="page-hero-subtitle">
+              Posted by{" "}
+              {[contractor?.firstName, contractor?.lastName]
+                .filter(Boolean)
+                .join(" ") || contractor?.email || "Unknown contractor"}
+              {" · "}
+              Location: {job.location?.address || "—"}
+            </p>
+          </div>
+        </div>
+        <div className="page-hero-actions">
+          {budgetDisplay && <Tag type="outline">Budget: {budgetDisplay}</Tag>}
+          <Tag type="cool-gray">{sortedBids.length} bids</Tag>
         </div>
       </div>
 
@@ -434,7 +444,7 @@ export default function JobBid() {
       )}
 
       <div className="bid-detail-content">
-        <Tile className="bid-detail-card">
+        <Tile className="page-card bid-detail-card">
           <MapView markers={mapMarkers} center={mapMarkers[0]} />
           <div className="bid-detail-job-info">
             <p className="bid-detail-label">Job Description</p>
@@ -444,7 +454,7 @@ export default function JobBid() {
           </div>
         </Tile>
 
-        <Tile className="bid-detail-card">
+        <Tile className="page-card bid-detail-card">
           <h3>{ownBidId ? "Update Your Bid" : "Place Your Bid"}</h3>
           {!canBid && (
             <InlineNotification
@@ -516,7 +526,7 @@ export default function JobBid() {
         </Tile>
       </div>
 
-      <Tile className="bid-detail-card">
+      <Tile className="page-card bid-detail-card">
         <h3>Your Bid</h3>
         {ownBid ? (
           <ul className="bid-list">
@@ -529,7 +539,7 @@ export default function JobBid() {
         )}
       </Tile>
 
-      <Tile className="bid-detail-card">
+      <Tile className="page-card bid-detail-card">
         <h3>Other Bids</h3>
         {otherBids.length === 0 ? (
           <p>No other bids yet.</p>

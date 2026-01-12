@@ -75,7 +75,6 @@ export default function UserReviews() {
   const reviews = Array.isArray(data?.reviews) ? data.reviews : [];
   const summary = data?.summary || { count: 0, avgRating: 0 };
   const portfolioItems = Array.isArray(portfolio?.items) ? portfolio.items : [];
-  const isContractor = (currentUser?.userType || "").toLowerCase() === "contractor";
 
   return (
     <div className="user-reviews-page">
@@ -90,11 +89,6 @@ export default function UserReviews() {
           <Button kind="ghost" onClick={() => navigate(-1)}>
             Back
           </Button>
-          {isContractor && (
-            <Button kind="secondary" onClick={() => navigate("/new-job")}>
-              Post a Job
-            </Button>
-          )}
         </div>
       </div>
 

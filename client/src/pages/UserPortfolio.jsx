@@ -58,8 +58,6 @@ export default function UserPortfolio() {
 
   const user = data?.user || null;
   const items = Array.isArray(data?.items) ? data.items : [];
-  const isContractor =
-    (currentUser?.userType || "").toLowerCase() === "contractor";
 
   const openItem = (item) => {
     setSelectedItem(item);
@@ -84,11 +82,6 @@ export default function UserPortfolio() {
           <Button kind="ghost" onClick={() => navigate(-1)}>
             Back
           </Button>
-          {isContractor && (
-            <Button kind="secondary" onClick={() => navigate("/new-job")}>
-              Post a Job
-            </Button>
-          )}
           {safeUid && (
             <Button
               kind="ghost"
