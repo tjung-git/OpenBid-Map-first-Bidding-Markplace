@@ -448,6 +448,7 @@ export async function createRealApp({
   password = false,
   reviews = false,
   portfolio = false,
+  upload = false,
   verifySession,
   identityOverrides = {},
 } = {}) {
@@ -643,6 +644,11 @@ export async function createRealApp({
   if (portfolio) {
     const { default: portfolioRoutes } = await import("../routes/portfolio.routes.js");
     app.use("/api/portfolio", portfolioRoutes);
+  }
+
+  if (upload) {
+    const { default: uploadRoutes } = await import("../routes/upload.routes.js");
+    app.use("/api/upload", uploadRoutes);
   }
 
   return {
