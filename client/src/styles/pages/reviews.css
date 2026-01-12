@@ -1,0 +1,68 @@
+.user-reviews-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.user-reviews-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.user-reviews-title {
+  margin: 0;
+}
+
+.user-reviews-subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--cds-text-secondary, #6f6f6f);
+}
+
+.user-reviews-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.user-reviews-hero {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: var(--cds-layer, #f4f4f4);
+  border: 1px solid var(--cds-border-subtle, #e0e0e0);
+}
+
+.user-reviews-hero-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.user-reviews-name {
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.user-reviews-email {
+  font-size: 0.875rem;
+  color: var(--cds-text-secondary, #6f6f6f);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .user-reviews-hero {
+    align-items: flex-start;
+  }
+
+  .user-reviews-email {
+    white-space: normal;
+  }
+}

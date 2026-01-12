@@ -68,6 +68,65 @@
   color: var(--cds-text-primary);
 }
 
+.profile-showcase-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.profile-showcase-subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--cds-text-secondary);
+}
+
+.profile-showcase-toggle {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: var(--cds-layer);
+  border: 1px solid var(--cds-border-subtle);
+}
+
+.profile-showcase-tab {
+  border: none;
+  background: transparent;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--cds-text-secondary);
+}
+
+.profile-showcase-tab--active {
+  background: var(--cds-layer-01);
+  color: var(--cds-text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.profile-showcase-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.profile-reviews-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.profile-reviews-summary-text {
+  font-size: 0.875rem;
+  color: var(--cds-text-secondary);
+}
+
 .status-item {
   display: flex;
   align-items: center;
@@ -153,5 +212,9 @@
 
   .info-grid {
     grid-template-columns: 1fr;
+  }
+
+  .profile-showcase-actions {
+    justify-content: flex-start;
   }
 }
