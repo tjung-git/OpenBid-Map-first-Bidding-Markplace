@@ -7,6 +7,7 @@ import {
   Button,
   InlineNotification,
   Tile,
+  Tag,
 } from "@carbon/react";
 import { api } from "../services/api";
 import {
@@ -15,6 +16,7 @@ import {
 } from "../hooks/useSession";
 import MapView from "../components/MapView";
 import "../styles/pages/bid.css";
+import "../styles/components/page-shell.css";
 
 const PAGE_SIZE = 5;
 
@@ -327,7 +329,7 @@ export default function BidDetail() {
 
   if (loading) {
     return (
-      <div className="container">
+      <div className="page-shell">
         <p>Loading bid details…</p>
       </div>
     );
@@ -335,7 +337,7 @@ export default function BidDetail() {
 
   if (!job) {
     return (
-      <div className="container">
+      <div className="page-shell">
         <InlineNotification
           title="Not Found"
           subtitle="Job could not be found."
@@ -349,16 +351,24 @@ export default function BidDetail() {
   const totalPages = Math.max(1, Math.ceil(sortedBids.length / PAGE_SIZE));
 
   return (
-    <div className="container bid-detail-container">
-      <div className="bid-detail-header">
-        <Button kind="ghost" onClick={() => nav("/jobs")}>
-          Back to Job List
-        </Button>
-        <div>
-          <h2>{job.title}</h2>
-          <p className="job-detail-meta">
-            Posted by {contractorName}
-          </p>
+    <div className="page-shell bid-detail-container">
+      <div className="page-hero">
+        <div className="page-hero-left">
+          <Button kind="ghost" onClick={() => nav("/jobs")}>
+            Back to Job List
+          </Button>
+          <div className="page-hero-titles">
+            <h2 className="page-hero-title">{job.title}</h2>
+            <p className="page-hero-subtitle">
+              Posted by {contractorName}
+              {" · "}
+              Location: {job.location?.address || "—"}
+            </p>
+          </div>
+        </div>
+        <div className="page-hero-actions">
+          {budgetDisplay && <Tag type="outline">Budget: {budgetDisplay}</Tag>}
+          <Tag type="cool-gray">{sortedBids.length} bids</Tag>
         </div>
       </div>
 
@@ -382,7 +392,7 @@ export default function BidDetail() {
       )}
 
       <div className="bid-detail-content">
-        <Tile className="bid-detail-card">
+        <Tile className="page-card bid-detail-card">
           <MapView markers={mapMarkers} center={mapMarkers[0]} />
           <div className="bid-detail-job-info">
             <p className="bid-detail-label">Job Description</p>
@@ -392,7 +402,7 @@ export default function BidDetail() {
           </div>
         </Tile>
 
-        <Tile className="bid-detail-card">
+        <Tile className="page-card bid-detail-card">
           <h3>{ownBidId ? "Update Your Bid" : "Place Your Bid"}</h3>
           {showCompetitiveSections && (
             <p className="bid-detail-highest">{bidsPlacedText}</p>
@@ -471,7 +481,7 @@ export default function BidDetail() {
       </div>
 
       {showCompetitiveSections && (
-        <Tile className="bid-detail-card">
+        <Tile className="page-card bid-detail-card">
           <h3>Recent Bids</h3>
           {sortedBids.length === 0 ? (
             <p>No bids yet.</p>

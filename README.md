@@ -69,9 +69,20 @@ For full functionality with persistent data, email verification, and KYC, see th
    FIREBASE_CLIENT_EMAIL=<client_email>
    FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
    FIREBASE_WEB_API_KEY=<firebase web api key>
+   # Firebase Storage bucket used for avatar/review/portfolio photos.
+   # Examples: <project_id>.appspot.com OR <project_id>.firebasestorage.app
+   FIREBASE_STORAGE_BUCKET=<firebase storage bucket>
    APP_URL=http://localhost:5173
    EMAIL_VERIFICATION_REDIRECT=http://localhost:5173/login
-   APP_NAME=OpenBid
+   # Optional (only needed if using Stripe Identity webhooks for KYC)
+   STRIPE_SECRET_KEY_FOR_TESTING=sk_test_
+   STRIPE_WEBHOOK_SECRET=whsec_xxx
+
+   # Optional (only needed if enabling Duo 2FA)
+   DUO_CLIENT_ID=
+   DUO_CLIENT_SECRET=
+   DUO_API_HOST=
+   DUO_REDIRECT_URI=
    ```
 
 ### 3. Client Environment (`client/.env`)
