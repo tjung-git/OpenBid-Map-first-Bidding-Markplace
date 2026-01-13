@@ -19,7 +19,7 @@
   z-index: 0;
 }
 
-.profile-container > * {
+.profile-container > :not(.cds--modal):not(.bx--modal) {
   position: relative;
   z-index: 1;
 }
