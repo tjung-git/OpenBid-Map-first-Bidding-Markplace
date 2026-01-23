@@ -70,6 +70,17 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
+.profile-avatar-actions .profile-avatar-remove.cds--btn--icon-only {
+  border-color: rgba(255, 95, 95, 0.35);
+  color: rgba(255, 180, 180, 0.95);
+}
+
+.profile-avatar-actions .profile-avatar-remove.cds--btn--icon-only:hover {
+  background: rgba(255, 95, 95, 0.08);
+  border-color: rgba(255, 95, 95, 0.5);
+  color: rgba(255, 210, 210, 1);
+}
+
 .profile-avatar-actions .cds--btn--icon-only:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.2);
