@@ -11,7 +11,8 @@ function headers() {
   if (session?.user?.uid) {
     h["x-user-id"] = session.user.uid;
   }
-  if (cfg.prototype && uid) {
+  const proto = Boolean(session?.prototype ?? cfg.prototype);
+  if (proto && uid) {
     h["x-mock-uid"] = uid;
   }
   const authToken = session?.session?.token || session?.session?.idToken;
