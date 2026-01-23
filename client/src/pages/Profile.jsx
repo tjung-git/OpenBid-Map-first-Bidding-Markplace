@@ -53,6 +53,8 @@ export default function Profile() {
   const [portfolioExistingPhotos, setPortfolioExistingPhotos] = useState([]);
   const [portfolioRemovePhotoUrls, setPortfolioRemovePhotoUrls] = useState([]);
   const [portfolioDeleting, setPortfolioDeleting] = useState(false);
+  const [portfolioPhotoNoticeDismissed, setPortfolioPhotoNoticeDismissed] =
+    useState(false);
   const [showcaseView, setShowcaseView] = useState("portfolio");
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsError, setReviewsError] = useState("");
@@ -79,6 +81,7 @@ export default function Profile() {
 
   const openPortfolioModal = (item = null) => {
     setPortfolioFormError("");
+    setPortfolioPhotoNoticeDismissed(false);
     setPortfolioRemovePhotoUrls([]);
     clearPortfolioNewPhotos();
     setPortfolioEditing(item);
@@ -100,6 +103,7 @@ export default function Profile() {
     setPortfolioFormError("");
     setPortfolioRemovePhotoUrls([]);
     setPortfolioExistingPhotos([]);
+    setPortfolioPhotoNoticeDismissed(false);
     setPortfolioSaving(false);
     setPortfolioDeleting(false);
     clearPortfolioNewPhotos();
@@ -271,6 +275,16 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (cfg.prototype) {
+      setNotice("Prototype mode does not support image uploads.");
+      try {
+        e.target.value = "";
+      } catch {
+        // ignore
+      }
+      return;
+    }
+
     // Validate file type and size
     if (!file.type.startsWith('image/')) {
       setNotice("Please upload an image file");
@@ -300,10 +314,23 @@ export default function Profile() {
       setNotice("Avatar updated successfully!");
     } catch (error) {
       console.error('Avatar upload error:', error);
-      setNotice(error?.data?.error || "Failed to upload avatar");
+      const code = error?.data?.error;
+      if (code === "avatar_upload_not_supported_in_prototype") {
+        setNotice("Prototype mode does not support image uploads.");
+      } else {
+        setNotice(code || "Failed to upload avatar");
+      }
     } finally {
       setUploading(false);
     }
+  };
+
+  const triggerAvatarPicker = () => {
+    if (cfg.prototype) {
+      setNotice("Prototype mode does not support image uploads.");
+      return;
+    }
+    fileInputRef.current?.click();
   };
 
   const handleAvatarRemove = async () => {
@@ -324,7 +351,12 @@ export default function Profile() {
       setNotice("Avatar removed.");
     } catch (error) {
       console.error("Avatar delete error:", error);
-      setNotice(error?.data?.error || "Failed to remove avatar");
+      const code = error?.data?.error;
+      if (code === "avatar_upload_not_supported_in_prototype") {
+        setNotice("Prototype mode does not support image uploads.");
+      } else {
+        setNotice(code || "Failed to remove avatar");
+      }
     } finally {
       setUploading(false);
     }
@@ -380,7 +412,11 @@ export default function Profile() {
       }
 
       if (portfolioNewPhotos.length > 0) {
-        await api.portfolioUploadPhotos(itemId, portfolioNewPhotos);
+        if (cfg.prototype) {
+          setNotice("Portfolio saved. Photos are disabled in prototype mode.");
+        } else {
+          await api.portfolioUploadPhotos(itemId, portfolioNewPhotos);
+        }
       }
 
       await refreshPortfolio();
@@ -389,8 +425,14 @@ export default function Profile() {
       closePortfolioModal();
     } catch (err) {
       const code = err?.data?.error;
-      const details = [code, err?.data?.details, err?.message].filter(Boolean).join(" · ");
-      setPortfolioFormError(details || "Unable to save portfolio.");
+      if (code === "photo_upload_not_supported_in_prototype") {
+        setPortfolioFormError("Prototype mode does not support portfolio photo uploads.");
+      } else {
+        const details = [code, err?.data?.details, err?.message]
+          .filter(Boolean)
+          .join(" · ");
+        setPortfolioFormError(details || "Unable to save portfolio.");
+      }
     } finally {
       setPortfolioSaving(false);
     }
@@ -435,21 +477,24 @@ export default function Profile() {
             <Button
               size="sm"
               kind="ghost"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={triggerAvatarPicker}
               disabled={uploading}
               renderIcon={Upload}
               hasIconOnly
               iconDescription="Update photo"
+              aria-label="Update photo"
             />
             {avatarPreview ? (
               <Button
                 size="sm"
-                kind="danger--ghost"
+                kind="ghost"
                 onClick={handleAvatarRemove}
                 disabled={uploading}
                 renderIcon={TrashCan}
                 hasIconOnly
                 iconDescription="Remove photo"
+                aria-label="Remove photo"
+                className="profile-avatar-remove"
               />
             ) : null}
           </div>
@@ -879,13 +924,40 @@ export default function Profile() {
             )}
 
             <div className="portfolio-upload">
-              <div className="portfolio-existing-title">Add photos (max 6)</div>
+              <div className="portfolio-existing-title">
+                {cfg.prototype
+                  ? "Photos (disabled in prototype mode)"
+                  : "Photos (max 6, auto-compressed)"}
+              </div>
+              {cfg.prototype && !portfolioPhotoNoticeDismissed ? (
+                <InlineNotification
+                  title="Prototype mode"
+                  subtitle="Portfolio photo uploads are disabled in prototype mode."
+                  kind="warning"
+                  lowContrast
+                  onCloseButtonClick={() => setPortfolioPhotoNoticeDismissed(true)}
+                />
+              ) : null}
               <input
                 className="portfolio-file-input"
                 type="file"
                 accept="image/*"
                 multiple
+                disabled={cfg.prototype}
                 onChange={(e) => {
+                  if (cfg.prototype) {
+                    setNotice("Prototype mode does not support image uploads.");
+                    setPortfolioFormError(
+                      "Prototype mode does not support portfolio photo uploads."
+                    );
+                    clearPortfolioNewPhotos();
+                    try {
+                      e.target.value = "";
+                    } catch {
+                      // ignore
+                    }
+                    return;
+                  }
                   const files = Array.from(e.target.files || []).slice(0, 6);
                   clearPortfolioNewPhotos();
                   setPortfolioNewPhotos(files);
