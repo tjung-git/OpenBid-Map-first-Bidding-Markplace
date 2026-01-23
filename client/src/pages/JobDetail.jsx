@@ -500,8 +500,11 @@ export default function JobDetail() {
         setReviewRemovePhotoUrls([]);
       }
 
+      const wantsPhotos = reviewPhotos.length > 0;
       if (reviewPhotos.length > 0) {
-        await api.reviewUploadPhotos(reviewId, reviewPhotos);
+        if (!cfg.prototype) {
+          await api.reviewUploadPhotos(reviewId, reviewPhotos);
+        }
       }
 
       const refreshed = await api.reviewsForUser(providerId);
@@ -530,7 +533,12 @@ export default function JobDetail() {
         setReviewExistingPhotos([]);
       }
       clearReviewPhotos();
-      setFlash(existingReview?.id ? "Review updated." : "Review submitted.");
+      const baseMessage = existingReview?.id ? "Review updated." : "Review submitted.";
+      if (cfg.prototype && wantsPhotos) {
+        setFlash(`${baseMessage} Photos are disabled in prototype mode.`);
+      } else {
+        setFlash(baseMessage);
+      }
       closeReviewComposer();
     } catch (err) {
       const code = err?.data?.error;
@@ -550,6 +558,10 @@ export default function JobDetail() {
         const extra = err?.data?.details ? ` (${err.data.details})` : "";
         setReviewSubmitError(
           `Photo upload is unavailable right now. Your review text was saved; try photos again later.${extra}`
+        );
+      } else if (code === "photo_upload_not_supported_in_prototype") {
+        setReviewSubmitError(
+          "Prototype mode does not support review photo uploads. Your review text was saved."
         );
       } else {
         const details = [
@@ -1246,8 +1258,18 @@ export default function JobDetail() {
 
               <div className="review-compose-section">
                 <div className="review-compose-label">
-                  Photos (max 6, auto-compressed)
+                  {cfg.prototype
+                    ? "Photos (disabled in prototype mode)"
+                    : "Photos (max 6, auto-compressed)"}
                 </div>
+                {cfg.prototype && (
+                  <InlineNotification
+                    title="Prototype mode"
+                    subtitle="Review photo uploads are disabled in prototype mode."
+                    kind="warning"
+                    lowContrast
+                  />
+                )}
                 {existingReview && reviewExistingPhotos.length > 0 && (
                   <div className="review-existing-photos">
                     <div className="review-compose-label">Current photos</div>
@@ -1289,8 +1311,21 @@ export default function JobDetail() {
                   type="file"
                   accept="image/*"
                   multiple
+                  disabled={cfg.prototype}
                   onChange={(e) => {
                     const files = Array.from(e.target.files || []).slice(0, 6);
+                    if (cfg.prototype && files.length > 0) {
+                      setReviewSubmitError(
+                        "Prototype mode does not support review photo uploads. Your review text will still be saved."
+                      );
+                      try {
+                        e.target.value = "";
+                      } catch {
+                        // ignore
+                      }
+                      clearReviewPhotos();
+                      return;
+                    }
                     reviewPhotoPreviews.forEach((url) => {
                       try {
                         URL.revokeObjectURL(url);
