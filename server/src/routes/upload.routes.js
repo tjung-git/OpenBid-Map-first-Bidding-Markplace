@@ -116,6 +116,12 @@ router.post("/avatar", upload.single("avatar"), async (req, res, next) => {
     const session = await auth.verify(req);
     if (!session) return res.status(401).json({ error: "unauthorized" });
 
+    if (config.prototype) {
+      return res
+        .status(501)
+        .json({ error: "avatar_upload_not_supported_in_prototype" });
+    }
+
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
@@ -155,6 +161,12 @@ router.delete("/avatar", async (req, res, next) => {
   try {
     const session = await auth.verify(req);
     if (!session) return res.status(401).json({ error: "unauthorized" });
+
+    if (config.prototype) {
+      return res
+        .status(501)
+        .json({ error: "avatar_upload_not_supported_in_prototype" });
+    }
 
     const user = await resolveUser(req, session);
     if (!user) return res.status(404).json({ error: "user_not_found" });

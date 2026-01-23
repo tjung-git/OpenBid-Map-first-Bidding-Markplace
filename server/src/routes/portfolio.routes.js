@@ -255,6 +255,12 @@ router.post(
       const ctx = await requireUser(req, res);
       if (!ctx) return;
 
+      if (config.prototype) {
+        return res
+          .status(501)
+          .json({ error: "photo_upload_not_supported_in_prototype" });
+      }
+
       const itemId = String(req.params.itemId || "").trim();
       if (!itemId) return res.status(400).json({ error: "itemId_required" });
 

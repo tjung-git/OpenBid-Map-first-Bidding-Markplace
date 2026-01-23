@@ -437,6 +437,12 @@ router.post(
       const session = await auth.verify(req);
       if (!session) return res.status(401).json({ error: "unauthorized" });
 
+      if (config.prototype) {
+        return res
+          .status(501)
+          .json({ error: "photo_upload_not_supported_in_prototype" });
+      }
+
       const reviewId = String(req.params.reviewId || "").trim();
       if (!reviewId) return res.status(400).json({ error: "reviewId_required" });
 
