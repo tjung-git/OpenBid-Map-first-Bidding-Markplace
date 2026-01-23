@@ -4,7 +4,14 @@ export const auth = {
     return { uid, email, name: email.split("@")[0] };
   },
   async verify(req) {
-    const uid = req.header("x-mock-uid");
+    const uid =
+      req.header("x-mock-uid") ||
+      req.header("x-user-id") ||
+      (() => {
+        const authHeader = req.header("Authorization") || "";
+        const match = authHeader.match(/^Bearer\s+(.+)$/i);
+        return match && match[1] ? match[1] : null;
+      })();
     if (!uid) return null;
     return { uid, email: `${uid}@mock.local`, name: uid };
   },
