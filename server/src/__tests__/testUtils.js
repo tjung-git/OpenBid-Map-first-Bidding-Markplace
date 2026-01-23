@@ -575,6 +575,9 @@ export async function createRealApp({
   jest.doMock("jimp", () => {
     const JimpMock = function () {
       return {
+        scaleToFit() {
+          return this;
+        },
         quality() {
           return this;
         },
@@ -600,10 +603,9 @@ export async function createRealApp({
       };
     };
 
-    return {
-      default: JimpMock,
-      MIME_JPEG: JimpMock.MIME_JPEG,
-    };
+    // Provide an ESM-shaped default export so Babel/Jest interop always yields
+    // `Jimp` with `.read`/`.MIME_JPEG` available.
+    return { __esModule: true, default: JimpMock };
   });
 
   const { db } = await import("../adapters/db.real.js");
