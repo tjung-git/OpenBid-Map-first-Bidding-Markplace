@@ -15,3 +15,7 @@ server/.env
 !.env.example
 !client/.env.example
 !server/.env.example
+
+# Build outputs / generated artifacts
+client/dist/
+server/review-test.jpg

@@ -5,6 +5,8 @@ import {
   NumberInput,
   Button,
   InlineNotification,
+  Tile,
+  TextArea,
 } from "@carbon/react";
 import { api } from "../services/api";
 import {
@@ -16,6 +18,7 @@ import MapView from "../components/MapView";
 import "../styles/pages/jobs.css";
 import { cfg } from "../services/config";
 import SearchAutocomplete from "../components/SearchAutocomplete";
+import "../styles/components/page-shell.css";
 
 export default function NewJob() {
   const [title, setTitle] = useState("");
@@ -100,13 +103,20 @@ export default function NewJob() {
   }
 
   return (
-    <div className="container">
-      <div className="job-detail-header">
-        <Button kind="ghost" onClick={() => nav("/jobs")}>
-          Back to Job List
-        </Button>
+    <div className="page-shell">
+      <div className="page-hero">
+        <div className="page-hero-left">
+          <Button kind="ghost" onClick={() => nav("/jobs")}>
+            Back to Job List
+          </Button>
+          <div className="page-hero-titles">
+            <h2 className="page-hero-title">Post a Job</h2>
+            <p className="page-hero-subtitle">
+              Share the details, budget, and location to start receiving bids.
+            </p>
+          </div>
+        </div>
       </div>
-      <h2>Post a Job</h2>
       {err && (
         <InlineNotification
           title="Error"
@@ -115,58 +125,84 @@ export default function NewJob() {
           lowContrast
         />
       )}
-      <Form onSubmit={submit}>
-        <TextInput
-          id="title"
-          labelText="Job Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
-        <TextInput
-          id="desc"
-          labelText="Job Description"
-          value={desc}
-          onChange={(e) => setDesc(e.target.value)}
-        />
-        <NumberInput
-          id="budget"
-          label="Job Budget"
-          allowEmpty
-          value={budgetInput === "" ? "" : Number(budgetInput)}
-          onChange={(_, { value }) => {
-            const raw = value == null ? "" : String(value);
-            const cleaned = raw.replace(/[^0-9.]/g, "");
-            const normalized = cleaned.replace(/^0+(?=\d)/, "");
-            setBudgetInput(normalized);
-          }}
-        />
-        {cfg.prototype ? 
-          <div className="job-form-grid">
-            <NumberInput
-              id="lat"
-              label="Latitude"
-              value={lat}
-              onChange={(_, { value }) => setLat(Number(value))}
-            />
-            <NumberInput
-              id="lng"
-              label="Longitude"
-              value={lng}
-              onChange={(_, { value }) => setLng(Number(value))}
-            />
-            </div> :
-            <div className="job-location-search-container">
-              <SearchAutocomplete onSelectPlace={handlePlaceSelection}/>
-              <div>Selected location: {address}</div>
-            </div>
-            }
-        <MapView center={mapCenter} markers={mapMarkers} />
-        {/* TODO: Wire MapView interactions so the marker can drive lat/lng updates automatically. */}
-        <Button type="submit" className="job-submit" disabled={submitting}>
-          Create
-        </Button>
-      </Form>
+
+      <div className="page-grid">
+        <Tile className="page-card">
+          <h3 className="page-card-title">Job details</h3>
+          <p className="page-card-subtitle">
+            A clear title and description helps bidders quote accurately.
+          </p>
+          <div className="page-card-body">
+            <Form onSubmit={submit} className="page-stack">
+              <TextInput
+                id="title"
+                labelText="Job Title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+              />
+              <TextArea
+                id="desc"
+                labelText="Job Description"
+                value={desc}
+                onChange={(e) => setDesc(e.target.value)}
+                rows={4}
+                placeholder="What do you need done? Include deadlines, materials, and any details."
+              />
+              <NumberInput
+                id="budget"
+                label="Job Budget"
+                allowEmpty
+                value={budgetInput === "" ? "" : Number(budgetInput)}
+                onChange={(_, { value }) => {
+                  const raw = value == null ? "" : String(value);
+                  const cleaned = raw.replace(/[^0-9.]/g, "");
+                  const normalized = cleaned.replace(/^0+(?=\d)/, "");
+                  setBudgetInput(normalized);
+                }}
+              />
+              <div className="job-detail-actions">
+                <Button type="submit" disabled={submitting}>
+                  {submitting ? "Creating…" : "Create job"}
+                </Button>
+              </div>
+            </Form>
+          </div>
+        </Tile>
+
+        <Tile className="page-card job-map-card">
+          <h3 className="page-card-title">Location</h3>
+          <p className="page-card-subtitle">
+            Choose where the work will happen so nearby bidders can find it.
+          </p>
+          <div className="page-card-body">
+            {cfg.prototype ? (
+              <div className="job-form-grid">
+                <NumberInput
+                  id="lat"
+                  label="Latitude"
+                  value={lat}
+                  onChange={(_, { value }) => setLat(Number(value))}
+                />
+                <NumberInput
+                  id="lng"
+                  label="Longitude"
+                  value={lng}
+                  onChange={(_, { value }) => setLng(Number(value))}
+                />
+              </div>
+            ) : (
+              <div className="job-location-search-container">
+                <SearchAutocomplete onSelectPlace={handlePlaceSelection} />
+                <div>Selected location: {address}</div>
+              </div>
+            )}
+          </div>
+          <div className="page-card-body">
+            <MapView center={mapCenter} markers={mapMarkers} />
+          </div>
+        </Tile>
+      </div>
     </div>
   );
 }

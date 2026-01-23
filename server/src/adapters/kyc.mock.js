@@ -1,4 +1,4 @@
-const kycStatus = new Map(); // uid -> 'pending'|'verified'|'failed'
+const kycStatus = new Map(); // uid maps to 'pending'|'verified'|'failed'
 
 export const kyc = {
   async verification(uid) {

@@ -101,6 +101,7 @@ export default function Login() {
     setSubmitting(true);
     try {
       const data = await api.login(email, password);
+      const isPrototype = Boolean(data?.prototype ?? cfg.prototype);
 
       // If MFA required, go start Duo (server will redirect back with ?code=...)
       if (data?.mfa?.required && data?.mfa?.startUrl) {
@@ -126,7 +127,7 @@ export default function Login() {
         setUser(data.user, data.requirements);
       }
 
-      if (!data.requirements.emailVerified) {
+      if (!isPrototype && !data.requirements.emailVerified) {
         setError(
           "Please verify your email address using the link we sent before logging in."
         );
@@ -136,6 +137,12 @@ export default function Login() {
       nav("/jobs");
     } catch (err) {
       if (err?.status === 403 && err?.data?.error === "verification_required") {
+        if (cfg.prototype) {
+          setError(
+            "Prototype mode should not require email verification. Make sure both server PROTOTYPE=TRUE and client VITE_PROTOTYPE=TRUE are set."
+          );
+          return;
+        }
         const details = err.data || {};
         if (details.emailVerification !== "verified") {
           setError("Please verify your email before logging in.");

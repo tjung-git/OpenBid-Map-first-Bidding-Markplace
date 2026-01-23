@@ -309,6 +309,7 @@ export async function createPrototypeApp({
   bids = false,
   kyc = false,
   password = false,
+  reviews = false,
 } = {}) {
   jest.resetModules();
   process.env.PROTOTYPE = "TRUE";
@@ -339,6 +340,11 @@ export async function createPrototypeApp({
   if (password) {
     const { default: passwordRoutes } = await import("../routes/password.routes.js");
     app.use("/api/password", passwordRoutes);
+  }
+
+  if (reviews) {
+    const { default: reviewsRoutes } = await import("../routes/reviews.routes.js");
+    app.use("/api/reviews", reviewsRoutes);
   }
 
   return app;
@@ -440,6 +446,9 @@ export async function createRealApp({
   bids = false,
   kyc = false,
   password = false,
+  reviews = false,
+  portfolio = false,
+  upload = false,
   verifySession,
   identityOverrides = {},
 } = {}) {
@@ -528,7 +537,6 @@ export async function createRealApp({
     const actual = jest.requireActual("../lib/firebaseIdentity.js");
     FirebaseIdentityErrorClass = actual.FirebaseIdentityError;
     return {
-      __esModule: true,
       FirebaseIdentityError: actual.FirebaseIdentityError,
       signUpWithEmailPassword: signUpWithEmailPasswordMock,
       signInWithEmailPassword: signInWithEmailPasswordMock,
@@ -540,21 +548,65 @@ export async function createRealApp({
 
   jest.doMock("../lib/firebase.js", () => {
     const actual = jest.requireActual("../lib/firebase.js");
+    const bucket = {
+      name: "openbid-test-bucket",
+      file: jest.fn(() => ({
+        save: jest.fn(async () => undefined),
+        delete: jest.fn(async () => undefined),
+      })),
+    };
     return {
-      __esModule: true,
       ...actual,
       getDb: jest.fn(() => firestore),
       getAuthClient: jest.fn(() => firebaseAuthClient),
+      getStorageBucket: jest.fn(() => bucket),
     };
   });
 
   jest.doMock("../adapters/auth.real.js", () => ({
-    __esModule: true,
     auth: {
       signIn: authSignInMock,
       verify: verifyMock,
     },
   }));
+
+  // Jimp is heavy to load and slow to run in tests. Mock it so route tests can
+  // focus on auth/validation/storage wiring rather than image processing speed.
+  jest.doMock("jimp", () => {
+    const JimpMock = function () {
+      return {
+        scaleToFit() {
+          return this;
+        },
+        quality() {
+          return this;
+        },
+        async getBufferAsync() {
+          return Buffer.from("test-jpeg");
+        },
+      };
+    };
+
+    JimpMock.MIME_JPEG = "image/jpeg";
+    JimpMock.read = async (buffer) => {
+      const out = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer || "");
+      return {
+        scaleToFit() {
+          return this;
+        },
+        quality() {
+          return this;
+        },
+        async getBufferAsync() {
+          return out.length > 0 ? out : Buffer.from("test-jpeg");
+        },
+      };
+    };
+
+    // Provide an ESM-shaped default export so Babel/Jest interop always yields
+    // `Jimp` with `.read`/`.MIME_JPEG` available.
+    return { __esModule: true, default: JimpMock };
+  });
 
   const { db } = await import("../adapters/db.real.js");
 
@@ -584,6 +636,21 @@ export async function createRealApp({
   if (password) {
     const { default: passwordRoutes } = await import("../routes/password.routes.js");
     app.use("/api/password", passwordRoutes);
+  }
+
+  if (reviews) {
+    const { default: reviewsRoutes } = await import("../routes/reviews.routes.js");
+    app.use("/api/reviews", reviewsRoutes);
+  }
+
+  if (portfolio) {
+    const { default: portfolioRoutes } = await import("../routes/portfolio.routes.js");
+    app.use("/api/portfolio", portfolioRoutes);
+  }
+
+  if (upload) {
+    const { default: uploadRoutes } = await import("../routes/upload.routes.js");
+    app.use("/api/upload", uploadRoutes);
   }
 
   return {
