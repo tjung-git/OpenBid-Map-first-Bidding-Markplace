@@ -277,11 +277,13 @@ describe('Profile - KYC Integration', () => {
   });
 
   describe('Avatar Upload', () => {
-    it('displays Change Avatar button', async () => {
+    it('displays avatar action button', async () => {
       render(<Profile />);
-      
+
       await waitFor(() => {
-        expect(screen.getByText('Change Avatar')).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /update photo/i })
+        ).toBeInTheDocument();
       });
     });
 
@@ -290,13 +292,10 @@ describe('Profile - KYC Integration', () => {
       api.api.uploadAvatar.mockResolvedValue({ avatarUrl: 'https://example.com/avatar.png' });
       const user = userEvent.setup();
       
-      render(<Profile />);
-      
-      await waitFor(() => {
-        expect(screen.getByText('Change Avatar')).toBeInTheDocument();
-      });
-      
-      const input = screen.getByRole('button', { name: /change avatar/i }).previousSibling;
+      const { container } = render(<Profile />);
+
+      const input = container.querySelector('input[type="file"]');
+      expect(input).toBeInTheDocument();
       await user.upload(input, mockFile);
       
       await waitFor(() => {
@@ -314,13 +313,10 @@ describe('Profile - KYC Integration', () => {
       Object.defineProperty(largeFile, 'size', { value: 6 * 1024 * 1024 });
       const user = userEvent.setup();
       
-      render(<Profile />);
-      
-      await waitFor(() => {
-        expect(screen.getByText('Change Avatar')).toBeInTheDocument();
-      });
-      
-      const input = screen.getByRole('button', { name: /change avatar/i }).previousSibling;
+      const { container } = render(<Profile />);
+
+      const input = container.querySelector('input[type="file"]');
+      expect(input).toBeInTheDocument();
       await user.upload(input, largeFile);
       
       await waitFor(() => {
@@ -337,13 +333,10 @@ describe('Profile - KYC Integration', () => {
       });
       const user = userEvent.setup();
       
-      render(<Profile />);
-      
-      await waitFor(() => {
-        expect(screen.getByText('Change Avatar')).toBeInTheDocument();
-      });
-      
-      const input = screen.getByRole('button', { name: /change avatar/i }).previousSibling;
+      const { container } = render(<Profile />);
+
+      const input = container.querySelector('input[type="file"]');
+      expect(input).toBeInTheDocument();
       await user.upload(input, mockFile);
       
       await waitFor(() => {
@@ -369,17 +362,16 @@ describe('Profile - KYC Integration', () => {
       api.api.uploadAvatar.mockImplementation(() => new Promise(() => {}));
       const user = userEvent.setup();
       
-      render(<Profile />);
-      
-      await waitFor(() => {
-        expect(screen.getByText('Change Avatar')).toBeInTheDocument();
-      });
-      
-      const input = screen.getByRole('button', { name: /change avatar/i }).previousSibling;
+      const { container } = render(<Profile />);
+
+      const input = container.querySelector('input[type="file"]');
+      expect(input).toBeInTheDocument();
       await user.upload(input, mockFile);
       
       await waitFor(() => {
-        expect(screen.getByText('Uploading...')).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /update photo/i })
+        ).toBeDisabled();
       });
     });
   });
