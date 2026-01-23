@@ -254,7 +254,10 @@ router.post("/login", async (req, res, next) => {
       }
     }
 
-    if ((user.emailVerification || "").toLowerCase() !== "verified") {
+    if (
+      !config.prototype &&
+      (user.emailVerification || "").toLowerCase() !== "verified"
+    ) {
       return res.status(403).json({
         error: "verification_required",
         emailVerification: user.emailVerification || "pending",
@@ -313,7 +316,9 @@ router.post("/login", async (req, res, next) => {
     }
 
     const requirements = {
-      emailVerified: user.emailVerification === "verified",
+      emailVerified: config.prototype
+        ? true
+        : user.emailVerification === "verified",
       kycVerified: isKycVerified(user.kycStatus),
     };
 
@@ -385,7 +390,9 @@ router.patch("/role", async (req, res, next) => {
       return res.json({
         user: sanitizeUser(user),
         requirements: {
-          emailVerified: user.emailVerification === "verified",
+          emailVerified: config.prototype
+            ? true
+            : user.emailVerification === "verified",
           kycVerified: isKycVerified(user.kycStatus),
         },
       });
@@ -401,7 +408,9 @@ router.patch("/role", async (req, res, next) => {
     res.json({
       user: sanitizeUser(updated),
       requirements: {
-        emailVerified: updated.emailVerification === "verified",
+        emailVerified: config.prototype
+          ? true
+          : updated.emailVerification === "verified",
         kycVerified: isKycVerified(updated.kycStatus),
       },
     });
