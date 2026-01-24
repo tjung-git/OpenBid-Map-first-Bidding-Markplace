@@ -1,0 +1,354 @@
+% !TEX root = main.tex
+\documentclass[11pt]{article}
+
+% ---------- Basics -----------
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{parskip}
+\usepackage{listings}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{float}
+\graphicspath{{./diagrams/}}
+
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue!60!black,
+  citecolor=black
+}
+
+% ---------- Listings ----------
+\lstset{
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  breaklines=true,
+  frame=single,
+  framerule=0.2pt,
+  tabsize=2,
+  showstringspaces=false
+}
+
+% ---------- Title ----------
+\newcommand{\product}{OpenBid}
+\title{DIGT2107: Practice of Software Development\\
+\Large Project Iteration 3.1: Software Design Documentation\\[4pt]
+\large \product}
+\author{Team 1: Tyler \and Mani \and Yanness \and Alaister}
+\date{Due: February 1, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\textbf{Course:} DIGT2107 -- Winter Term 2026 \quad|\quad
+\textbf{Instructor:} Dr.\ May Haidar
+\end{center}
+
+\newpage
+
+% ===================== 1. Introduction =====================
+\section{Introduction}
+\textbf{Project Name:} \product \\
+\textbf{Team Number:} \textbf{1} \\
+\textbf{Team Members:} Tyler, Mani, Yanness, Alaister
+
+\paragraph{Document Overview}
+This document outlines the Software Design Document (SDD) for Iteration 3.1 of the OpenBid platform. It provides advanced software design representations through Class Diagrams, Sequence Diagrams, and Activity Diagrams for all major system components:
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Stripe KYC \& User Profile} -- Identity verification and profile management
+  \item \textbf{Jobs \& Bids} -- Job posting and bidding functionality
+  \item \textbf{Authentication \& 2FA} -- User authentication with Duo MFA
+  \item \textbf{Payments \& Escrow} -- Stripe payment processing and escrow management
+\end{itemize}
+
+Each section includes class diagrams showing component structure, sequence diagrams illustrating key flows, activity diagrams depicting workflows, and design stories for the backlog.
+
+% ===================== 2. Class Diagrams =====================
+\section{Class Diagrams}
+
+\subsection{User \& Profile Domain}
+The following class diagram illustrates the core classes related to user management and profile functionality.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{class_user_profile.png}
+\caption{User \& Profile Domain Class Diagram}
+\end{figure}
+
+\subsection{Stripe KYC Domain}
+The following class diagram illustrates the classes related to Stripe Identity verification (KYC).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{class_kyc_stripe.png}
+\caption{Stripe KYC Domain Class Diagram}
+\end{figure}
+
+\subsection{Component Relationships}
+The following diagram shows how the KYC and Profile components interact with each other and external services.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{kyc_and_profile_relationship.png}
+\caption{KYC and Profile Component Relationships}
+\end{figure}
+
+% ===================== 3. Sequence Diagrams =====================
+\section{Sequence Diagrams}
+
+\subsection{KYC Verification Flow - Part A: Initialization}
+This sequence diagram demonstrates the initial flow when a user starts KYC verification.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{kyc_initialization.png}
+\caption{KYC Verification Initialization Flow}
+\end{figure}
+
+\textbf{Flow Description:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item User clicks "Complete KYC" button on Profile page.
+  \item Profile page calls \texttt{api.kycVerification()}.
+  \item Client API sends POST request to \texttt{/api/kyc/verification}.
+  \item Server delegates to KYC adapter's \texttt{verification()} method.
+  \item KYC adapter creates Stripe verification session.
+  \item Stripe returns session ID and verification URL.
+  \item Profile page opens Stripe verification in new tab.
+\end{enumerate}
+
+\subsection{KYC Verification Flow - Part B: Webhook \& Status Check}
+This sequence diagram demonstrates the webhook handling and status check after user completes Stripe verification.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{kyc_webhook_status_check.png}
+\caption{KYC Webhook and Status Check Flow}
+\end{figure}
+
+\textbf{Flow Description:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item After user completes verification, Stripe sends webhook event.
+  \item Server verifies webhook signature and updates user's KYC status.
+  \item When user returns to app, window focus event triggers status check.
+  \item Profile page fetches updated KYC status from server.
+  \item UI updates to show verified badge.
+\end{enumerate}
+
+\subsection{Profile Avatar Upload Flow}
+This sequence diagram demonstrates the profile avatar upload functionality.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{avatar_upload_flow.png}
+\caption{Avatar Upload Sequence Diagram}
+\end{figure}
+
+% ===================== 4. Activity Diagrams =====================
+\section{Activity Diagrams}
+
+\subsection{KYC Verification Workflow}
+The following activity diagram illustrates the complete workflow for KYC verification with all decision points.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{kyc_verification_workflow.png}
+\caption{KYC Verification Activity Diagram}
+\end{figure}
+
+\subsection{Profile Management Workflow}
+The following activity diagram illustrates the user profile management workflow.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{user_profile_management_workflow.png}
+\caption{User Profile Management Activity Diagram}
+\end{figure}
+
+% ===================== 5. Component Summary =====================
+\section{Component Summary}
+
+\begin{longtable}{@{}p{0.22\linewidth} p{0.15\linewidth} p{0.2\linewidth} p{0.38\linewidth}@{}}
+\toprule
+\textbf{Component} & \textbf{Type} & \textbf{Technology} & \textbf{Responsibility} \\
+\midrule
+\endhead
+\texttt{Profile.jsx} & React Component & React, Carbon Design & User profile UI, avatar upload, KYC status \\
+\texttt{kyc.routes.js} & Express Router & Node.js, Express & KYC API endpoints \\
+\texttt{kyc.real.js} & Adapter & Stripe SDK & Real Stripe Identity integration \\
+\texttt{kyc.mock.js} & Adapter & In-memory & Mock KYC for prototype mode \\
+\texttt{index.js} & Server Entry & Express & Stripe webhook handler \\
+\texttt{api.js} & Client Service & Fetch API & HTTP client for KYC/Profile calls \\
+\bottomrule
+\end{longtable}
+
+% ===================== 6. Design Stories =====================
+\section{Updated Backlog with Design Stories}
+
+The KYC and Profile features documented above are complete. The following design stories outline the upcoming \textbf{In-App Messaging} feature for the next iteration:
+
+\subsection*{Messaging Design Stories}
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{DS-MSG-001: Design Message Data Model} (High, 3 pts) \\
+  Define message schema including sender, receiver, content, timestamp, read status, and job/bid thread linking. Design conversation thread structure for organizing messages between contractors and bidders.
+  
+  \item \textbf{DS-MSG-002: Design Real-Time Architecture} (High, 5 pts) \\
+  Evaluate and select real-time messaging approach: Firebase Realtime Database listeners vs Firestore onSnapshot vs WebSockets. Design message synchronization and offline support.
+  
+  \item \textbf{DS-MSG-003: Design Chat UI Component} (Medium, 3 pts) \\
+  Design chat interface with message bubbles, input field, send button, and typing indicators. Support for text messages and future attachment support.
+  
+  \item \textbf{DS-MSG-004: Design Notification System} (Medium, 3 pts) \\
+  Design push notification flow for new messages. Integrate with Firebase Cloud Messaging for real-time alerts when user is not in the app.
+  
+  \item \textbf{DS-MSG-005: Design Job-Thread Linking} (High, 2 pts) \\
+  Design how message threads are linked to specific jobs and bids. Ensure only awarded bidders can message contractors, and vice versa.
+\end{enumerate}
+
+% ===================== 7. Test Coverage Report =====================
+\section{Preliminary Test Coverage Report}
+
+The following test coverage report was generated using Jest with the \texttt{--coverage} flag. This report covers the KYC and Profile-related components.
+
+\subsection*{Test Results Summary}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Test Suites:} 5 passed, 1 skipped, 6 total
+  \item \textbf{Tests:} 33 passed, 2 skipped, 35 total
+  \item \textbf{Snapshots:} 0 total
+\end{itemize}
+
+\subsection*{Coverage by Component (KYC \& Profile)}
+
+\begin{tabularx}{\linewidth}{|l|c|c|c|c|}
+\hline
+\textbf{File} & \textbf{\% Stmts} & \textbf{\% Branch} & \textbf{\% Funcs} & \textbf{\% Lines} \\
+\hline
+\texttt{kyc.routes.js} & 87.09 & 92.85 & 100 & 89.28 \\
+\texttt{kyc.real.js} & 38.23 & 25.00 & 100 & 36.36 \\
+\texttt{kyc.mock.js} & 25.00 & 0.00 & 0 & 25.00 \\
+\texttt{db.real.js} (User data) & 64.23 & 43.10 & 71.42 & 72.41 \\
+\hline
+\textbf{Overall} & 53.73 & 46.20 & 57.14 & 56.33 \\
+\hline
+\end{tabularx}
+
+\subsection*{Analysis}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{KYC Routes:} Excellent coverage at 89\% line coverage. All API endpoints are tested.
+  \item \textbf{KYC Real Adapter:} Lower coverage (36\%) due to Stripe API integration being mocked during testing.
+  \item \textbf{Database Adapter:} Good coverage at 72\% for user data operations.
+  \item \textbf{Gaps Identified:} The \texttt{kyc.mock.js} adapter has low coverage as it is primarily used for prototype mode testing only.
+\end{itemize}
+
+% ===================== 8. GUI Screenshots =====================
+\section{GUI Implementation Screenshots}
+
+The following screenshots demonstrate the Profile page implementation, showing the KYC verification status and user interface elements.
+
+\subsection*{Profile Page - Before KYC Verification}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{ProfileBeforeKYC.png}
+\caption{Profile page showing pending KYC status with "Complete KYC" button}
+\end{figure}
+
+\subsection*{Profile Page - After KYC Verification}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{ProfileAfterKYC.png}
+\caption{Profile page showing verified KYC status with green badge}
+\end{figure}
+
+\subsection*{Key UI Elements}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Avatar Upload:} Users can upload and change their profile picture
+  \item \textbf{KYC Status Display:} Visual indicator showing pending, verified, or failed status
+  \item \textbf{Action Buttons:} "Complete KYC" and "Refresh Status" buttons for unverified users
+  \item \textbf{Account Information:} Display of user's name, email, and verification status
+\end{itemize}
+
+% ============================================================================
+% TEAMMATE SECTIONS - ADD YOUR CONTENT BELOW
+% ============================================================================
+
+\newpage
+% ===================== TEAMMATE 1: Jobs & Bids Domain =====================
+\section*{[TEAMMATE 1] Jobs \& Bids Domain}
+\textit{Section owner: [Name] -- Please add your diagrams below}
+
+\subsection*{Class Diagrams}
+% TODO: Add Job class diagram
+% TODO: Add Bid class diagram
+% TODO: Add JobAdapter and BidAdapter diagrams
+
+\subsection*{Sequence Diagrams}
+% Reference: You already have UC-1 (Job Creation) and UC-2 (Bidding) as PNG files
+% Consider including them here with \includegraphics
+
+\subsection*{Activity Diagrams}
+% TODO: Add Job posting workflow
+% TODO: Add Bid placement workflow
+
+\subsection*{Design Stories}
+% TODO: Add design stories for Jobs/Bids components
+
+\newpage
+% ===================== TEAMMATE 2: Authentication & 2FA Domain =====================
+\section*{[TEAMMATE 2] Authentication \& 2FA Domain}
+\textit{Section owner: [Name] -- Please add your diagrams below}
+
+\subsection*{Class Diagrams}
+% TODO: Add AuthAdapter class diagram
+% TODO: Add Session/Firebase Auth diagrams
+% TODO: Add Duo 2FA diagrams
+
+\subsection*{Sequence Diagrams}
+% TODO: Add Login flow sequence diagram
+% TODO: Add Signup flow sequence diagram
+% TODO: Add Duo 2FA challenge sequence diagram
+
+\subsection*{Activity Diagrams}
+% TODO: Add Authentication workflow
+% TODO: Add 2FA verification workflow
+% TODO: Add User Registration & Profile Setup Flow
+
+\subsection*{Design Stories}
+% TODO: Add design stories for Auth/2FA components
+
+\newpage
+% ===================== TEAMMATE 3: Payments & Escrow Domain =====================
+\section*{[TEAMMATE 3] Payments \& Escrow Domain}
+\textit{Section owner: [Name] -- Please add your diagrams below}
+
+\subsection*{Class Diagrams}
+% TODO: Add PaymentsAdapter class diagram
+% TODO: Add Stripe Connect/PaymentIntent diagrams
+
+\subsection*{Sequence Diagrams}
+% Reference: You already have UC-3 (Award Bid & Escrow) and UC-4 (Complete & Payout) as PNG files
+% Consider including them here with \includegraphics
+
+\subsection*{Activity Diagrams}
+% TODO: Add Escrow funding workflow
+% TODO: Add Payout workflow
+
+\subsection*{Design Stories}
+% TODO: Add design stories for Payments components
+
+% ============================================================================
+% END OF TEAMMATE SECTIONS
+% ============================================================================
+
+\end{document}
