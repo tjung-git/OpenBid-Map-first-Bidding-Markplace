@@ -22,6 +22,14 @@
 
 \newcolumntype{L}{>{\raggedright\arraybackslash}X}
 
+\newcommand{\maybeincludegraphics}[2][]{%
+  \IfFileExists{\detokenize{./diagrams/#2}}{%
+    \includegraphics[#1]{#2}%
+  }{%
+    \fbox{\parbox{0.9\linewidth}{\centering Missing diagram file:\\\texttt{\detokenize{#2}}}}%
+  }%
+}
+
 \hypersetup{
   colorlinks=true,
   linkcolor=black,
@@ -285,24 +293,171 @@ The following screenshots demonstrate the Profile page implementation, showing t
 
 \newpage
 % ===================== TEAMMATE 1: Jobs & Bids Domain =====================
-\section*{[TEAMMATE 1] Jobs \& Bids Domain}
-\textit{Section owner: [Name] -- Please add your diagrams below}
+\section*{Firestore Persistence: Users, Jobs \& Bids}
+
+\subsection*{Overview}
+This section documents the Firestore-backed persistence layer that stores \textbf{user}, \textbf{job}, and \textbf{bid} information. The primary implementation is the server adapter \texttt{server/src/adapters/db.real.js}, which uses the Firebase Admin SDK to interact with the \texttt{users}, \texttt{jobs}, and \texttt{bids} collections.
 
 \subsection*{Class Diagrams}
-% TODO: Add Job class diagram
-% TODO: Add Bid class diagram
-% TODO: Add JobAdapter and BidAdapter diagrams
+\paragraph{Firestore Collections \& Domain Entities}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.95\textwidth]{jobs_and_bids/class_firestore_entities.png}
+\caption{Users, Jobs, and Bids: Firestore Schema / Domain Entity Class Diagram}
+\end{figure}
+
+\paragraph{Server Routes and DB Adapter Structure}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.95\textwidth]{jobs_and_bids/class_routes_db_adapter.png}
+\caption{Jobs/Bids API Routers and Firestore DB Adapter Class Diagram}
+\end{figure}
 
 \subsection*{Sequence Diagrams}
-% Reference: You already have UC-1 (Job Creation) and UC-2 (Bidding) as PNG files
-% Consider including them here with \includegraphics
+\paragraph{Create Job (Contractor)}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.95\textwidth]{jobs_and_bids/seq_create_job.png}
+\caption{Sequence Diagram: Contractor Creates a Job}
+\end{figure}
+
+\textbf{Flow Description:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item Contractor submits job details from the client UI.
+  \item Client calls \texttt{api.jobCreate()} which sends \texttt{POST /api/jobs}.
+  \item Server verifies the session and confirms the user is a contractor with \texttt{kycStatus=verified}.
+  \item Server writes a new job document to Firestore via \texttt{db.job.create()}.
+  \item Server returns the created job to the client for immediate rendering.
+\end{enumerate}
+
+\paragraph{Place Bid (Bidder)}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.95\textwidth]{jobs_and_bids/seq_place_bid.png}
+\caption{Sequence Diagram: Bidder Places a Bid on a Job}
+\end{figure}
+
+\textbf{Flow Description:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item Bidder enters bid amount and note on a job detail page.
+  \item Client calls \texttt{api.bid()} which sends \texttt{POST /api/bids/:jobId}.
+  \item Server verifies the session and confirms the bidder's \texttt{kycStatus=verified}.
+  \item Server loads the job and validates: job exists, job is open, bidder is not the poster, and no existing bid exists.
+  \item Server creates a bid document in Firestore via \texttt{db.bid.create()} and returns the bid to the client.
+\end{enumerate}
+
+\paragraph{Accept Bid (Contractor Awards Job)}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.95\textwidth]{jobs_and_bids/seq_accept_bid.png}
+\caption{Sequence Diagram: Contractor Accepts a Bid and Awards the Job}
+\end{figure}
 
 \subsection*{Activity Diagrams}
-% TODO: Add Job posting workflow
-% TODO: Add Bid placement workflow
+\paragraph{Job Lifecycle Workflow}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.95\textwidth]{jobs_and_bids/act_job_lifecycle.png}
+\caption{Activity Diagram: Job Lifecycle (Create, Update, Delete, Award)}
+\end{figure}
 
-\subsection*{Design Stories}
-% TODO: Add design stories for Jobs/Bids components
+\paragraph{Bid Lifecycle Workflow}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.95\textwidth]{jobs_and_bids/act_bid_lifecycle.png}
+\caption{Activity Diagram: Bid Lifecycle (Place, Edit, Delete, Accept/Reject)}
+\end{figure}
+
+\subsection*{Component Summary (Jobs \& Bids + Firestore)}
+{\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.14\linewidth} >{\raggedright\arraybackslash}p{0.20\linewidth} >{\raggedright\arraybackslash}p{0.32\linewidth}@{}}
+\toprule
+\textbf{Component} & \textbf{Type} & \textbf{Technology} & \textbf{Responsibility} \\
+\midrule
+\endhead
+\path{server/src/adapters/db.real.js} & Adapter & Firebase Admin SDK (Firestore) & CRUD for users, jobs, bids; timestamps; cascading deletes for job bids \\
+\path{server/src/adapters/db.mock.js} & Adapter & In-memory & Prototype/mock persistence for local development and tests \\
+\path{server/src/routes/jobs.routes.js} & Express Router & Node.js, Express & Jobs endpoints: list/get/create/update/delete; contractor/KYC enforcement \\
+\path{server/src/routes/bids.routes.js} & Express Router & Node.js, Express & Bids endpoints: list-by-job, list-my-bids, create/update/delete, accept bid \\
+\path{client/src/services/api.js} & Client Service & Fetch API & HTTP client for \texttt{/api/jobs} and \texttt{/api/bids} calls \\
+\path{client/src/pages/JobList.jsx} & React Page & React & Browse jobs, map/filtering, navigate to job details \\
+\path{client/src/pages/JobDetail.jsx} & React Page & React & View job + bids, place bid (bidder), accept bid (contractor) \\
+\path{client/src/pages/MyBids.jsx} & React Page & React & List and manage bidder's submitted bids \\
+\bottomrule
+\end{longtable}
+}
+
+\subsection*{Updated Backlog with Design Stories (Future: Reviews \& Portfolio)}
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{DS-REV-001: Design Review Data Model} (High, 3 pts) \\
+  Define review schema (reviewerId, revieweeId, jobId, bidId, rating, comment, timestamps). Decide write rules: only allow reviews after job completion and escrow payout. Enforce one review per party per job.
+
+  \item \textbf{DS-REV-002: Design Review Aggregation \& Reputation} (Medium, 3 pts) \\
+  Design aggregate rating fields on user documents (avg rating, count) and the update strategy (transaction, Cloud Function trigger, or server-side recompute). Define abuse mitigation (minimum comment length, flagging).
+
+  \item \textbf{DS-PORT-001: Design Provider Portfolio Model} (High, 3 pts) \\
+  Define portfolio entry schema (providerId, title, description, tags, links/images, createdAt). Decide storage for images (Cloud Storage) and references in Firestore.
+
+  \item \textbf{DS-PORT-002: Design Portfolio UI and Access Rules} (Medium, 3 pts) \\
+  Design profile/portfolio views and editing flows. Restrict write access to the owner; allow public read for awarded-job providers and verified accounts as configured.
+\end{enumerate}
+
+\subsection*{Preliminary Test Coverage (Jobs \& Bids)}
+The following test coverage report was generated using Jest (server) with the \texttt{--coverage} flag. This report focuses on the Jobs, Bids, and Firestore persistence components.
+
+\subsection*{Server (Jest) Test Results Summary}
+\textbf{Command:} \texttt{cd server \&\& npm test -- --coverage}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Test Suites:} 5 passed, 1 skipped, 6 total
+  \item \textbf{Tests:} 33 passed, 2 skipped, 35 total
+  \item \textbf{Snapshots:} 0 total
+\end{itemize}
+
+\subsection*{Coverage by Component (Jobs \& Bids + Firestore) -- Server}
+\begin{tabularx}{\linewidth}{|l|c|c|c|c|}
+\hline
+\textbf{File} & \textbf{\% Stmts} & \textbf{\% Branch} & \textbf{\% Funcs} & \textbf{\% Lines} \\
+\hline
+\texttt{jobs.routes.js} & 64.80 & 60.86 & 77.77 & 71.81 \\
+\texttt{bids.routes.js} & 42.14 & 29.07 & 40.00 & 44.96 \\
+\texttt{db.real.js} (Jobs/Bids) & 64.23 & 43.10 & 71.42 & 72.41 \\
+\hline
+\textbf{Overall} & 53.73 & 46.20 & 57.14 & 56.33 \\
+\hline
+\end{tabularx}
+
+\subsection*{Analysis -- Server}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Jobs Routes:} Good coverage (71.81\% lines) covering job list/create/update/delete constraints.
+  \item \textbf{Bids Routes:} Lower coverage (44.96\% lines) due to untested branches around bidding edge cases and accept flow variations.
+  \item \textbf{Database Adapter:} Solid coverage (72.41\% lines) for Firestore operations on jobs and bids, including timestamps and updates.
+  \item \textbf{Gaps Identified:} Branch coverage remains moderate due to access-control and error-path permutations not fully exercised.
+\end{itemize}
+
+\subsection*{GUI Implementation Screenshots}
+
+\subsection*{Job List Page}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.8\textwidth]{jobs_and_bids/gui_job_list.png}
+\caption{Job List page showing open jobs and filters}
+\end{figure}
+
+\subsection*{Job Detail + Bidding Page}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.8\textwidth]{jobs_and_bids/gui_job_detail_bidding.png}
+\caption{Job Detail page showing job information and the bidding panel}
+\end{figure}
+
+\subsection*{My Bids Page}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.8\textwidth]{jobs_and_bids/gui_my_bids.png}
+\caption{My Bids page showing bidder's active bids and management actions}
+\end{figure}
 
 \newpage
 % ===================== TEAMMATE 2: Authentication & 2FA Domain =====================
