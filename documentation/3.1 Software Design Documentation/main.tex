@@ -347,6 +347,136 @@ The following screenshots demonstrate the Profile page implementation, showing t
 \subsection*{Design Stories}
 % TODO: Add design stories for Payments components
 
+% ===================== TEAMMATE 3: Payments & Escrow Domain =====================
+\section*{[TEAMMATE 4] Maps}
+\textit{Section owner: [Name] -- Please add your diagrams below}
+
+\subsection*{Class Diagrams}
+
+\subsection{Mapview Class}
+This diagram represents the model of the mapview component.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{class_mapview.PNG}
+\caption{Mapview component as a class}
+\end{figure}
+
+\subsection{SearchAutocomplete Class}
+This diagram represents the model of the searchAutocomplete component.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{class_search_autocomplete.PNG}
+\caption{SearchAutocomplete component as a class}
+\end{figure}
+
+\subsection{MapView and Autocomplete Classes}
+This diagram represents a page interacting with both the MapView and Autocomplete components.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{mapview_search_autocomplete_interaction.PNG}
+\caption{Autocomplete and Mapview components classes interaction}
+\end{figure}
+
+\subsection*{Sequence Diagrams}
+
+\subsection{Mapview Component diagram flow on a page}
+This diagram represents a sequence diagram when visting a page with the mapview component (without the searchAutocomplete component).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{mapview_flow.PNG}
+\caption{Mapview component sequence diagram}
+\end{figure}
+
+\textbf{Flow Description:}
+There are multiple pages that use the Mapview Component without the SearchAutocomplete component, but the JobDetail page was chosen in this example.
+\begin{enumerate}[leftmargin=1.4em]
+  \item User navigates to a page with a Mapview component (and no SearchAutocomplete component).
+  \item Server fetches details of a job.
+  \item Page is hydrated with information regarding the job and the Mapview is updated with the job address.
+\end{enumerate}
+
+\subsection{SearchAutocomplete Component diagram flow on a page}
+*Intentionally omitted as this component will exclusively work with the Mapview component, never on its own.
+
+\subsection{Mapview and SearchAutocomplete Components diagram flow on a page}
+This diagram represents a sequence diagram when visting a page with both the mapview and searchautocomplete components.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{mapview_search_autocomplete_flow.PNG}
+\caption{Mapview and search components sequence diagram}
+\end{figure}
+
+\textbf{Flow Description:}
+There are multiple pages that use both the Mapview Component and the SearchAutocomplete component, but the JobList page was chosen in this example.
+\begin{enumerate}[leftmargin=1.4em]
+  \item User navigates to a page with both the Mapview component and SearchAutocomplete component).
+  \item An initial mapview loads in the page.
+  \item User updates the address in the search autocomplete searchbar.
+  \item react-places-autocomplete-library is called and returns partial address results.
+  \item Client UI displays partial address results.
+  \item User selects an address result and the page is updated.
+\end{enumerate}
+
+\subsection*{Activity Diagrams}
+
+\subsection{SearchAutocomplete and Mapview Component flow on a page}
+This diagram represents the actions occuring by the user and the system when interacting with the searchAutocomplete and Mapview components.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{mapview_search_autocomplete_activity_diagram.PNG}
+\caption{Mapview and searchAutocomplete components activity diagram}
+\end{figure}
+
+
+\subsection*{Design Stories}
+\subsection*{Admin Design Stories}
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{DS-Admin-001: Design Admin UI} (High, 5 pts) \\
+  Design key admin pages and components- realtime updates, navigation, etc. should be provided within components.
+  
+  \item \textbf{DS-Admin-002: Design Admin Data Model} (High, 5 pts) \\
+  Design new user Admin in database and provide appropriate permissions.
+  
+  \item \textbf{DS-Admin-003: Design with accessibility in mind} (Medium, 2 pts) \\
+  Design an accessible dashboard to ensure any person can utilize the platform as an admin.
+\end{enumerate}
+
+\subsection*{GUI}
+
+\subsection*{Page with Mapview Component}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{MapviewComponent.png}
+\caption{An example of a page that displays the MapView component without the SearchAutocomplete component.}
+\end{figure}
+
+\subsection*{Page with Mapview and SearchAutocomplete Components}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{MapviewAndSearchComponent.png}
+\caption{An example of a page that displays both the SearchAutoComplete component (as the bar to type an address) and the MapView component.}
+\end{figure}
+
+
+\subsection*{Coverage by Component (Maps)}
+
+\begin{tabularx}{\linewidth}{|l|c|c|c|c|}
+\hline
+\textbf{File} & \textbf{\% Stmts} & \textbf{\% Branch} & \textbf{\% Funcs} & \textbf{\% Lines} \\
+\hline
+\texttt{locationHelpers.js} & 100 & 100 & 100 & 100 \\
+\texttt{mapHelpers.js} & 100 & 100 & 100 & 100 \\
+\hline
+\end{tabularx}
+
+*Testing should include the searchautocomplete component in the future, this may involve adding component tests instead of unit tests to test the component with other components.
+
 % ============================================================================
 % END OF TEAMMATE SECTIONS
 % ============================================================================
