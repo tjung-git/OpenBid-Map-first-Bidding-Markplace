@@ -1,0 +1,14 @@
+@startuml
+actor User
+participant "App" as App
+participant "Duo2FA" as D2FA
+
+User -> App : Clicks login (after password)
+App -> D2FA : /duo/start?state=...
+D2FA -> User : Redirect to Duo prompt
+User -> D2FA : Approve on phone
+D2FA -> App : /duo/callback?state=...&code=allow-123
+App -> D2FA : /duo/finalize (with otc)
+D2FA --> App : 2FA success
+App -> User : Login complete
+@enduml

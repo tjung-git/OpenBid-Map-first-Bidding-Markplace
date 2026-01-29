@@ -1,0 +1,16 @@
+@startuml
+start
+:User enters email/password;
+:Validate credentials (Firebase);
+if (Valid?) then (yes)
+  :Start Duo 2FA challenge;
+  if (2FA success?) then (yes)
+    :Grant access;
+  else (no)
+    :Deny access;
+  endif
+else (no)
+  :Show error;
+endif
+stop
+@enduml

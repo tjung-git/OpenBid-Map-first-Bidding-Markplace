@@ -1,0 +1,20 @@
+@startuml
+class AuthAdapter {
+  +signIn(email, password)
+  +verify(req)
+}
+class FirebaseAuth {
+  +signInWithEmailPassword(email, password)
+  +verifyIdToken(token)
+  +sendVerificationEmail(idToken)
+  +sendPasswordResetEmail(email)
+}
+class Duo2FA {
+  +startChallenge(user)
+  +verifyCallback(state, code)
+  +finalize(otc)
+}
+
+AuthAdapter --> FirebaseAuth : uses
+AuthAdapter --> Duo2FA : uses
+@enduml

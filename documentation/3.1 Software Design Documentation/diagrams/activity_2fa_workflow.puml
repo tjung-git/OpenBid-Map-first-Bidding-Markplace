@@ -1,0 +1,13 @@
+@startuml
+start
+:Initiate Duo 2FA;
+:User receives push/phone prompt;
+if (User approves?) then (yes)
+  :Return success to app;
+  :Allow login/session;
+else (no)
+  :Return failure;
+  :Deny login/session;
+endif
+stop
+@enduml

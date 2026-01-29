@@ -307,25 +307,75 @@ The following screenshots demonstrate the Profile page implementation, showing t
 \newpage
 % ===================== TEAMMATE 2: Authentication & 2FA Domain =====================
 \section*{[TEAMMATE 2] Authentication \& 2FA Domain}
-\textit{Section owner: [Name] -- Please add your diagrams below}
+\textit{Section owner: [Your Name]}
 
 \subsection*{Class Diagrams}
-% TODO: Add AuthAdapter class diagram
-% TODO: Add Session/Firebase Auth diagrams
-% TODO: Add Duo 2FA diagrams
+% AuthAdapter: Handles authentication logic (signIn, verify)
+% Firebase Integration: Uses Firebase Admin SDK for user management
+% Duo 2FA: Integrates with Duo Universal for two-factor authentication
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{diagrams/class_auth_domain.png}
+\caption{Authentication, Firebase, and Duo 2FA Class Diagram}
+\end{figure}
 
 \subsection*{Sequence Diagrams}
-% TODO: Add Login flow sequence diagram
-% TODO: Add Signup flow sequence diagram
-% TODO: Add Duo 2FA challenge sequence diagram
+% Login Flow
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{diagrams/seq_login_flow.png}
+\caption{User Login Sequence Diagram}
+\end{figure}
+
+% Signup Flow
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{diagrams/seq_signup_flow.png}
+\caption{User Signup Sequence Diagram}
+\end{figure}
+
+% Duo 2FA Challenge
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{diagrams/seq_duo_2fa.png}
+\caption{Duo 2FA Challenge Sequence Diagram}
+\end{figure}
 
 \subsection*{Activity Diagrams}
-% TODO: Add Authentication workflow
-% TODO: Add 2FA verification workflow
-% TODO: Add User Registration & Profile Setup Flow
+% Authentication Workflow
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{diagrams/activity_auth_workflow.png}
+\caption{Authentication Workflow Activity Diagram}
+\end{figure}
+
+% 2FA Verification Workflow
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{diagrams/activity_2fa_workflow.png}
+\caption{2FA Verification Activity Diagram}
+\end{figure}
+
+% User Registration & Profile Setup
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{diagrams/activity_registration_profile.png}
+\caption{User Registration and Profile Setup Activity Diagram}
+\end{figure}
 
 \subsection*{Design Stories}
-% TODO: Add design stories for Auth/2FA components
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{DS-AUTH-001: Implement User Login} (High, 3 pts) \\
+  Support login with email and password using Firebase Auth. Return JWT for session management.
+  \item \textbf{DS-AUTH-002: Implement User Registration} (High, 3 pts) \\
+  Allow new users to register with email and password. Send verification email via Firebase.
+  \item \textbf{DS-AUTH-003: Integrate Duo 2FA} (High, 5 pts) \\
+  Require Duo 2FA for all logins. Implement /api/auth/duo/start, /callback, and /finalize endpoints.
+  \item \textbf{DS-AUTH-004: Password Reset Flow} (Medium, 2 pts) \\
+  Allow users to request password reset emails via Firebase.
+  \item \textbf{DS-AUTH-005: Enforce 2FA for Sensitive Actions} (High, 2 pts) \\
+  Require 2FA for actions like posting jobs, bidding, and payouts.
+\end{enumerate}
 
 \newpage
 % ===================== TEAMMATE 3: Payments & Escrow Domain =====================
