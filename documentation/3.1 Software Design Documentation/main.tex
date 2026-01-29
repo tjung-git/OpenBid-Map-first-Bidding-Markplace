@@ -347,10 +347,7 @@ The following screenshots demonstrate the Profile page implementation, showing t
 \subsection*{Design Stories}
 % TODO: Add design stories for Payments components
 
-% ===================== TEAMMATE 3: Payments & Escrow Domain =====================
-\section*{[TEAMMATE 4] Maps}
-\textit{Section owner: [Name] -- Please add your diagrams below}
-
+% ===================== TEAMMATE 4: Maps Domain =====================
 \subsection*{Class Diagrams}
 
 \subsection{Mapview Class}
@@ -472,10 +469,12 @@ This diagram represents the actions occuring by the user and the system when int
 \hline
 \texttt{locationHelpers.js} & 100 & 100 & 100 & 100 \\
 \texttt{mapHelpers.js} & 100 & 100 & 100 & 100 \\
+\texttt{MapView.jsx} & 0 & 0 & 0 & 0 \\
+\texttt{SearchAutocomplete.jsx} & 0 & 0 & 0 & 0 \\
 \hline
 \end{tabularx}
 
-*Testing should include the searchautocomplete component in the future, this may involve adding component tests instead of unit tests to test the component with other components.
+*There is full coverage for the map and search autocomplete helper functions. However, the MapView and SearchAutocomplete components themselves require component tests.
 
 % ============================================================================
 % END OF TEAMMATE SECTIONS
