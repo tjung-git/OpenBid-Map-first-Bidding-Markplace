@@ -19,3 +19,6 @@ server/.env
 # Build outputs / generated artifacts
 client/dist/
 server/review-test.jpg
+
+# Test coverage
+coverage/

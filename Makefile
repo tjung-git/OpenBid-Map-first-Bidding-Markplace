@@ -30,5 +30,41 @@ clean-latex:
 		"documentation/2.1 Testing and Initial Development"/*.out "documentation/2.1 Testing and Initial Development"/*.toc \
 		"documentation/2.1 Testing and Initial Development"/*.bbl "documentation/2.1 Testing and Initial Development"/*.blg \
 		"documentation/2.1 Testing and Initial Development"/*.synctex.gz 2>/dev/null || true
+
+		@rm -f "documentation/2.2 Full Documentation, Prototype, Presentation"/*.aux "documentation/2.2 Full Documentation, Prototype, Presentation"/*.fdb_latexmk \
+		"documentation/2.2 Full Documentation, Prototype, Presentation"/*.fls "documentation/2.2 Full Documentation, Prototype, Presentation"/*.log \
+		"documentation/2.2 Full Documentation, Prototype, Presentation"/*.out "documentation/2.2 Full Documentation, Prototype, Presentation"/*.toc \
+		"documentation/2.2 Full Documentation, Prototype, Presentation"/*.bbl "documentation/2.2 Full Documentation, Prototype, Presentation"/*.blg \
+		"documentation/2.2 Full Documentation, Prototype, Presentation"/*.synctex.gz 2>/dev/null || true
+
+		@rm -f "documentation/3.1 Software Design Documentation"/*.aux "documentation/3.1 Software Design Documentation"/*.fdb_latexmk \
+		"documentation/3.1 Software Design Documentation"/*.fls "documentation/3.1 Software Design Documentation"/*.log \
+		"documentation/3.1 Software Design Documentation"/*.out "documentation/3.1 Software Design Documentation"/*.toc \
+		"documentation/3.1 Software Design Documentation"/*.bbl "documentation/3.1 Software Design Documentation"/*.blg \
+		"documentation/3.1 Software Design Documentation"/*.synctex.gz 2>/dev/null || true
 		
 	@echo "LaTeX cleanup complete!"
+
+# Build LaTeX PDFs for documentation sections
+.PHONY: latex docs-1.1 docs-1.2 docs-2.1 docs-2.2 docs-3.1
+latex: docs-1.1 docs-1.2 docs-2.1 docs-2.2 docs-3.1
+
+docs-1.1:
+	@echo "Building 1.1 Project Proposal..."
+	@cd "documentation/1.1 Project Proposal" && latexmk -pdf -interaction=nonstopmode -quiet main.tex || true
+
+docs-1.2:
+	@echo "Building 1.2 Detailed User Stories..."
+	@cd "documentation/1.2 Detailed User Stories, Requirements, and Initial Prototype" && latexmk -pdf -interaction=nonstopmode -quiet main.tex || true
+
+docs-2.1:
+	@echo "Building 2.1 Testing and Initial Development..."
+	@cd "documentation/2.1 Testing and Initial Development" && latexmk -pdf -interaction=nonstopmode -quiet main.tex || true
+
+docs-2.2:
+	@echo "Building 2.2 Full Documentation, Prototype, Presentation..."
+	@cd "documentation/2.2 Full Documentation, Prototype, Presentation" && latexmk -pdf -interaction=nonstopmode -quiet main.tex || true
+
+docs-3.1:
+	@echo "Building 3.1 Software Design Documentation..."
+	@cd "documentation/3.1 Software Design Documentation" && latexmk -pdf -interaction=nonstopmode -quiet main.tex || true
