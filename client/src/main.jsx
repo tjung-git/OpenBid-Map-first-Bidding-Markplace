@@ -18,6 +18,7 @@ import LoginFinish from "./pages/LoginFinish";
 import Users from "./pages/Users.jsx";
 import Jobs from "./pages/Jobs.jsx";
 import DashboardLayout from "./components/DashboardLayout";
+import AdminRoute from "./components/AdminRoute";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
