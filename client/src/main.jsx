@@ -26,10 +26,6 @@ createRoot(document.getElementById("root")).render(
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route element={<DashboardLayout/>}>
-          <Route path="/admin-users" element={<Users />} />
-          <Route path="/admin-jobs" element={<Jobs />} />
-        </Route>
         <Route element={<ProtectedApp />}>
           <Route index element={<Navigate to="/jobs" replace />} />
           <Route path="/profile" element={<Profile />} />
@@ -44,7 +40,10 @@ createRoot(document.getElementById("root")).render(
           />
           <Route path="/new-job" element={<NewJob />} />
           <Route path="/login/finish" element={<LoginFinish />} />
-          
+          <Route element={<DashboardLayout/>}>
+            <Route path="/admin-users" element={<Users />} />
+            <Route path="/admin-jobs" element={<Jobs />} />
+          </Route>
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
