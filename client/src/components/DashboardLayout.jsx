@@ -14,6 +14,7 @@ import {
 import { Logout } from "@carbon/icons-react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useSessionUser } from "../hooks/useSession";
+import { logout } from "../services/session";
 
 function DashboardLayout() {
 
@@ -31,6 +32,7 @@ function DashboardLayout() {
   return (
     <>
       <Header aria-label="Admin Dashboard">
+        <HeaderName prefix="OpenBid">Admin</HeaderName>
         <HeaderGlobalBar>
           <div className="header-user-info">
             <span className="header-user-greeting">
@@ -38,8 +40,7 @@ function DashboardLayout() {
             </span>
             {fullName && (
               <span className="header-user-details">
-                Logged in as {fullName}
-                {userType ? ` (${userType})` : ""}
+                Logged in as {`${fullName} (Admin)`}
               </span>
             )}
           </div>
