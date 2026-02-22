@@ -15,6 +15,9 @@ import BidDetail from "./pages/BidDetail.jsx";
 import MyBids from "./pages/MyBids.jsx";
 import ProtectedApp from "./components/ProtectedApp.jsx";
 import LoginFinish from "./pages/LoginFinish";
+import Users from "./pages/Users.jsx";
+import Jobs from "./pages/Jobs.jsx";
+import DashboardLayout from "./components/DashboardLayout";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -23,6 +26,10 @@ createRoot(document.getElementById("root")).render(
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route element={<DashboardLayout/>}>
+          <Route path="/admin-users" element={<Users />} />
+          <Route path="/admin-jobs" element={<Jobs />} />
+        </Route>
         <Route element={<ProtectedApp />}>
           <Route index element={<Navigate to="/jobs" replace />} />
           <Route path="/profile" element={<Profile />} />
