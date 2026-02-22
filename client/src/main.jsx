@@ -40,9 +40,11 @@ createRoot(document.getElementById("root")).render(
           />
           <Route path="/new-job" element={<NewJob />} />
           <Route path="/login/finish" element={<LoginFinish />} />
-          <Route element={<DashboardLayout/>}>
-            <Route path="/admin-users" element={<Users />} />
-            <Route path="/admin-jobs" element={<Jobs />} />
+          <Route element={<AdminRoute />}>
+            <Route element={<DashboardLayout/>}>
+              <Route path="/admin-users" element={<Users />} />
+              <Route path="/admin-jobs" element={<Jobs />} />
+            </Route>
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />

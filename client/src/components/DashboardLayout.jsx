@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect} from "react";
 import {
   Header,
   HeaderName,
@@ -12,22 +12,19 @@ import {
   HeaderGlobalAction
 } from "@carbon/react";
 import { Logout } from "@carbon/icons-react";
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, redirect, useNavigate } from "react-router-dom";
 import { useSessionUser } from "../hooks/useSession";
 import { logout } from "../services/session";
 
 function DashboardLayout() {
-
-  const nav = useNavigate();
-    const user = useSessionUser();
   
-    const greetingName = user?.firstName || user?.name || "Guest";
-    const fullName = user
-      ? [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email
-      : "";
-    const userType = user?.userType
-      ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1)
-      : null;
+  const nav = useNavigate();
+  const user = useSessionUser();
+  
+  const greetingName = user?.firstName || user?.name || "Guest";
+  const fullName = user
+    ? [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email
+    : "";
 
   return (
     <>
