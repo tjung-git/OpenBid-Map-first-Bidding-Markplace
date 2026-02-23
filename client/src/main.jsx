@@ -19,28 +19,38 @@ import Users from "./pages/Users.jsx";
 import Jobs from "./pages/Jobs.jsx";
 import DashboardLayout from "./components/DashboardLayout";
 import AdminRoute from "./components/AdminRoute";
+import NonAdminRoute from "./components/NonAdminRoute";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
+        {/* Public Routes*/}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+
+        {/* Authenticated Routes*/}
         <Route element={<ProtectedApp />}>
-          <Route index element={<Navigate to="/jobs" replace />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/jobs" element={<JobList />} />
-          <Route path="/jobs/:jobId" element={<JobDetail />} />
-          <Route path="/jobs/:jobId/bid" element={<JobBid />} />
-          <Route path="/bids/:jobId" element={<BidDetail />} />
-          <Route path="/jobs/myBids" element={<MyBids />} />
-          <Route
-            path="/jobs/myBids/bidDetails/:jobId"
-            element={<BidDetail />}
-          />
-          <Route path="/new-job" element={<NewJob />} />
-          <Route path="/login/finish" element={<LoginFinish />} />
+
+        {/* Bidder/Poster Routes*/}
+          <Route element={<NonAdminRoute />}>
+            <Route index element={<Navigate to="/jobs" replace />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/jobs" element={<JobList />} />
+            <Route path="/jobs/:jobId" element={<JobDetail />} />
+            <Route path="/jobs/:jobId/bid" element={<JobBid />} />
+            <Route path="/bids/:jobId" element={<BidDetail />} />
+            <Route path="/jobs/myBids" element={<MyBids />} />
+            <Route
+              path="/jobs/myBids/bidDetails/:jobId"
+              element={<BidDetail />}
+            />
+            <Route path="/new-job" element={<NewJob />} />
+            <Route path="/login/finish" element={<LoginFinish />} />
+          </Route>
+
+          {/* Admin Routes*/}
           <Route element={<AdminRoute />}>
             <Route element={<DashboardLayout/>}>
               <Route path="/admin-users" element={<Users />} />

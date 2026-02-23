@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { useSessionUser } from "../hooks/useSession";
+import { useSessionUser} from "../hooks/useSession";
 
 export default function AdminRoute() {
   const user = useSessionUser();

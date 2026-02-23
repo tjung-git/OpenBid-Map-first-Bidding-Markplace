@@ -133,7 +133,7 @@ export default function Login() {
         return;
       }
 
-      nav("/jobs");
+      nav(data.user?.userType !== "admin"? "/jobs": "/admin-users");
     } catch (err) {
       if (err?.status === 403 && err?.data?.error === "verification_required") {
         const details = err.data || {};
