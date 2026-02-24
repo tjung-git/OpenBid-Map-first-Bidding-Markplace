@@ -61,12 +61,12 @@ export default function App() {
               </span>
             )}
           </div>
-          {isAdmin && (
+          {!isAdmin && (
             <HeaderGlobalAction aria-label="Map" onClick={() => nav("/jobs")}>
               <Map />
             </HeaderGlobalAction>
           )}
-          {isAdmin && (
+          {!isAdmin && (
             <HeaderGlobalAction
               aria-label="Profile"
               onClick={() => nav("/profile")}
