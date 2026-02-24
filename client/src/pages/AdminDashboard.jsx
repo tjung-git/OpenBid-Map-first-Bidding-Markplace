@@ -1,9 +1,6 @@
 import React, { useMemo, useState } from "react";
+import { api } from "../services/api";
 import {
-  Header,
-  HeaderName,
-  HeaderGlobalBar,
-  HeaderGlobalAction,
   SideNav,
   SideNavItems,
   SideNavLink,
@@ -35,7 +32,6 @@ import {
   View,
   TrashCan,
 } from "@carbon/icons-react";
-import { logout } from "../services/session";
 import { useNavigate } from "react-router-dom";
 import "../styles/pages/admin-dashboard.css";
 
