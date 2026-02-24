@@ -15,11 +15,9 @@ import BidDetail from "./pages/BidDetail.jsx";
 import MyBids from "./pages/MyBids.jsx";
 import ProtectedApp from "./components/ProtectedApp.jsx";
 import LoginFinish from "./pages/LoginFinish";
-import Users from "./pages/Users.jsx";
-import Jobs from "./pages/Jobs.jsx";
-import DashboardLayout from "./components/DashboardLayout";
 import AdminRoute from "./components/AdminRoute";
 import NonAdminRoute from "./components/NonAdminRoute";
+import AdminDashboard from "./pages/AdminDashboard";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -33,7 +31,7 @@ createRoot(document.getElementById("root")).render(
         {/* Authenticated Routes*/}
         <Route element={<ProtectedApp />}>
 
-        {/* Bidder/Poster Routes*/}
+          {/* Bidder/Poster Routes*/}
           <Route element={<NonAdminRoute />}>
             <Route index element={<Navigate to="/jobs" replace />} />
             <Route path="/profile" element={<Profile />} />
@@ -52,10 +50,7 @@ createRoot(document.getElementById("root")).render(
 
           {/* Admin Routes*/}
           <Route element={<AdminRoute />}>
-            <Route element={<DashboardLayout/>}>
-              <Route path="/admin-users" element={<Users />} />
-              <Route path="/admin-jobs" element={<Jobs />} />
-            </Route>
+            <Route path="/admin" element={<AdminDashboard />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />

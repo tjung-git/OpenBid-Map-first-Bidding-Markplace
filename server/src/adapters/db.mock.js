@@ -19,7 +19,20 @@ const state = {
       passwordHash: '$2b$10$JIyQumAfY3GLNiNvSNu4.efls3iHM6CAiQyoHfr/H1mISNppvqSaC',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    }]
+    }],
+    ['u_admin', {
+      uid: 'u_admin',
+      email: 'openbidadmin@gmail.com',
+      firstName: 'OpenBid',
+      lastName: 'Admin',
+      userType: 'admin',
+      emailVerification: 'verified',
+      kycStatus: 'pending',
+      kycSessionId: null,
+      passwordHash: '$2b$10$tfCv9AKisSr53nOORsm6.ui.8LbOk6QQar9t9l4xTvBmb/kIGnc1e',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }],
   ]), // key: uid -> user { uid, email, name, kycStatus, kycSessionId }
   jobs: new Map(), // jobId -> job
   bids: new Map(), // bidId -> bid

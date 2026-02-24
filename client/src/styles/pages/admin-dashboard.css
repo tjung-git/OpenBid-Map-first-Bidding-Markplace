@@ -1,0 +1,21 @@
+.cds--header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10000;
+}
+
+.cds--side-nav {
+  position: fixed;
+  top: 48px; /* Carbon header height */
+  left: 0;
+  height: calc(100vh - 48px);
+  overflow-y: auto;
+  z-index: 9999; /* below header, above content */
+}
+
+.admin-content {
+  padding-top: 48px; /* header height */
+  margin-left: 220px; /* match your sideNavWidth */
+}
