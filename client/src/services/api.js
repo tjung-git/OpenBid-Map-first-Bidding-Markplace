@@ -82,7 +82,11 @@ export const api = {
       method: "POST",
       headers: headers(),
     });
-    return r.json();
+    const data = await r.json();
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
   },
   async kycStatus() {
     const r = await fetch(`${base}/api/kyc/status`, { headers: headers() });

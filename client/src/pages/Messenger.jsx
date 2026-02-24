@@ -40,6 +40,7 @@ export default function Messenger() {
     const [activeMenu, setActiveMenu] = useState(null);
 
     const messagesEndRef = useRef(null);
+    const unsubscribeRef = useRef(null);
 
     // Load conversations via API and connect socket for real-time
     useEffect(() => {
@@ -64,33 +65,38 @@ export default function Messenger() {
             setLoading(false);
         });
 
-        // Listen for new messages via socket
-        const unsubscribe = onNewMessage(({ conversationId: convId, message }) => {
-            if (!isMounted) return;
+        // Listen for new messages via socket (only if not already registered)
+        if (!unsubscribeRef.current) {
+            unsubscribeRef.current = onNewMessage(({ conversationId: convId, message }) => {
+                if (!isMounted) return;
 
-            // Add message to current conversation if it matches
-            setMessages(prev => {
-                // Avoid duplicates
-                if (prev.some(m => m.id === message.id)) return prev;
-                return [...prev, message];
+                // Add message to current conversation if it matches
+                setMessages(prev => {
+                    // Avoid duplicates
+                    if (prev.some(m => m.id === message.id)) return prev;
+                    return [...prev, message];
+                });
+
+                // Update conversation's lastMessageAt in list
+                setConversations(prev => prev.map(conv => {
+                    if (conv.id === convId) {
+                        return {
+                            ...conv,
+                            lastMessageAt: message.createdAt,
+                            lastMessagePreview: message.content?.substring(0, 50)
+                        };
+                    }
+                    return conv;
+                }));
             });
-
-            // Update conversation's lastMessageAt in list
-            setConversations(prev => prev.map(conv => {
-                if (conv.id === convId) {
-                    return {
-                        ...conv,
-                        lastMessageAt: message.createdAt,
-                        lastMessagePreview: message.content?.substring(0, 50)
-                    };
-                }
-                return conv;
-            }));
-        });
+        }
 
         return () => {
             isMounted = false;
-            unsubscribe();
+            if (unsubscribeRef.current) {
+                unsubscribeRef.current();
+                unsubscribeRef.current = null;
+            }
         };
     }, [user?.uid]);
 
