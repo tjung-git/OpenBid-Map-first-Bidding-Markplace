@@ -10,7 +10,7 @@ export default function NonAdminRoute() {
   }
 
   if (user.userType === "admin") {
-    return <Navigate to="/admin-users" replace />;
+    return <Navigate to="/admin" replace />;
   }
 
   return <Outlet />;

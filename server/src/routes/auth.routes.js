@@ -44,14 +44,8 @@ const isKycVerified = (value) =>
 
 router.post("/signup", async (req, res, next) => {
   try {
-    const {
-      firstName,
-      lastName,
-      email,
-      password,
-      confirmPassword,
-      userType,
-    } = req.body;
+    const { firstName, lastName, email, password, confirmPassword, userType } =
+      req.body;
 
     if (!firstName || !lastName) {
       return res.status(400).json({ error: "firstName and lastName required" });
@@ -110,7 +104,7 @@ router.post("/signup", async (req, res, next) => {
       try {
         createdAccount = await signUpWithEmailPassword(
           normalizedEmail,
-          password
+          password,
         );
         uid = createdAccount.uid;
         firebaseIdToken = createdAccount.idToken;
@@ -207,7 +201,7 @@ router.post("/login", async (req, res, next) => {
           console.error(
             "[auth] Firebase fallback error",
             error.message,
-            error.status
+            error.status,
           );
           return res.status(502).json({ error: "firebase_signin_failed" });
         }
@@ -234,7 +228,7 @@ router.post("/login", async (req, res, next) => {
       } catch (error) {
         console.error(
           "[auth] Unable to synchronize Firebase email verification state",
-          error
+          error,
         );
       }
     }
@@ -261,7 +255,7 @@ router.post("/login", async (req, res, next) => {
             try {
               const createdAccount = await signUpWithEmailPassword(
                 normalizedEmail,
-                password
+                password,
               );
               await sendVerificationEmail(createdAccount.idToken);
               const authSession = await auth.signIn(user.email, password);
@@ -276,7 +270,7 @@ router.post("/login", async (req, res, next) => {
             } catch (provisionError) {
               console.error(
                 "[auth] Failed to provision Firebase account during login",
-                provisionError
+                provisionError,
               );
               return res
                 .status(500)
@@ -286,7 +280,7 @@ router.post("/login", async (req, res, next) => {
             console.error(
               "[auth] Firebase sign-in failed",
               error.message,
-              error.status
+              error.status,
             );
             return res.status(502).json({ error: "firebase_signin_failed" });
           }
@@ -322,7 +316,7 @@ router.post("/login", async (req, res, next) => {
         email: user.email,
         sessionPayload,
       },
-      5 * 60 * 1000
+      5 * 60 * 1000,
     );
 
     return res.status(202).json({
@@ -363,6 +357,9 @@ router.patch("/role", async (req, res, next) => {
     }
     if (!user) {
       return res.status(404).json({ error: "user_not_found" });
+    }
+    if (user.userType === "admin") {
+      return res.status(405).json({ error: "admin_cannot_change_role" });
     }
 
     if ((user.userType || "").toLowerCase() === requestedRole) {

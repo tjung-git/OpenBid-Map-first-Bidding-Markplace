@@ -8,9 +8,9 @@ export default function AdminRoute() {
     return <Navigate to="/login" replace />;
   }
 
-  // if (user.userType !== "admin") {
-  //   return <Navigate to="/jobs" replace />;
-  // }
+  if (user.userType !== "admin") {
+    return <Navigate to="/jobs" replace />;
+  }
 
   return <Outlet />;
 }
