@@ -462,24 +462,6 @@ export default function AdminDashboard() {
 
   return (
     <>
-      {/* Top header */}
-      {/* <Header aria-label="OpenBid Admin">
-        <HeaderName prefix="OpenBid">Admin</HeaderName>
-
-        <HeaderGlobalBar>
-          <HeaderGlobalAction
-            aria-label="Logout"
-            onClick={() => {
-              logout();
-              nav("/login");
-            }}
-          >
-            <Logout />
-          </HeaderGlobalAction>
-        </HeaderGlobalBar>
-      </Header> */}
-
-      {/* Sidebar + content layout */}
       <div style={{ display: "flex", minHeight: "100vh" }}>
         <SideNav
           aria-label="Admin navigation"
