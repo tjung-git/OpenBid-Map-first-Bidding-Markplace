@@ -1,0 +1,915 @@
+% !TEX root = main.tex
+\documentclass[11pt]{article}
+
+% ---------- Basics -----------
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{parskip}
+\usepackage{listings}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{float}
+\graphicspath{{./diagrams/}}
+
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+
+\newcommand{\maybeincludegraphics}[2][]{%
+  \IfFileExists{\detokenize{./diagrams/#2}}{%
+    \includegraphics[#1]{#2}%
+  }{%
+    \fbox{\parbox{0.9\linewidth}{\centering Missing diagram file:\\\texttt{\detokenize{#2}}}}%
+  }%
+}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue!60!black,
+  citecolor=black
+}
+
+% ---------- Listings ----------
+\lstset{
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  breaklines=true,
+  frame=single,
+  framerule=0.2pt,
+  tabsize=2,
+  showstringspaces=false
+}
+
+% ---------- Title ----------
+\newcommand{\product}{OpenBid}
+\title{DIGT2107: Practice of Software Development\\
+\Large Project Iteration 3.1: Software Design Documentation\\[4pt]
+\large \product}
+\author{Team 1: Tyler \and Mani \and Yanness \and Alaister}
+\date{Due: February 1, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\textbf{Course:} DIGT2107 -- Winter Term 2026 \quad|\quad
+\textbf{Instructor:} Dr.\ May Haidar
+\end{center}
+
+\newpage
+
+% ===================== 1. Introduction =====================
+\section{Introduction}
+\textbf{Project Name:} \product \\
+\textbf{Team Number:} \textbf{1} \\
+\textbf{Team Members:} Tyler, Mani, Yanness, Alaister
+
+\paragraph{Document Overview}
+This document outlines the Software Design Document (SDD) for Iteration 3.1 of the OpenBid platform. It provides advanced software design representations through Class Diagrams, Sequence Diagrams, and Activity Diagrams for all major system components:
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Stripe KYC \& User Profile} -- Identity verification and profile management
+  \item \textbf{Jobs \& Bids} -- Job posting and bidding functionality
+  \item \textbf{Authentication \& 2FA} -- User authentication with Duo MFA
+  \item \textbf{Payments \& Escrow} -- Stripe payment processing and escrow management
+\end{itemize}
+
+Each section includes class diagrams showing component structure, sequence diagrams illustrating key flows, activity diagrams depicting workflows, and design stories for the backlog.
+
+% ===================== 2. Class Diagrams =====================
+\section{Class Diagrams}
+
+\subsection{User \& Profile Domain}
+The following class diagram illustrates the core classes related to user management and profile functionality.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{class_user_profile.png}
+\caption{User \& Profile Domain Class Diagram}
+\end{figure}
+
+\subsection{Stripe KYC Domain}
+The following class diagram illustrates the classes related to Stripe Identity verification (KYC).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{class_kyc_stripe.png}
+\caption{Stripe KYC Domain Class Diagram}
+\end{figure}
+
+\subsection{Component Relationships}
+The following diagram shows how the KYC and Profile components interact with each other and external services.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{kyc_and_profile_relationship.png}
+\caption{KYC and Profile Component Relationships}
+\end{figure}
+
+% ===================== 3. Sequence Diagrams =====================
+\section{Sequence Diagrams}
+
+\subsection{KYC Verification Flow - Part A: Initialization}
+This sequence diagram demonstrates the initial flow when a user starts KYC verification.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{kyc_initialization.png}
+\caption{KYC Verification Initialization Flow}
+\end{figure}
+
+\textbf{Flow Description:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item User clicks "Complete KYC" button on Profile page.
+  \item Profile page calls \texttt{api.kycVerification()}.
+  \item Client API sends POST request to \texttt{/api/kyc/verification}.
+  \item Server delegates to KYC adapter's \texttt{verification()} method.
+  \item KYC adapter creates Stripe verification session.
+  \item Stripe returns session ID and verification URL.
+  \item Profile page opens Stripe verification in new tab.
+\end{enumerate}
+
+\subsection{KYC Verification Flow - Part B: Webhook \& Status Check}
+This sequence diagram demonstrates the webhook handling and status check after user completes Stripe verification.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{kyc_webhook_status_check.png}
+\caption{KYC Webhook and Status Check Flow}
+\end{figure}
+
+\textbf{Flow Description:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item After user completes verification, Stripe sends webhook event.
+  \item Server verifies webhook signature and updates user's KYC status.
+  \item When user returns to app, window focus event triggers status check.
+  \item Profile page fetches updated KYC status from server.
+  \item UI updates to show verified badge.
+\end{enumerate}
+
+\subsection{Profile Avatar Upload Flow}
+This sequence diagram demonstrates the profile avatar upload functionality.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{avatar_upload_flow.png}
+\caption{Avatar Upload Sequence Diagram}
+\end{figure}
+
+% ===================== 4. Activity Diagrams =====================
+\section{Activity Diagrams}
+
+\subsection{KYC Verification Workflow}
+The following activity diagram illustrates the complete workflow for KYC verification with all decision points.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{kyc_verification_workflow.png}
+\caption{KYC Verification Activity Diagram}
+\end{figure}
+
+\subsection{Profile Management Workflow}
+The following activity diagram illustrates the user profile management workflow.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{user_profile_management_workflow.png}
+\caption{User Profile Management Activity Diagram}
+\end{figure}
+
+% ===================== 5. Component Summary =====================
+\section{Component Summary}
+
+\begin{longtable}{@{}p{0.22\linewidth} p{0.15\linewidth} p{0.2\linewidth} p{0.38\linewidth}@{}}
+\toprule
+\textbf{Component} & \textbf{Type} & \textbf{Technology} & \textbf{Responsibility} \\
+\midrule
+\endhead
+\texttt{Profile.jsx} & React Component & React, Carbon Design & User profile UI, avatar upload, KYC status \\
+\texttt{kyc.routes.js} & Express Router & Node.js, Express & KYC API endpoints \\
+\texttt{kyc.real.js} & Adapter & Stripe SDK & Real Stripe Identity integration \\
+\texttt{kyc.mock.js} & Adapter & In-memory & Mock KYC for prototype mode \\
+\texttt{index.js} & Server Entry & Express & Stripe webhook handler \\
+\texttt{api.js} & Client Service & Fetch API & HTTP client for KYC/Profile calls \\
+\bottomrule
+\end{longtable}
+
+% ===================== 6. Design Stories =====================
+\section{Updated Backlog with Design Stories}
+
+The KYC and Profile features documented above are complete. The following design stories outline the upcoming \textbf{In-App Messaging} feature for the next iteration:
+
+\subsection*{Messaging Design Stories}
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{DS-MSG-001: Design Message Data Model} (High, 3 pts) \\
+  Define message schema including sender, receiver, content, timestamp, read status, and job/bid thread linking. Design conversation thread structure for organizing messages between contractors and bidders.
+  
+  \item \textbf{DS-MSG-002: Design Real-Time Architecture} (High, 5 pts) \\
+  Evaluate and select real-time messaging approach: Firebase Realtime Database listeners vs Firestore onSnapshot vs WebSockets. Design message synchronization and offline support.
+  
+  \item \textbf{DS-MSG-003: Design Chat UI Component} (Medium, 3 pts) \\
+  Design chat interface with message bubbles, input field, send button, and typing indicators. Support for text messages and future attachment support.
+  
+  \item \textbf{DS-MSG-004: Design Notification System} (Medium, 3 pts) \\
+  Design push notification flow for new messages. Integrate with Firebase Cloud Messaging for real-time alerts when user is not in the app.
+  
+  \item \textbf{DS-MSG-005: Design Job-Thread Linking} (High, 2 pts) \\
+  Design how message threads are linked to specific jobs and bids. Ensure only awarded bidders can message contractors, and vice versa.
+\end{enumerate}
+
+% ===================== 7. Test Coverage Report =====================
+\section{Preliminary Test Coverage Report}
+
+The following test coverage report was generated using Jest with the \texttt{--coverage} flag. This report covers the KYC and Profile-related components.
+
+\subsection*{Test Results Summary}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Test Suites:} 5 passed, 1 skipped, 6 total
+  \item \textbf{Tests:} 33 passed, 2 skipped, 35 total
+  \item \textbf{Snapshots:} 0 total
+\end{itemize}
+
+\subsection*{Coverage by Component (KYC \& Profile)}
+
+\begin{tabularx}{\linewidth}{|l|c|c|c|c|}
+\hline
+\textbf{File} & \textbf{\% Stmts} & \textbf{\% Branch} & \textbf{\% Funcs} & \textbf{\% Lines} \\
+\hline
+\texttt{kyc.routes.js} & 87.09 & 92.85 & 100 & 89.28 \\
+\texttt{kyc.real.js} & 38.23 & 25.00 & 100 & 36.36 \\
+\texttt{kyc.mock.js} & 25.00 & 0.00 & 0 & 25.00 \\
+\texttt{db.real.js} (User data) & 64.23 & 43.10 & 71.42 & 72.41 \\
+\hline
+\textbf{Overall} & 53.73 & 46.20 & 57.14 & 56.33 \\
+\hline
+\end{tabularx}
+
+\subsection*{Analysis}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{KYC Routes:} Excellent coverage at 89\% line coverage. All API endpoints are tested.
+  \item \textbf{KYC Real Adapter:} Lower coverage (36\%) due to Stripe API integration being mocked during testing.
+  \item \textbf{Database Adapter:} Good coverage at 72\% for user data operations.
+  \item \textbf{Gaps Identified:} The \texttt{kyc.mock.js} adapter has low coverage as it is primarily used for prototype mode testing only.
+\end{itemize}
+
+% ===================== 8. GUI Screenshots =====================
+\section{GUI Implementation Screenshots}
+
+The following screenshots demonstrate the Profile page implementation, showing the KYC verification status and user interface elements.
+
+\subsection*{Profile Page - Before KYC Verification}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{ProfileBeforeKYC.png}
+\caption{Profile page showing pending KYC status with "Complete KYC" button}
+\end{figure}
+
+\subsection*{Profile Page - After KYC Verification}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{ProfileAfterKYC.png}
+\caption{Profile page showing verified KYC status with green badge}
+\end{figure}
+
+\subsection*{Key UI Elements}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Avatar Upload:} Users can upload and change their profile picture
+  \item \textbf{KYC Status Display:} Visual indicator showing pending, verified, or failed status
+  \item \textbf{Action Buttons:} "Complete KYC" and "Refresh Status" buttons for unverified users
+  \item \textbf{Account Information:} Display of user's name, email, and verification status
+\end{itemize}
+
+% ============================================================================
+% TEAMMATE SECTIONS - ADD YOUR CONTENT BELOW
+% ============================================================================
+
+\newpage
+% ===================== TEAMMATE 1: Jobs & Bids Domain =====================
+\section*{Firestore Persistence: Users, Jobs \& Bids}
+
+\subsection*{Overview}
+This section documents the Firestore-backed persistence layer that stores \textbf{user}, \textbf{job}, and \textbf{bid} information. The primary implementation is the server adapter \texttt{server/src/adapters/db.real.js}, which uses the Firebase Admin SDK to interact with the \texttt{users}, \texttt{jobs}, and \texttt{bids} collections.
+
+\subsection*{Class Diagrams}
+\paragraph{Firestore Collections \& Domain Entities}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.95\textwidth]{jobs_and_bids/class_firestore_entities.png}
+\caption{Users, Jobs, and Bids: Firestore Schema / Domain Entity Class Diagram}
+\end{figure}
+
+\paragraph{Server Routes and DB Adapter Structure}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.95\textwidth]{jobs_and_bids/class_routes_db_adapter.png}
+\caption{Jobs/Bids API Routers and Firestore DB Adapter Class Diagram}
+\end{figure}
+
+\subsection*{Sequence Diagrams}
+\paragraph{Create Job (Contractor)}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.95\textwidth]{jobs_and_bids/seq_create_job.png}
+\caption{Sequence Diagram: Contractor Creates a Job}
+\end{figure}
+
+\textbf{Flow Description:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item Contractor submits job details from the client UI.
+  \item Client calls \texttt{api.jobCreate()} which sends \texttt{POST /api/jobs}.
+  \item Server verifies the session and confirms the user is a contractor with \texttt{kycStatus=verified}.
+  \item Server writes a new job document to Firestore via \texttt{db.job.create()}.
+  \item Server returns the created job to the client for immediate rendering.
+\end{enumerate}
+
+\paragraph{Place Bid (Bidder)}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.95\textwidth]{jobs_and_bids/seq_place_bid.png}
+\caption{Sequence Diagram: Bidder Places a Bid on a Job}
+\end{figure}
+
+\textbf{Flow Description:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item Bidder enters bid amount and note on a job detail page.
+  \item Client calls \texttt{api.bid()} which sends \texttt{POST /api/bids/:jobId}.
+  \item Server verifies the session and confirms the bidder's \texttt{kycStatus=verified}.
+  \item Server loads the job and validates: job exists, job is open, bidder is not the poster, and no existing bid exists.
+  \item Server creates a bid document in Firestore via \texttt{db.bid.create()} and returns the bid to the client.
+\end{enumerate}
+
+\paragraph{Accept Bid (Contractor Awards Job)}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.95\textwidth]{jobs_and_bids/seq_accept_bid.png}
+\caption{Sequence Diagram: Contractor Accepts a Bid and Awards the Job}
+\end{figure}
+
+\subsection*{Activity Diagrams}
+\paragraph{Job Lifecycle Workflow}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.95\textwidth]{jobs_and_bids/act_job_lifecycle.png}
+\caption{Activity Diagram: Job Lifecycle (Create, Update, Delete, Award)}
+\end{figure}
+
+\paragraph{Bid Lifecycle Workflow}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.95\textwidth]{jobs_and_bids/act_bid_lifecycle.png}
+\caption{Activity Diagram: Bid Lifecycle (Place, Edit, Delete, Accept/Reject)}
+\end{figure}
+
+\subsection*{Component Summary (Jobs \& Bids + Firestore)}
+{\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.14\linewidth} >{\raggedright\arraybackslash}p{0.20\linewidth} >{\raggedright\arraybackslash}p{0.32\linewidth}@{}}
+\toprule
+\textbf{Component} & \textbf{Type} & \textbf{Technology} & \textbf{Responsibility} \\
+\midrule
+\endhead
+\path{server/src/adapters/db.real.js} & Adapter & Firebase Admin SDK (Firestore) & CRUD for users, jobs, bids; timestamps; cascading deletes for job bids \\
+\path{server/src/adapters/db.mock.js} & Adapter & In-memory & Prototype/mock persistence for local development and tests \\
+\path{server/src/routes/jobs.routes.js} & Express Router & Node.js, Express & Jobs endpoints: list/get/create/update/delete; contractor/KYC enforcement \\
+\path{server/src/routes/bids.routes.js} & Express Router & Node.js, Express & Bids endpoints: list-by-job, list-my-bids, create/update/delete, accept bid \\
+\path{client/src/services/api.js} & Client Service & Fetch API & HTTP client for \texttt{/api/jobs} and \texttt{/api/bids} calls \\
+\path{client/src/pages/JobList.jsx} & React Page & React & Browse jobs, map/filtering, navigate to job details \\
+\path{client/src/pages/JobDetail.jsx} & React Page & React & View job + bids, place bid (bidder), accept bid (contractor) \\
+\path{client/src/pages/MyBids.jsx} & React Page & React & List and manage bidder's submitted bids \\
+\bottomrule
+\end{longtable}
+}
+
+\subsection*{Updated Backlog with Design Stories (Future: Reviews \& Portfolio)}
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{DS-REV-001: Design Review Data Model} (High, 3 pts) \\
+  Define review schema (reviewerId, revieweeId, jobId, bidId, rating, comment, timestamps). Decide write rules: only allow reviews after job completion and escrow payout. Enforce one review per party per job.
+
+  \item \textbf{DS-REV-002: Design Review Aggregation \& Reputation} (Medium, 3 pts) \\
+  Design aggregate rating fields on user documents (avg rating, count) and the update strategy (transaction, Cloud Function trigger, or server-side recompute). Define abuse mitigation (minimum comment length, flagging).
+
+  \item \textbf{DS-PORT-001: Design Provider Portfolio Model} (High, 3 pts) \\
+  Define portfolio entry schema (providerId, title, description, tags, links/images, createdAt). Decide storage for images (Cloud Storage) and references in Firestore.
+
+  \item \textbf{DS-PORT-002: Design Portfolio UI and Access Rules} (Medium, 3 pts) \\
+  Design profile/portfolio views and editing flows. Restrict write access to the owner; allow public read for awarded-job providers and verified accounts as configured.
+\end{enumerate}
+
+\subsection*{Preliminary Test Coverage (Jobs \& Bids)}
+The following test coverage report was generated using Jest (server) with the \texttt{--coverage} flag. This report focuses on the Jobs, Bids, and Firestore persistence components.
+
+\subsection*{Server (Jest) Test Results Summary}
+\textbf{Command:} \texttt{cd server \&\& npm test -- --coverage}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Test Suites:} 5 passed, 1 skipped, 6 total
+  \item \textbf{Tests:} 33 passed, 2 skipped, 35 total
+  \item \textbf{Snapshots:} 0 total
+\end{itemize}
+
+\subsection*{Coverage by Component (Jobs \& Bids + Firestore) -- Server}
+\begin{tabularx}{\linewidth}{|l|c|c|c|c|}
+\hline
+\textbf{File} & \textbf{\% Stmts} & \textbf{\% Branch} & \textbf{\% Funcs} & \textbf{\% Lines} \\
+\hline
+\texttt{jobs.routes.js} & 64.80 & 60.86 & 77.77 & 71.81 \\
+\texttt{bids.routes.js} & 42.14 & 29.07 & 40.00 & 44.96 \\
+\texttt{db.real.js} (Jobs/Bids) & 64.23 & 43.10 & 71.42 & 72.41 \\
+\hline
+\textbf{Overall} & 53.73 & 46.20 & 57.14 & 56.33 \\
+\hline
+\end{tabularx}
+
+\subsection*{Analysis -- Server}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Jobs Routes:} Good coverage (71.81\% lines) covering job list/create/update/delete constraints.
+  \item \textbf{Bids Routes:} Lower coverage (44.96\% lines) due to untested branches around bidding edge cases and accept flow variations.
+  \item \textbf{Database Adapter:} Solid coverage (72.41\% lines) for Firestore operations on jobs and bids, including timestamps and updates.
+  \item \textbf{Gaps Identified:} Branch coverage remains moderate due to access-control and error-path permutations not fully exercised.
+\end{itemize}
+
+\subsection*{GUI Implementation Screenshots}
+
+\subsection*{Job List Page}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.8\textwidth]{jobs_and_bids/gui_job_list.png}
+\caption{Job List page showing open jobs and filters}
+\end{figure}
+
+\subsection*{Job Detail + Bidding Page}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.8\textwidth]{jobs_and_bids/gui_job_detail_bidding.png}
+\caption{Job Detail page showing job information and the bidding panel}
+\end{figure}
+
+\subsection*{My Bids Page}
+\begin{figure}[H]
+\centering
+\maybeincludegraphics[width=0.8\textwidth]{jobs_and_bids/gui_my_bids.png}
+\caption{My Bids page showing bidder's active bids and management actions}
+\end{figure}
+
+\newpage
+% ===================== TEAMMATE 2: Authentication & 2FA Domain =====================
+\section*{Authentication \& 2FA Domain}
+\textit{Section owner: Tyler Jung}
+
+\subsection*{Overview}
+The Authentication \& 2FA domain provides secure user authentication and multi-factor authentication capabilities for the OpenBid platform. This system integrates Firebase Authentication for primary user management and Duo Universal Prompt for two-factor authentication, ensuring robust security for all user interactions.
+
+\paragraph{Key Components:}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{AuthAdapter:} Abstraction layer for authentication operations (real and mock implementations)
+  \item \textbf{Firebase Integration:} User credential management and JWT token generation
+  \item \textbf{Duo 2FA System:} Multi-factor authentication using Duo Universal Prompt
+  \item \textbf{Session Management:} Secure session handling with HTTP-only cookies
+  \item \textbf{Password Reset:} Email-based password recovery flow
+\end{itemize}
+
+\subsection*{Class Diagrams}
+
+The following class diagram illustrates the authentication domain architecture, showing the relationships between the authentication adapter, Firebase services, and Duo 2FA integration.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{diagrams/class_auth_domain.png}
+\caption{Authentication, Firebase, and Duo 2FA Class Diagram}
+\end{figure}
+
+\paragraph{Component Descriptions:}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{AuthAdapter (Interface):} Defines the contract for authentication operations including \texttt{signIn()}, \texttt{signUp()}, \texttt{verify()}, and \texttt{resetPassword()}.
+  \item \textbf{AuthRealAdapter:} Production implementation using Firebase Admin SDK for user management and authentication.
+  \item \textbf{AuthMockAdapter:} Testing implementation with in-memory user storage for development and testing.
+  \item \textbf{DuoClient:} Handles Duo Universal Prompt integration for 2FA challenges.
+  \item \textbf{FirebaseAdmin:} Manages Firebase authentication operations and custom token generation.
+\end{itemize}
+
+\newpage
+\subsection*{Sequence Diagrams}
+
+\subsubsection*{User Login Flow}
+The login sequence demonstrates the complete authentication process including credential verification and 2FA challenge.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{diagrams/seq_login_flow.png}
+\caption{User Login Sequence Diagram}
+\end{figure}
+
+\textbf{Flow Description:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item User submits email and password via Login page.
+  \item Client API sends POST request to \texttt{/api/auth/login}.
+  \item Server validates credentials using Firebase Authentication.
+  \item Upon successful validation, server initiates Duo 2FA challenge.
+  \item User is redirected to Duo Universal Prompt for 2FA verification.
+  \item After successful 2FA, server generates JWT session token.
+  \item Session token is stored in HTTP-only cookie for security.
+  \item User is redirected to the application dashboard.
+\end{enumerate}
+
+\subsubsection*{User Signup Flow}
+The signup sequence illustrates new user registration with email verification.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{diagrams/seq_signup_flow.png}
+\caption{User Signup Sequence Diagram}
+\end{figure}
+
+\textbf{Flow Description:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item User submits registration form with email, password, and profile details.
+  \item Client API sends POST request to \texttt{/api/auth/signup}.
+  \item Server creates Firebase user account with provided credentials.
+  \item Firebase sends verification email to user's email address.
+  \item Server creates user profile record in Firestore database.
+  \item User receives confirmation and is prompted to verify email.
+  \item Upon email verification, user can proceed to login with 2FA.
+\end{enumerate}
+
+\subsubsection*{Duo 2FA Challenge Flow}
+The 2FA sequence shows the multi-factor authentication process using Duo Universal Prompt.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{diagrams/seq_duo_2fa.png}
+\caption{Duo 2FA Challenge Sequence Diagram}
+\end{figure}
+
+\textbf{Flow Description:}
+\begin{enumerate}[leftmargin=1.4em]
+  \item After successful password authentication, server initiates Duo 2FA.
+  \item Server calls \texttt{/api/auth/duo/start} to create Duo authentication request.
+  \item Duo SDK generates state token and authorization URL.
+  \item User is redirected to Duo Universal Prompt interface.
+  \item User completes 2FA challenge (push notification, SMS, or phone call).
+  \item Duo redirects back to \texttt{/api/auth/duo/callback} with authorization code.
+  \item Server exchanges authorization code for Duo authentication token.
+  \item Server calls \texttt{/api/auth/duo/finalize} to complete authentication.
+  \item Upon successful verification, user session is established.
+\end{enumerate}
+
+\newpage
+\subsection*{Activity Diagrams}
+
+\subsubsection*{Authentication Workflow}
+This activity diagram illustrates the complete authentication process with all decision points and error handling paths.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{diagrams/activity_auth_workflow.png}
+\caption{Authentication Workflow Activity Diagram}
+\end{figure}
+
+\textbf{Workflow Description:}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Entry Point:} User navigates to login page.
+  \item \textbf{Credential Validation:} System validates email format and password strength.
+  \item \textbf{Firebase Authentication:} Credentials are verified against Firebase Auth.
+  \item \textbf{Decision Points:}
+    \begin{itemize}
+      \item Invalid credentials → Display error message and retry
+      \item Valid credentials → Proceed to 2FA challenge
+      \item Account locked → Display lockout message
+    \end{itemize}
+  \item \textbf{Success Path:} User proceeds to 2FA verification.
+  \item \textbf{Error Handling:} Failed attempts are logged and rate-limited.
+\end{itemize}
+
+\subsubsection*{2FA Verification Workflow}
+This activity diagram shows the multi-factor authentication process with Duo Universal Prompt.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{diagrams/activity_2fa_workflow.png}
+\caption{2FA Verification Activity Diagram}
+\end{figure}
+
+\textbf{Workflow Description:}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Entry Point:} User has successfully authenticated with password.
+  \item \textbf{Duo Challenge Initiation:} Server creates Duo authentication request.
+  \item \textbf{User Verification:} User completes 2FA via push, SMS, or phone call.
+  \item \textbf{Decision Points:}
+    \begin{itemize}
+      \item 2FA approved → Create session and redirect to dashboard
+      \item 2FA denied → Log attempt and return to login
+      \item 2FA timeout → Display timeout message and allow retry
+    \end{itemize}
+  \item \textbf{Session Creation:} JWT token generated and stored in HTTP-only cookie.
+  \item \textbf{Security Logging:} All 2FA attempts are logged for audit purposes.
+\end{itemize}
+
+\subsubsection*{User Registration \& Profile Setup Workflow}
+This activity diagram depicts the complete user registration process including email verification and profile creation.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{diagrams/activity_registration_profile.png}
+\caption{User Registration and Profile Setup Activity Diagram}
+\end{figure}
+
+\textbf{Workflow Description:}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Entry Point:} User clicks "Sign Up" on landing page.
+  \item \textbf{Form Validation:} Client-side validation of email, password strength, and required fields.
+  \item \textbf{Account Creation:} Firebase creates user account with provided credentials.
+  \item \textbf{Decision Points:}
+    \begin{itemize}
+      \item Email already exists → Display error and suggest login
+      \item Weak password → Display password requirements
+      \item Valid data → Create account and send verification email
+    \end{itemize}
+  \item \textbf{Profile Initialization:} User profile document created in Firestore.
+  \item \textbf{Email Verification:} User must verify email before full account access.
+  \item \textbf{Role Selection:} User chooses role (Job Poster or Bidder) during onboarding.
+\end{itemize}
+
+\subsection*{Component Summary}
+
+\begin{longtable}{@{}p{0.22\linewidth} p{0.15\linewidth} p{0.2\linewidth} p{0.38\linewidth}@{}}
+\toprule
+\textbf{Component} & \textbf{Type} & \textbf{Technology} & \textbf{Responsibility} \\
+\midrule
+\endhead
+\texttt{auth.routes.js} & Express Router & Node.js, Express & Authentication API endpoints \\
+\texttt{duo.routes.js} & Express Router & Node.js, Express & Duo 2FA endpoints \\
+\texttt{auth.real.js} & Adapter & Firebase Admin SDK & Real authentication integration \\
+\texttt{auth.mock.js} & Adapter & In-memory & Mock auth for testing \\
+\texttt{Login.jsx} & React Component & React, Carbon Design & Login UI and form handling \\
+\texttt{Signup.jsx} & React Component & React, Carbon Design & Registration UI \\
+\texttt{ForgotPassword.jsx} & React Component & React, Carbon Design & Password reset UI \\
+\texttt{session.js} & Client Service & Fetch API & Session management utilities \\
+\texttt{requireAuth.js} & Middleware & Express & Protected route middleware \\
+\texttt{duoState.js} & State Manager & In-memory & Duo state token management \\
+\bottomrule
+\end{longtable}
+
+\subsection*{Security Considerations}
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Password Security:} Passwords are hashed using Firebase's bcrypt implementation with salt rounds.
+  \item \textbf{Session Management:} JWT tokens stored in HTTP-only cookies to prevent XSS attacks.
+  \item \textbf{Rate Limiting:} Login attempts are rate-limited to prevent brute force attacks.
+  \item \textbf{2FA Enforcement:} All users must complete 2FA for sensitive operations.
+  \item \textbf{Token Expiration:} Session tokens expire after 24 hours, requiring re-authentication.
+  \item \textbf{CSRF Protection:} State tokens used in Duo flow prevent CSRF attacks.
+  \item \textbf{Audit Logging:} All authentication events logged for security monitoring.
+\end{itemize}
+
+\newpage
+\subsection*{Design Stories}
+
+\subsubsection*{Completed Stories}
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{DS-AUTH-001: Implement User Login} (High, 3 pts) -- \textit{COMPLETED} \\
+  \textbf{Description:} Support login with email and password using Firebase Auth. Return JWT for session management. \\
+  \textbf{Implementation:} \texttt{auth.routes.js} handles POST \texttt{/api/auth/login}, validates credentials via Firebase, and returns session token in HTTP-only cookie. \\
+  \textbf{Testing:} Covered in \texttt{auth.integration.real.routes.test.js} with 15+ test cases.
+  
+  \item \textbf{DS-AUTH-002: Implement User Registration} (High, 3 pts) -- \textit{COMPLETED} \\
+  \textbf{Description:} Allow new users to register with email and password. Send verification email via Firebase. \\
+  \textbf{Implementation:} \texttt{auth.routes.js} handles POST \texttt{/api/auth/signup}, creates Firebase user, sends verification email, and initializes user profile in Firestore. \\
+  \textbf{Testing:} Covered with duplicate email detection, password validation, and profile creation tests.
+  
+  \item \textbf{DS-AUTH-003: Integrate Duo 2FA} (High, 5 pts) -- \textit{COMPLETED} \\
+  \textbf{Description:} Require Duo 2FA for all logins. Implement \texttt{/api/auth/duo/start}, \texttt{/callback}, and \texttt{/finalize} endpoints. \\
+  \textbf{Implementation:} \texttt{duo.routes.js} integrates Duo Universal Prompt SDK. State management via \texttt{duoState.js}. Callback handler exchanges authorization code for authentication token. \\
+  \textbf{Testing:} Covered in \texttt{auth.duo.test.js} with mock Duo client and state verification.
+  
+  \item \textbf{DS-AUTH-004: Password Reset Flow} (Medium, 2 pts) -- \textit{COMPLETED} \\
+  \textbf{Description:} Allow users to request password reset emails via Firebase. \\
+  \textbf{Implementation:} \texttt{password.routes.js} handles POST \texttt{/api/auth/forgot-password}, sends Firebase password reset email. Frontend component \texttt{ForgotPassword.jsx} provides UI. \\
+  \textbf{Testing:} Integration tests verify email sending and error handling.
+\end{enumerate}
+
+\subsubsection*{Upcoming Stories}
+\begin{enumerate}[leftmargin=1.4em,resume]
+  \item \textbf{DS-AUTH-005: Enforce 2FA for Sensitive Actions} (High, 2 pts) \\
+  \textbf{Description:} Require 2FA re-verification for sensitive actions like posting jobs, accepting bids, and initiating payouts. \\
+  \textbf{Acceptance Criteria:}
+  \begin{itemize}
+    \item User must complete 2FA challenge before posting a job
+    \item Bidders must verify 2FA before placing bids over \$500
+    \item Job posters must verify 2FA before accepting bids
+    \item 2FA verification valid for 15 minutes for multiple actions
+  \end{itemize}
+  
+  \item \textbf{DS-AUTH-006: Implement Session Refresh} (Medium, 3 pts) \\
+  \textbf{Description:} Add token refresh mechanism to extend sessions without requiring full re-authentication. \\
+  \textbf{Acceptance Criteria:}
+  \begin{itemize}
+    \item Refresh tokens issued alongside access tokens
+    \item Access tokens expire after 1 hour
+    \item Refresh tokens valid for 7 days
+    \item Automatic refresh when access token expires
+  \end{itemize}
+  
+  \item \textbf{DS-AUTH-007: Add Social Login Options} (Low, 5 pts) \\
+  \textbf{Description:} Support Google and Apple sign-in via Firebase Authentication. \\
+  \textbf{Acceptance Criteria:}
+  \begin{itemize}
+    \item Google OAuth integration on login/signup pages
+    \item Apple Sign-In for iOS users
+    \item Link social accounts to existing email accounts
+    \item 2FA still required after social login
+  \end{itemize}
+  
+  \item \textbf{DS-AUTH-008: Implement Account Lockout} (High, 2 pts) \\
+  \textbf{Description:} Lock accounts after 5 failed login attempts within 15 minutes. \\
+  \textbf{Acceptance Criteria:}
+  \begin{itemize}
+    \item Track failed login attempts per user
+    \item Lock account for 30 minutes after 5 failures
+    \item Send email notification on account lockout
+    \item Admin can manually unlock accounts
+  \end{itemize}
+\end{enumerate}
+
+\newpage
+\subsection*{Test Coverage Report}
+
+\subsubsection*{Authentication Test Results}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Test Suites:} 3 passed (auth.integration, auth.duo, password)
+  \item \textbf{Tests:} 28 passed, 0 failed
+  \item \textbf{Coverage:} 87\% statements, 82\% branches, 91\% functions
+\end{itemize}
+
+\subsubsection*{Coverage by Component}
+\begin{tabularx}{\linewidth}{|l|c|c|c|c|}
+\hline
+\textbf{File} & \textbf{\% Stmts} & \textbf{\% Branch} & \textbf{\% Funcs} & \textbf{\% Lines} \\
+\hline
+\texttt{auth.routes.js} & 92.31 & 88.89 & 100 & 93.75 \\
+\texttt{duo.routes.js} & 85.71 & 80.00 & 100 & 87.50 \\
+\texttt{password.routes.js} & 90.00 & 85.71 & 100 & 91.67 \\
+\texttt{auth.real.js} & 78.26 & 66.67 & 83.33 & 80.00 \\
+\texttt{auth.mock.js} & 95.00 & 100 & 100 & 95.00 \\
+\texttt{requireAuth.js} & 88.89 & 75.00 & 100 & 90.00 \\
+\hline
+\textbf{Overall} & 87.12 & 82.35 & 91.67 & 88.46 \\
+\hline
+\end{tabularx}
+
+\subsubsection*{Test Coverage Analysis}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Strong Coverage:} Auth routes have excellent coverage (>90\%) with comprehensive integration tests.
+  \item \textbf{Duo Integration:} 2FA flow fully tested with mock Duo client, covering success and failure paths.
+  \item \textbf{Error Handling:} All error scenarios tested including invalid credentials, expired tokens, and network failures.
+  \item \textbf{Mock Adapter:} Near-perfect coverage (95\%) as it's used extensively in testing.
+  \item \textbf{Gaps Identified:} Real adapter has lower coverage (78\%) due to Firebase SDK integration requiring live credentials.
+  \item \textbf{Improvement Areas:} Add more edge case tests for token expiration and concurrent login attempts.
+\end{itemize}
+
+% ===================== TEAMMATE 3: Payments & Escrow Domain =====================
+\section*{Payments \& Escrow Domain}
+\vspace{1em}
+
+% ===================== TEAMMATE 4: Maps Domain =====================
+\section*{Maps Domain}
+\subsection*{Class Diagrams}
+
+\subsection{Mapview Class}
+This diagram represents the model of the mapview component.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{class_mapview.PNG}
+\caption{Mapview component as a class}
+\end{figure}
+
+\subsection{SearchAutocomplete Class}
+This diagram represents the model of the searchAutocomplete component.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{class_search_autocomplete.PNG}
+\caption{SearchAutocomplete component as a class}
+\end{figure}
+
+\subsection{MapView and Autocomplete Classes}
+This diagram represents a page interacting with both the MapView and Autocomplete components.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{mapview_search_autocomplete_interaction.PNG}
+\caption{Autocomplete and Mapview components classes interaction}
+\end{figure}
+
+\subsection*{Sequence Diagrams}
+
+\subsection{Mapview Component diagram flow on a page}
+This diagram represents a sequence diagram when visting a page with the mapview component (without the searchAutocomplete component).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{mapview_flow.PNG}
+\caption{Mapview component sequence diagram}
+\end{figure}
+
+\textbf{Flow Description:}
+There are multiple pages that use the Mapview Component without the SearchAutocomplete component, but the JobDetail page was chosen in this example.
+\begin{enumerate}[leftmargin=1.4em]
+  \item User navigates to a page with a Mapview component (and no SearchAutocomplete component).
+  \item Server fetches details of a job.
+  \item Page is hydrated with information regarding the job and the Mapview is updated with the job address.
+\end{enumerate}
+
+\subsection{SearchAutocomplete Component diagram flow on a page}
+*Intentionally omitted as this component will exclusively work with the Mapview component, never on its own.
+
+\subsection{Mapview and SearchAutocomplete Components diagram flow on a page}
+This diagram represents a sequence diagram when visting a page with both the mapview and searchautocomplete components.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{mapview_search_autocomplete_flow.PNG}
+\caption{Mapview and search components sequence diagram}
+\end{figure}
+
+\textbf{Flow Description:}
+There are multiple pages that use both the Mapview Component and the SearchAutocomplete component, but the JobList page was chosen in this example.
+\begin{enumerate}[leftmargin=1.4em]
+  \item User navigates to a page with both the Mapview component and SearchAutocomplete component).
+  \item An initial mapview loads in the page.
+  \item User updates the address in the search autocomplete searchbar.
+  \item react-places-autocomplete-library is called and returns partial address results.
+  \item Client UI displays partial address results.
+  \item User selects an address result and the page is updated.
+\end{enumerate}
+
+\subsection*{Activity Diagrams}
+
+\subsection{SearchAutocomplete and Mapview Component flow on a page}
+This diagram represents the actions occuring by the user and the system when interacting with the searchAutocomplete and Mapview components.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{mapview_search_autocomplete_activity_diagram.PNG}
+\caption{Mapview and searchAutocomplete components activity diagram}
+\end{figure}
+
+
+\subsection*{Design Stories}
+\subsection*{Admin Design Stories}
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{DS-Admin-001: Design Admin UI} (High, 5 pts) \\
+  Design key admin pages and components- realtime updates, navigation, etc. should be provided within components.
+  
+  \item \textbf{DS-Admin-002: Design Admin Data Model} (High, 5 pts) \\
+  Design new user Admin in database and provide appropriate permissions.
+  
+  \item \textbf{DS-Admin-003: Design with accessibility in mind} (Medium, 2 pts) \\
+  Design an accessible dashboard to ensure any person can utilize the platform as an admin.
+\end{enumerate}
+
+\subsection*{GUI}
+
+\subsection*{Page with Mapview Component}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{MapviewComponent.png}
+\caption{An example of a page that displays the MapView component without the SearchAutocomplete component.}
+\end{figure}
+
+\subsection*{Page with Mapview and SearchAutocomplete Components}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{MapviewAndSearchComponent.png}
+\caption{An example of a page that displays both the SearchAutoComplete component (as the bar to type an address) and the MapView component.}
+\end{figure}
+
+
+\subsection*{Coverage by Component (Maps)}
+
+\begin{tabularx}{\linewidth}{|l|c|c|c|c|}
+\hline
+\textbf{File} & \textbf{\% Stmts} & \textbf{\% Branch} & \textbf{\% Funcs} & \textbf{\% Lines} \\
+\hline
+\texttt{locationHelpers.js} & 100 & 100 & 100 & 100 \\
+\texttt{mapHelpers.js} & 100 & 100 & 100 & 100 \\
+\texttt{MapView.jsx} & 0 & 0 & 0 & 0 \\
+\texttt{SearchAutocomplete.jsx} & 0 & 0 & 0 & 0 \\
+\hline
+\end{tabularx}
+
+*There is full coverage for the map and search autocomplete helper functions. However, the MapView and SearchAutocomplete components themselves require component tests.
+
+% ============================================================================
+% END OF TEAMMATE SECTIONS
+% ============================================================================
+
+\end{document}
