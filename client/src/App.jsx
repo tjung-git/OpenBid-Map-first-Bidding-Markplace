@@ -23,6 +23,7 @@ export default function App() {
   const userType = user?.userType
     ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1)
     : null;
+  const isAdmin = user?.userType === "admin";
 
   const handleBrandNavigation = useCallback(() => {
     if (!user) {
@@ -35,22 +36,24 @@ export default function App() {
   return (
     <>
       <Header aria-label="OpenBid">
-        <HeaderName prefix="">
-          <button
-            type="button"
-            className="header-logo-button"
-            onClick={handleBrandNavigation}
-            aria-label="OpenBid home"
-          >
-            <img src="/Images/OpenBidLogo.svg" alt="OpenBid logo" />
-            <span className="header-logo-text">OpenBid</span>
-          </button>
+        <HeaderName prefix={isAdmin ? "OpenBid" : ""}>
+          {isAdmin ? (
+            "Admin"
+          ) : (
+            <button
+              type="button"
+              className="header-logo-button"
+              onClick={handleBrandNavigation}
+              aria-label="OpenBid home"
+            >
+              <img src="/Images/OpenBidLogo.svg" alt="OpenBid logo" />
+              <span className="header-logo-text">OpenBid</span>
+            </button>
+          )}
         </HeaderName>
         <HeaderGlobalBar>
           <div className="header-user-info">
-            <span className="header-user-greeting">
-              Hello, {greetingName}
-            </span>
+            <span className="header-user-greeting">Hello, {greetingName}</span>
             {fullName && (
               <span className="header-user-details">
                 Logged in as {fullName}
@@ -58,12 +61,19 @@ export default function App() {
               </span>
             )}
           </div>
-          <HeaderGlobalAction aria-label="Map" onClick={() => nav("/jobs")}>
-            <Map />
-          </HeaderGlobalAction>
-          <HeaderGlobalAction aria-label="Profile" onClick={() => nav("/profile")}>
-            <UserAvatar />
-          </HeaderGlobalAction>
+          {isAdmin && (
+            <HeaderGlobalAction aria-label="Map" onClick={() => nav("/jobs")}>
+              <Map />
+            </HeaderGlobalAction>
+          )}
+          {isAdmin && (
+            <HeaderGlobalAction
+              aria-label="Profile"
+              onClick={() => nav("/profile")}
+            >
+              <UserAvatar />
+            </HeaderGlobalAction>
+          )}
           <HeaderGlobalAction
             aria-label="Logout"
             onClick={() => {
@@ -75,7 +85,7 @@ export default function App() {
           </HeaderGlobalAction>
         </HeaderGlobalBar>
       </Header>
-      <Nav />
+      {!isAdmin && <Nav />}
       <main className="container">
         <Outlet />
       </main>
