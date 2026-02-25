@@ -40,6 +40,25 @@ function normalizeFirestoreRecord(docSnap, idKey = "id") {
   return { [idKey]: docSnap.id, ...data };
 }
 
+async function resolveUserFromSession(req, session) {
+  let user = null;
+
+  if (session?.uid) user = await db.user.get(session.uid);
+
+  if (!user && session?.email) {
+    user = await db.user.findByEmail(String(session.email).toLowerCase());
+  }
+
+  if (!user && req.header("x-user-id")) {
+    user = await db.user.get(req.header("x-user-id"));
+  }
+  if (!user && req.header("x-mock-uid")) {
+    user = await db.user.get(req.header("x-mock-uid"));
+  }
+
+  return user;
+}
+
 async function requireAdmin(req, res) {
   const session = await auth.verify(req);
   if (!session) {
@@ -47,12 +66,7 @@ async function requireAdmin(req, res) {
     return null;
   }
 
-  let user = null;
-  if (session.uid) user = await db.user.get(session.uid);
-  if (!user && session.email)
-    user = await db.user.findByEmail(String(session.email).toLowerCase());
-  if (!user && req.header("x-user-id"))
-    user = await db.user.get(req.header("x-user-id"));
+  const user = await resolveUserFromSession(req, session);
 
   if (!user) {
     res.status(404).json({ error: "user_not_found" });
@@ -61,7 +75,7 @@ async function requireAdmin(req, res) {
 
   if (user.uid && session.uid !== user.uid) session.uid = user.uid;
 
-  if (String(user.userType).toLowerCase() !== "admin") {
+  if (String(user.userType || "").toLowerCase() !== "admin") {
     res.status(403).json({ error: "admin_only" });
     return null;
   }
@@ -77,22 +91,37 @@ async function listAllUsersReal() {
 }
 
 async function deleteUserReal(uid) {
-  const ref = getDb().collection(collections.users).doc(uid);
+  const dbRef = getDb();
+
+  const ref = dbRef.collection(collections.users).doc(uid);
   const snap = await ref.get();
   if (!snap.exists) return false;
 
   await ref.delete();
 
-  const bidsSnap = await getDb()
+  // Cleanup: delete bids by providerId == uid
+  const bidsSnap = await dbRef
     .collection(collections.bids)
     .where("providerId", "==", uid)
     .get();
 
   if (!bidsSnap.empty) {
-    const batch = getDb().batch();
+    const batch = dbRef.batch();
     bidsSnap.docs.forEach((doc) => batch.delete(doc.ref));
     await batch.commit();
   }
+
+  // Optional: cleanup jobs posted by this user (posterId == uid)
+  // Parity with db.mock cleanup, uncomment:
+  // const jobsSnap = await dbRef
+  //   .collection(collections.jobs)
+  //   .where("posterId", "==", uid)
+  //   .get();
+  // if (!jobsSnap.empty) {
+  //   const batch = dbRef.batch();
+  //   jobsSnap.docs.forEach((doc) => batch.delete(doc.ref));
+  //   await batch.commit();
+  // }
 
   return true;
 }
@@ -112,15 +141,16 @@ router.get("/users", async (req, res, next) => {
       return res.json({ users: users.map(sanitizeUser) });
     }
 
-    if (config.prototype) {
-      return res.status(501).json({
-        error: "not_implemented",
-        detail: "db.user.list() missing in prototype mode (db.mock).",
-      });
+    // Fallback: real mode list via Firestore scan (if db.user.list not present)
+    if (!config.prototype) {
+      const users = await listAllUsersReal();
+      return res.json({ users: users.map(sanitizeUser) });
     }
 
-    const users = await listAllUsersReal();
-    return res.json({ users: users.map(sanitizeUser) });
+    return res.status(501).json({
+      error: "not_implemented",
+      detail: "db.user.list() missing in prototype mode (db.mock).",
+    });
   } catch (e) {
     next(e);
   }
@@ -149,7 +179,6 @@ router.patch("/users/:uid", async (req, res, next) => {
     const existing = await db.user.get(uid);
     if (!existing) return res.status(404).json({ error: "not_found" });
 
-    // Keep this conservative: don't allow passwordHash updates via admin
     const allowed = new Set([
       "firstName",
       "lastName",
@@ -190,22 +219,24 @@ router.delete("/users/:uid", async (req, res, next) => {
     if (ctx.user?.uid && ctx.user.uid === uid) {
       return res.status(409).json({ error: "cannot_delete_self" });
     }
+
     if (typeof db.user.delete === "function") {
       const ok = await db.user.delete(uid);
       if (!ok) return res.status(404).json({ error: "not_found" });
       return res.status(204).end();
     }
 
-    if (config.prototype) {
-      return res.status(501).json({
-        error: "not_implemented",
-        detail: "db.user.delete() missing in prototype mode (db.mock).",
-      });
+    // Fallback: real mode delete via Firestore if db.user.delete not present
+    if (!config.prototype) {
+      const ok = await deleteUserReal(uid);
+      if (!ok) return res.status(404).json({ error: "not_found" });
+      return res.status(204).end();
     }
 
-    const ok = await deleteUserReal(uid);
-    if (!ok) return res.status(404).json({ error: "not_found" });
-    return res.status(204).end();
+    return res.status(501).json({
+      error: "not_implemented",
+      detail: "db.user.delete() missing in prototype mode (db.mock).",
+    });
   } catch (e) {
     next(e);
   }
@@ -297,24 +328,28 @@ router.get("/bids", async (req, res, next) => {
 
     if (typeof db.bid.list === "function") {
       const bids = await db.bid.list();
+      bids.sort((a, b) => {
+        const aCreated = new Date(a.bidCreatedAt || a.createdAt || 0).getTime();
+        const bCreated = new Date(b.bidCreatedAt || b.createdAt || 0).getTime();
+        return bCreated - aCreated;
+      });
       return res.json({ bids });
     }
 
-    if (config.prototype) {
-      return res.status(501).json({
-        error: "not_implemented",
-        detail: "db.bid.list() missing in prototype mode (db.mock).",
+    if (!config.prototype) {
+      const bids = await listAllBidsReal();
+      bids.sort((a, b) => {
+        const aCreated = new Date(a.bidCreatedAt || a.createdAt || 0).getTime();
+        const bCreated = new Date(b.bidCreatedAt || b.createdAt || 0).getTime();
+        return bCreated - aCreated;
       });
+      return res.json({ bids });
     }
 
-    const bids = await listAllBidsReal();
-    bids.sort((a, b) => {
-      const aCreated = new Date(a.bidCreatedAt || a.createdAt || 0).getTime();
-      const bCreated = new Date(b.bidCreatedAt || b.createdAt || 0).getTime();
-      return bCreated - aCreated;
+    return res.status(501).json({
+      error: "not_implemented",
+      detail: "db.bid.list() missing in prototype mode (db.mock).",
     });
-
-    return res.json({ bids });
   } catch (e) {
     next(e);
   }
@@ -393,7 +428,6 @@ router.patch("/bids/:bidId", async (req, res, next) => {
       return res.status(400).json({ error: "no_update_fields" });
     }
 
-    // Your db.bid.update writes updatedAt serverTimestamp; keep bidUpdatedAt consistent with your app
     patch.bidUpdatedAt = new Date().toISOString();
 
     const updated = await db.bid.update(bidId, patch);
