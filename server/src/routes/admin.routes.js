@@ -7,8 +7,10 @@ import { db as mockDb } from "../adapters/db.mock.js";
 import { db as realDb } from "../adapters/db.real.js";
 import { getDb } from "../lib/firebase.js";
 import { Timestamp } from "firebase-admin/firestore";
+import { requireRole } from "../middleware/requireRole.js";
 
 const router = Router();
+router.use(requireRole("admin"));
 const auth = config.prototype ? mockAuth : realAuth;
 const db = config.prototype ? mockDb : realDb;
 
@@ -216,10 +218,21 @@ router.delete("/users/:uid", async (req, res, next) => {
 
     const uid = req.params.uid;
 
+    // Prevent deleting yourself
     if (ctx.user?.uid && ctx.user.uid === uid) {
       return res.status(409).json({ error: "cannot_delete_self" });
     }
 
+    // Load the TARGET user (the one being deleted)
+    const target = await db.user.get(uid);
+    if (!target) return res.status(404).json({ error: "not_found" });
+
+    // Prevent deleting an admin account (TARGET user)
+    if ((target.userType || "").toLowerCase() === "admin") {
+      return res.status(409).json({ error: "cannot_delete_admin" });
+    }
+
+    // Prefer adapter delete if available (prototype or real)
     if (typeof db.user.delete === "function") {
       const ok = await db.user.delete(uid);
       if (!ok) return res.status(404).json({ error: "not_found" });

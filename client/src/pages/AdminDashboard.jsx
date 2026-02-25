@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+// AdminDashboard.jsx
+import React, { useEffect, useMemo, useState } from "react";
 import { api } from "../services/api";
 import {
   SideNav,
@@ -8,7 +9,6 @@ import {
   Tabs,
   TabList,
   Tab,
-  TabPanel,
   DataTable,
   Table,
   TableHead,
@@ -24,146 +24,12 @@ import {
   ToastNotification,
   InlineNotification,
 } from "@carbon/react";
-import {
-  UserAvatar,
-  Task,
-  Money,
-  Logout,
-  View,
-  TrashCan,
-} from "@carbon/icons-react";
-import { useNavigate } from "react-router-dom";
+import { UserAvatar, Task, Money, View, TrashCan } from "@carbon/icons-react";
 import "../styles/pages/admin-dashboard.css";
 
-const dummyUsers = [
-  {
-    uid: "u_admin",
-    firstName: "OpenBid",
-    lastName: "Admin",
-    email: "openbidadmin@gmail.com",
-    userType: "admin",
-    emailVerification: "verified",
-    kycStatus: "pending",
-    kycSessionId: null,
-    createdAt: new Date(Date.now() - 7 * 864e5).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    uid: "u_openbid123",
-    firstName: "OpenBid",
-    lastName: "Developer",
-    email: "openbid123@gmail.com",
-    userType: "bidder",
-    emailVerification: "verified",
-    kycStatus: "pending",
-    kycSessionId: null,
-    createdAt: new Date(Date.now() - 22 * 864e5).toISOString(),
-    updatedAt: new Date(Date.now() - 2 * 864e5).toISOString(),
-  },
-  {
-    uid: "u_poster777",
-    firstName: "Sam",
-    lastName: "Poster",
-    email: "sam.poster@example.com",
-    userType: "poster",
-    emailVerification: "pending",
-    kycStatus: "pending",
-    kycSessionId: null,
-    createdAt: new Date(Date.now() - 2 * 864e5).toISOString(),
-    updatedAt: new Date(Date.now() - 1 * 864e5).toISOString(),
-  },
-];
-
-const dummyJobs = [
-  {
-    id: "job_1",
-    posterId: "u_poster777",
-    title: "Fix kitchen sink leak",
-    description:
-      "Leak under the sink. Need someone to replace seal and inspect pipes.",
-    budgetAmount: 250,
-    location: "Toronto, ON",
-    status: "open",
-    createdAt: new Date(Date.now() - 3 * 864e5).toISOString(),
-    updatedAt: new Date(Date.now() - 1 * 864e5).toISOString(),
-  },
-  {
-    id: "job_2",
-    posterId: "u_poster777",
-    title: "Paint backyard fence",
-    description: "Fence needs sanding and repainting. Materials provided.",
-    budgetAmount: 400,
-    location: "Mississauga, ON",
-    status: "open",
-    createdAt: new Date(Date.now() - 6 * 864e5).toISOString(),
-    updatedAt: new Date(Date.now() - 4 * 864e5).toISOString(),
-  },
-  {
-    id: "job_3",
-    posterId: "u_openbid123",
-    title: "Install smart thermostat",
-    description:
-      "Install Nest thermostat; wiring present but needs setup and testing.",
-    budgetAmount: 180,
-    location: "Milton, ON",
-    status: "closed",
-    createdAt: new Date(Date.now() - 15 * 864e5).toISOString(),
-    updatedAt: new Date(Date.now() - 10 * 864e5).toISOString(),
-  },
-];
-
-const dummyBids = [
-  {
-    id: "bid_1",
-    jobId: "job_1",
-    providerId: "u_openbid123",
-    bidderName: "OpenBid Developer",
-    contractorId: "u_poster777",
-    contractorName: "Sam Poster",
-    jobTitle: "Fix kitchen sink leak",
-    jobDescription:
-      "Leak under the sink. Need someone to replace seal and inspect pipes.",
-    jobBudgetAmount: 250,
-    jobLocation: "Toronto, ON",
-    amount: 225,
-    note: "Can come tomorrow morning. Includes parts if needed (basic).",
-    status: "active",
-    bidCreatedAt: new Date(Date.now() - 2 * 864e5).toISOString(),
-  },
-  {
-    id: "bid_2",
-    jobId: "job_2",
-    providerId: "u_openbid123",
-    bidderName: "OpenBid Developer",
-    contractorId: "u_poster777",
-    contractorName: "Sam Poster",
-    jobTitle: "Paint backyard fence",
-    jobDescription: "Fence needs sanding and repainting. Materials provided.",
-    jobBudgetAmount: 400,
-    jobLocation: "Mississauga, ON",
-    amount: 360,
-    note: "Two-day job. Prep + paint. Weather permitting.",
-    status: "active",
-    bidCreatedAt: new Date(Date.now() - 5 * 864e5).toISOString(),
-  },
-  {
-    id: "bid_3",
-    jobId: "job_3",
-    providerId: "u_poster777",
-    bidderName: "Sam Poster",
-    contractorId: "u_openbid123",
-    contractorName: "OpenBid Developer",
-    jobTitle: "Install smart thermostat",
-    jobDescription:
-      "Install Nest thermostat; wiring present but needs setup and testing.",
-    jobBudgetAmount: 180,
-    jobLocation: "Milton, ON",
-    amount: 190,
-    note: "Includes setup + testing + app pairing.",
-    status: "closed",
-    bidCreatedAt: new Date(Date.now() - 12 * 864e5).toISOString(),
-  },
-];
+/* -----------------------------
+ * Helpers
+ * ----------------------------- */
 
 function fmtMoney(v) {
   if (v === null || v === undefined || Number.isNaN(Number(v))) return "";
@@ -188,6 +54,10 @@ function filterRows(rows, q, fields) {
   return rows.filter((r) => fields.some((f) => contains(r[f], q)));
 }
 
+/* -----------------------------
+ * Generic Table
+ * ----------------------------- */
+
 function SimpleTable({
   title,
   subtitle,
@@ -201,17 +71,16 @@ function SimpleTable({
 
   const rows = useMemo(() => {
     const filtered = filterRows(rawRows, query, searchFields);
-
     // Carbon DataTable expects each row object to have an `id` string.
     return filtered.map((r) => ({ ...r, id: String(r.id) }));
   }, [rawRows, query, searchFields]);
 
   return (
-    <div style={{ marginBottom: "2rem" }}>
-      <div style={{ marginBottom: "0.75rem" }}>
-        <h2 style={{ margin: 0 }}>{title}</h2>
+    <div className="admin-section">
+      <div className="admin-section__header">
+        <h2 className="admin-section__title">{title}</h2>
         {subtitle ? (
-          <p style={{ margin: "0.25rem 0 0 0", opacity: 0.8 }}>{subtitle}</p>
+          <p className="admin-section__subtitle">{subtitle}</p>
         ) : null}
       </div>
 
@@ -258,9 +127,7 @@ function SimpleTable({
                     ))}
 
                     <TableCell>
-                      <div
-                        style={{ display: "flex", gap: 8, flexWrap: "wrap" }}
-                      >
+                      <div className="admin-table-actions">
                         <Button
                           kind="ghost"
                           size="sm"
@@ -315,11 +182,18 @@ function SimpleTable({
   );
 }
 
+/* -----------------------------
+ * AdminDashboard
+ * ----------------------------- */
+
 export default function AdminDashboard() {
-  const [users, setUsers] = useState(dummyUsers);
-  const [jobs, setJobs] = useState(dummyJobs);
-  const [bids, setBids] = useState(dummyBids);
+  const [users, setUsers] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const [bids, setBids] = useState([]);
   const [activeTab, setActiveTab] = useState(0);
+
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   const [toast, setToast] = useState(null);
   const [modal, setModal] = useState({
@@ -331,7 +205,70 @@ export default function AdminDashboard() {
   const [view, setView] = useState({ open: false, title: "", body: "" });
 
   const sideNavWidth = 220;
-  const nav = useNavigate();
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      try {
+        setLoading(true);
+        setLoadError("");
+
+        const [u, j, b] = await Promise.all([
+          api.adminUsersList(),
+          api.adminJobsList(),
+          api.adminBidsList(),
+        ]);
+
+        if (!alive) return;
+
+        setUsers(u?.users || []);
+        setJobs(j?.jobs || []);
+        setBids(b?.bids || []);
+      } catch (e) {
+        if (!alive) return;
+        setLoadError(
+          e?.data?.error ||
+            e?.data?.detail ||
+            e?.message ||
+            "Failed to load admin data.",
+        );
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const refreshActiveTab = async () => {
+    try {
+      setLoading(true);
+      setLoadError("");
+
+      if (activeTab === 0) {
+        const u = await api.adminUsersList();
+        setUsers(u?.users || []);
+      } else if (activeTab === 1) {
+        const j = await api.adminJobsList();
+        setJobs(j?.jobs || []);
+      } else if (activeTab === 2) {
+        const b = await api.adminBidsList();
+        setBids(b?.bids || []);
+      }
+    } catch (e) {
+      setLoadError(
+        e?.data?.error ||
+          e?.data?.detail ||
+          e?.message ||
+          "Failed to refresh data.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const usersHeaders = useMemo(
     () => [
@@ -425,52 +362,61 @@ export default function AdminDashboard() {
     });
   };
 
+  const doDelete = async (entityName, row) => {
+    if (!row) return;
+
+    try {
+      if (entityName === "User") {
+        await api.adminUserDelete(row.uid ?? row.id);
+        setUsers((prev) => prev.filter((u) => u.uid !== (row.uid ?? row.id)));
+      } else if (entityName === "Job") {
+        await api.adminJobDelete(row.id);
+        setJobs((prev) => prev.filter((j) => j.id !== row.id));
+        setBids((prev) => prev.filter((b) => b.jobId !== row.id));
+      } else if (entityName === "Bid") {
+        await api.adminBidDelete(row.id);
+        setBids((prev) => prev.filter((b) => b.id !== row.id));
+      }
+
+      setToast({
+        kind: "success",
+        title: "Deleted",
+        subtitle: `${entityName} removed.`,
+      });
+      window.setTimeout(() => setToast(null), 2500);
+    } catch (e) {
+      setToast({
+        kind: "error",
+        title: "Delete failed",
+        subtitle:
+          e?.data?.error || e?.data?.detail || e?.message || "Unknown error",
+      });
+      window.setTimeout(() => setToast(null), 3500);
+    }
+  };
+
   const onDelete = (entityName, row) => {
     if (!row) return;
 
     setModal({
       open: true,
       title: `Delete ${entityName}?`,
-      body: `This is a dummy action. It will remove the record from local state only.\n\nID: ${row.id ?? row.uid ?? "(unknown)"}`,
-      onConfirm: () => {
+      body: `This will delete the record.\n\nID: ${row.id ?? row.uid ?? "(unknown)"}`,
+      onConfirm: async () => {
         setModal((m) => ({ ...m, open: false }));
-
-        if (entityName === "User") {
-          setUsers((prev) =>
-            prev.filter((u) => u.uid !== row.uid && u.uid !== row.id),
-          );
-        }
-        if (entityName === "Job") {
-          setJobs((prev) => prev.filter((j) => j.id !== row.id));
-          // also delete related bids (nice for realism)
-          setBids((prev) => prev.filter((b) => b.jobId !== row.id));
-        }
-        if (entityName === "Bid") {
-          setBids((prev) => prev.filter((b) => b.id !== row.id));
-        }
-
-        setToast({
-          kind: "success",
-          title: "Deleted",
-          subtitle: `${entityName} removed (dummy).`,
-        });
-
-        window.setTimeout(() => setToast(null), 2500);
+        await doDelete(entityName, row);
       },
     });
   };
 
   return (
     <>
-      <div style={{ display: "flex", minHeight: "100vh" }}>
+      <div className="admin-layout">
         <SideNav
           aria-label="Admin navigation"
           expanded
-          style={{
-            position: "relative",
-            width: sideNavWidth,
-            borderRight: "1px solid rgba(0,0,0,0.08)",
-          }}
+          className="admin-sidenav"
+          style={{ width: sideNavWidth }}
         >
           <SideNavItems>
             <SideNavLink
@@ -488,12 +434,9 @@ export default function AdminDashboard() {
           </SideNavItems>
         </SideNav>
 
-        <Content
-          className="admin-content"
-          style={{ padding: "1.5rem", flex: 1 }}
-        >
+        <Content className="admin-content">
           {toast ? (
-            <div style={{ marginBottom: "1rem" }}>
+            <div className="admin-toast">
               <ToastNotification
                 kind={toast.kind}
                 title={toast.title}
@@ -504,21 +447,46 @@ export default function AdminDashboard() {
             </div>
           ) : null}
 
-          <Tabs
-            selectedIndex={activeTab}
-            onChange={(event, { selectedIndex }) => setActiveTab(selectedIndex)}
-          >
-            <TabList aria-label="Admin sections">
-              <Tab>Users</Tab>
-              <Tab>Jobs</Tab>
-              <Tab>Bids</Tab>
-            </TabList>
-          </Tabs>
+          {loadError ? (
+            <div className="admin-inline-error">
+              <InlineNotification
+                kind="error"
+                title="Admin load failed"
+                subtitle={loadError}
+                lowContrast
+              />
+            </div>
+          ) : null}
+
+          <div className="admin-tabs-row">
+            <Tabs
+              selectedIndex={activeTab}
+              onChange={(event, { selectedIndex }) =>
+                setActiveTab(selectedIndex)
+              }
+            >
+              <TabList aria-label="Admin sections">
+                <Tab>Users</Tab>
+                <Tab>Jobs</Tab>
+                <Tab>Bids</Tab>
+              </TabList>
+            </Tabs>
+
+            <Button
+              kind="secondary"
+              size="sm"
+              className="admin-refresh-btn"
+              disabled={loading}
+              onClick={refreshActiveTab}
+            >
+              {loading ? "Loading…" : "Refresh"}
+            </Button>
+          </div>
 
           {activeTab === 0 && (
             <SimpleTable
               title="Users"
-              subtitle="Manage accounts (dummy data)."
+              subtitle="Manage accounts."
               headers={usersHeaders}
               rawRows={usersRows}
               searchFields={[
@@ -537,7 +505,7 @@ export default function AdminDashboard() {
           {activeTab === 1 && (
             <SimpleTable
               title="Jobs"
-              subtitle="Moderate job posts (dummy data)."
+              subtitle="Moderate job posts."
               headers={jobsHeaders}
               rawRows={jobsRows}
               searchFields={["id", "title", "posterId", "location", "status"]}
@@ -549,7 +517,7 @@ export default function AdminDashboard() {
           {activeTab === 2 && (
             <SimpleTable
               title="Bids"
-              subtitle="Review bids and activity (dummy data)."
+              subtitle="Review bids and activity."
               headers={bidsHeaders}
               rawRows={bidsRows}
               searchFields={[
@@ -575,7 +543,7 @@ export default function AdminDashboard() {
         onRequestSubmit={() => setView({ open: false, title: "", body: "" })}
         secondaryButtonText={null}
       >
-        <pre style={{ whiteSpace: "pre-wrap", margin: 0 }}>{view.body}</pre>
+        <pre className="admin-modal-pre">{view.body}</pre>
       </Modal>
 
       {/* Delete confirm modal */}
@@ -588,7 +556,7 @@ export default function AdminDashboard() {
         onRequestClose={() => setModal((m) => ({ ...m, open: false }))}
         onRequestSubmit={() => modal.onConfirm?.()}
       >
-        <pre style={{ whiteSpace: "pre-wrap", margin: 0 }}>{modal.body}</pre>
+        <pre className="admin-modal-pre">{modal.body}</pre>
       </Modal>
     </>
   );

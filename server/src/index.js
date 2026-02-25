@@ -32,7 +32,7 @@ app.use("/api/kyc", forbidRole("admin"), kycRoutes);
 app.use("/api/jobs", forbidRole("admin"), jobsRoutes);
 app.use("/api/bids", forbidRole("admin"), bidsRoutes);
 app.use("/api/password", forbidRole("admin"), passwordRoutes);
-app.use("/api/auth/duo", forbidRole("admin"), duoRoutes);
+app.use("/api/auth/duo", duoRoutes);
 app.use("/api/upload", forbidRole("admin"), uploadRoutes);
 app.use("/api/admin", requireRole("admin"), adminRoutes);
 
