@@ -1,4 +1,3 @@
-// AdminDashboard.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { api } from "../services/api";
 import {
@@ -23,13 +22,13 @@ import {
   Modal,
   ToastNotification,
   InlineNotification,
+  Form,
+  TextInput,
+  Select,
+  SelectItem,
 } from "@carbon/react";
 import { UserAvatar, Task, Money, View, TrashCan } from "@carbon/icons-react";
 import "../styles/pages/admin-dashboard.css";
-
-/* -----------------------------
- * Helpers
- * ----------------------------- */
 
 function fmtMoney(v) {
   if (v === null || v === undefined || Number.isNaN(Number(v))) return "";
@@ -43,6 +42,18 @@ function fmtDate(iso) {
   return d.toLocaleString();
 }
 
+function fmtLocation(loc) {
+  if (!loc) return "";
+  if (typeof loc === "string") return loc;
+
+  const address = loc.address ? String(loc.address) : "";
+  const lat = typeof loc.lat === "number" ? loc.lat.toFixed(4) : "";
+  const lng = typeof loc.lng === "number" ? loc.lng.toFixed(4) : "";
+
+  if (address && (lat || lng)) return `${address} (${lat}, ${lng})`;
+  return address || (lat || lng ? `${lat}, ${lng}` : "");
+}
+
 function contains(haystack, needle) {
   return String(haystack ?? "")
     .toLowerCase()
@@ -53,10 +64,6 @@ function filterRows(rows, q, fields) {
   if (!q) return rows;
   return rows.filter((r) => fields.some((f) => contains(r[f], q)));
 }
-
-/* -----------------------------
- * Generic Table
- * ----------------------------- */
 
 function SimpleTable({
   title,
@@ -71,7 +78,6 @@ function SimpleTable({
 
   const rows = useMemo(() => {
     const filtered = filterRows(rawRows, query, searchFields);
-    // Carbon DataTable expects each row object to have an `id` string.
     return filtered.map((r) => ({ ...r, id: String(r.id) }));
   }, [rawRows, query, searchFields]);
 
@@ -182,10 +188,6 @@ function SimpleTable({
   );
 }
 
-/* -----------------------------
- * AdminDashboard
- * ----------------------------- */
-
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [jobs, setJobs] = useState([]);
@@ -202,7 +204,26 @@ export default function AdminDashboard() {
     body: "",
     onConfirm: null,
   });
-  const [view, setView] = useState({ open: false, title: "", body: "" });
+
+  const [view, setView] = useState({
+    open: false,
+    title: "",
+    entity: null,
+    id: null,
+    loading: false,
+    saving: false,
+    error: "",
+    form: {
+      uid: "",
+      email: "",
+      firstName: "",
+      lastName: "",
+      userType: "",
+      emailVerification: "",
+      kycStatus: "",
+    },
+    raw: null,
+  });
 
   const sideNavWidth = 220;
 
@@ -276,7 +297,7 @@ export default function AdminDashboard() {
       { key: "name", header: "Name" },
       { key: "email", header: "Email" },
       { key: "userType", header: "Role" },
-      { key: "emailVerification", header: "Email" },
+      { key: "emailVerification", header: "Email Verification" },
       { key: "kycStatus", header: "KYC" },
       { key: "createdAt", header: "Created" },
     ],
@@ -319,7 +340,7 @@ export default function AdminDashboard() {
         title: j.title,
         posterId: j.posterId,
         budgetAmount: fmtMoney(j.budgetAmount),
-        location: j.location,
+        location: fmtLocation(j.location),
         status: j.status,
         createdAt: fmtDate(j.createdAt),
       })),
@@ -330,8 +351,8 @@ export default function AdminDashboard() {
     () => [
       { key: "id", header: "Bid ID" },
       { key: "jobId", header: "Job ID" },
-      { key: "providerId", header: "Provider UID" },
-      { key: "bidderName", header: "Bidder" },
+      { key: "contractorId", header: "Contractor UID" },
+      { key: "providerId", header: "Bidder UID" },
       { key: "amount", header: "Amount" },
       { key: "status", header: "Status" },
       { key: "bidCreatedAt", header: "Created" },
@@ -344,8 +365,8 @@ export default function AdminDashboard() {
       bids.map((b) => ({
         id: b.id,
         jobId: b.jobId,
+        contractorId: b.contractorId,
         providerId: b.providerId,
-        bidderName: b.bidderName,
         amount: fmtMoney(b.amount),
         status: b.status,
         bidCreatedAt: fmtDate(b.bidCreatedAt),
@@ -353,13 +374,112 @@ export default function AdminDashboard() {
     [bids],
   );
 
-  const onView = (entityName, row) => {
+  const openUserEditor = async (row) => {
+    if (!row) return;
+    const uid = row.uid ?? row.id;
+    if (!uid) return;
+
+    setView({
+      open: true,
+      title: "Edit User",
+      entity: "User",
+      id: uid,
+      loading: true,
+      saving: false,
+      error: "",
+      form: {
+        uid: String(uid),
+        email: row.email ?? "",
+        firstName: "",
+        lastName: "",
+        userType: row.userType ?? "",
+        emailVerification: row.emailVerification ?? "",
+        kycStatus: row.kycStatus ?? "",
+      },
+      raw: row,
+    });
+
+    try {
+      const res = await api.adminUserGet(uid);
+      const u = res?.user || {};
+      setView((v) => ({
+        ...v,
+        loading: false,
+        raw: u,
+        form: {
+          uid: String(u.uid ?? uid),
+          email: u.email ?? "",
+          firstName: u.firstName ?? "",
+          lastName: u.lastName ?? "",
+          userType: u.userType ?? "",
+          emailVerification: u.emailVerification ?? "",
+          kycStatus: u.kycStatus ?? "",
+        },
+      }));
+    } catch (e) {
+      setView((v) => ({
+        ...v,
+        loading: false,
+        error:
+          e?.data?.error ||
+          e?.data?.detail ||
+          e?.message ||
+          "Failed to load user.",
+      }));
+    }
+  };
+
+  const openReadOnlyView = (entity, row) => {
     if (!row) return;
     setView({
       open: true,
-      title: `View ${entityName}`,
-      body: JSON.stringify(row, null, 2),
+      title: `View ${entity}`,
+      entity,
+      id: row?.id ?? row?.uid ?? null,
+      loading: false,
+      saving: false,
+      error: "",
+      form: view.form,
+      raw: row,
     });
+  };
+
+  const saveUserEdits = async () => {
+    if (view.entity !== "User" || !view.id) return;
+    try {
+      setView((v) => ({ ...v, saving: true, error: "" }));
+
+      const payload = {
+        email: view.form.email,
+        firstName: view.form.firstName,
+        lastName: view.form.lastName,
+        userType: view.form.userType,
+        emailVerification: view.form.emailVerification,
+        kycStatus: view.form.kycStatus,
+      };
+
+      const res = await api.adminUserUpdate(view.id, payload);
+      const updated = res?.user || {};
+
+      setUsers((prev) =>
+        prev.map((u) => (u.uid === view.id ? { ...u, ...updated } : u)),
+      );
+
+      setToast({ kind: "success", title: "Updated", subtitle: "User saved." });
+      window.setTimeout(() => setToast(null), 2500);
+
+      setView((v) => ({ ...v, saving: false, open: false }));
+    } catch (e) {
+      setView((v) => ({
+        ...v,
+        saving: false,
+        error:
+          e?.data?.error ||
+          e?.data?.detail ||
+          e?.message ||
+          "Failed to update user.",
+      }));
+    }
   };
 
   const doDelete = async (entityName, row) => {
@@ -401,7 +521,9 @@ export default function AdminDashboard() {
     setModal({
       open: true,
       title: `Delete ${entityName}?`,
-      body: `This will delete the record.\n\nID: ${row.id ?? row.uid ?? "(unknown)"}`,
+      body: `This will delete the record.\n\nID: ${
+        row.id ?? row.uid ?? "(unknown)"
+      }`,
       onConfirm: async () => {
         setModal((m) => ({ ...m, open: false }));
         await doDelete(entityName, row);
@@ -497,7 +619,7 @@ export default function AdminDashboard() {
                 "emailVerification",
                 "kycStatus",
               ]}
-              onViewRow={(row) => onView("User", row)}
+              onViewRow={(row) => openUserEditor(row)}
               onDeleteRow={(row) => onDelete("User", row)}
             />
           )}
@@ -509,7 +631,7 @@ export default function AdminDashboard() {
               headers={jobsHeaders}
               rawRows={jobsRows}
               searchFields={["id", "title", "posterId", "location", "status"]}
-              onViewRow={(row) => onView("Job", row)}
+              onViewRow={(row) => openReadOnlyView("Job", row)}
               onDeleteRow={(row) => onDelete("Job", row)}
             />
           )}
@@ -523,30 +645,166 @@ export default function AdminDashboard() {
               searchFields={[
                 "id",
                 "jobId",
+                "contractorId",
                 "providerId",
-                "bidderName",
                 "status",
               ]}
-              onViewRow={(row) => onView("Bid", row)}
+              onViewRow={(row) => openReadOnlyView("Bid", row)}
               onDeleteRow={(row) => onDelete("Bid", row)}
             />
           )}
         </Content>
       </div>
 
-      {/* View modal */}
       <Modal
         open={view.open}
         modalHeading={view.title}
-        primaryButtonText="Close"
-        onRequestClose={() => setView({ open: false, title: "", body: "" })}
-        onRequestSubmit={() => setView({ open: false, title: "", body: "" })}
-        secondaryButtonText={null}
+        primaryButtonText={view.entity === "User" ? "Save" : "Close"}
+        secondaryButtonText={view.entity === "User" ? "Cancel" : null}
+        onRequestClose={() =>
+          setView((v) => ({
+            ...v,
+            open: false,
+            error: "",
+            saving: false,
+            loading: false,
+          }))
+        }
+        onRequestSubmit={() => {
+          if (view.entity === "User") return saveUserEdits();
+          setView((v) => ({ ...v, open: false }));
+        }}
+        primaryButtonDisabled={
+          view.entity === "User" ? view.loading || view.saving : false
+        }
       >
-        <pre className="admin-modal-pre">{view.body}</pre>
+        {view.entity === "User" ? (
+          <>
+            {view.error ? (
+              <InlineNotification
+                kind="error"
+                title="User edit failed"
+                subtitle={view.error}
+                lowContrast
+              />
+            ) : null}
+
+            {view.loading ? (
+              <InlineNotification
+                kind="info"
+                title="Loading user…"
+                subtitle="Fetching latest user details."
+                lowContrast
+              />
+            ) : (
+              <Form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  saveUserEdits();
+                }}
+              >
+                <TextInput
+                  id="admin-user-uid"
+                  labelText="UID"
+                  value={view.form.uid}
+                  disabled
+                />
+
+                <TextInput
+                  id="admin-user-email"
+                  labelText="Email"
+                  value={view.form.email}
+                  onChange={(e) =>
+                    setView((v) => ({
+                      ...v,
+                      form: { ...v.form, email: e.target.value },
+                    }))
+                  }
+                />
+
+                <div className="job-form-grid">
+                  <TextInput
+                    id="admin-user-first"
+                    labelText="First name"
+                    value={view.form.firstName}
+                    onChange={(e) =>
+                      setView((v) => ({
+                        ...v,
+                        form: { ...v.form, firstName: e.target.value },
+                      }))
+                    }
+                  />
+                  <TextInput
+                    id="admin-user-last"
+                    labelText="Last name"
+                    value={view.form.lastName}
+                    onChange={(e) =>
+                      setView((v) => ({
+                        ...v,
+                        form: { ...v.form, lastName: e.target.value },
+                      }))
+                    }
+                  />
+                </div>
+
+                <Select
+                  id="admin-user-role"
+                  labelText="Role"
+                  value={view.form.userType || ""}
+                  onChange={(e) =>
+                    setView((v) => ({
+                      ...v,
+                      form: { ...v.form, userType: e.target.value },
+                    }))
+                  }
+                >
+                  <SelectItem value="admin" text="admin" />
+                  <SelectItem value="contractor" text="contractor" />
+                  <SelectItem value="bidder" text="bidder" />
+                </Select>
+
+                <Select
+                  id="admin-user-email-verification"
+                  labelText="Email verification"
+                  value={view.form.emailVerification || ""}
+                  onChange={(e) =>
+                    setView((v) => ({
+                      ...v,
+                      form: { ...v.form, emailVerification: e.target.value },
+                    }))
+                  }
+                >
+                  <SelectItem value="verified" text="verified" />
+                  <SelectItem value="pending" text="pending" />
+                </Select>
+
+                <Select
+                  id="admin-user-kyc"
+                  labelText="KYC status"
+                  value={view.form.kycStatus || ""}
+                  onChange={(e) =>
+                    setView((v) => ({
+                      ...v,
+                      form: { ...v.form, kycStatus: e.target.value },
+                    }))
+                  }
+                >
+                  <SelectItem value="pending" text="pending" />
+                  <SelectItem value="verified" text="verified" />
+                  <SelectItem value="rejected" text="rejected" />
+                </Select>
+
+                <button type="submit" style={{ display: "none" }} />
+              </Form>
+            )}
+          </>
+        ) : (
+          <pre className="admin-modal-pre">
+            {JSON.stringify(view.raw, null, 2)}
+          </pre>
+        )}
       </Modal>
 
-      {/* Delete confirm modal */}
       <Modal
         open={modal.open}
         danger
