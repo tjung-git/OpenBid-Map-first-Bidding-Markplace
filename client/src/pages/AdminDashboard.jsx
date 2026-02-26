@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { api } from "../services/api";
+import { cfg } from "../services/config";
 import {
   SideNav,
   SideNavItems,
@@ -26,8 +27,10 @@ import {
   TextInput,
   Select,
   SelectItem,
+  NumberInput,
 } from "@carbon/react";
 import { UserAvatar, Task, Money, View, TrashCan } from "@carbon/icons-react";
+import SearchAutocomplete from "../components/SearchAutocomplete";
 import "../styles/pages/admin-dashboard.css";
 
 function fmtMoney(v) {
@@ -221,6 +224,24 @@ export default function AdminDashboard() {
       userType: "",
       emailVerification: "",
       kycStatus: "",
+      jobId: "",
+      jobTitle: "",
+      jobDescription: "",
+      jobBudget: "",
+      jobStatus: "",
+      jobPosterId: "",
+      jobAddress: "",
+      jobLat: 0,
+      jobLng: 0,
+      bidId: "",
+      bidAmount: "",
+      bidStatus: "",
+      bidNote: "",
+      bidStatusNote: "",
+      bidProviderId: "",
+      bidContractorId: "",
+      bidJobId: "",
+      bidClosedAt: "",
     },
     raw: null,
   });
@@ -379,7 +400,8 @@ export default function AdminDashboard() {
     const uid = row.uid ?? row.id;
     if (!uid) return;
 
-    setView({
+    setView((v) => ({
+      ...v,
       open: true,
       title: "Edit User",
       entity: "User",
@@ -387,7 +409,9 @@ export default function AdminDashboard() {
       loading: true,
       saving: false,
       error: "",
+      raw: row,
       form: {
+        ...v.form,
         uid: String(uid),
         email: row.email ?? "",
         firstName: "",
@@ -396,8 +420,7 @@ export default function AdminDashboard() {
         emailVerification: row.emailVerification ?? "",
         kycStatus: row.kycStatus ?? "",
       },
-      raw: row,
-    });
+    }));
 
     try {
       const res = await api.adminUserGet(uid);
@@ -407,6 +430,7 @@ export default function AdminDashboard() {
         loading: false,
         raw: u,
         form: {
+          ...v.form,
           uid: String(u.uid ?? uid),
           email: u.email ?? "",
           firstName: u.firstName ?? "",
@@ -429,19 +453,142 @@ export default function AdminDashboard() {
     }
   };
 
-  const openReadOnlyView = (entity, row) => {
+  const openJobEditor = async (row) => {
     if (!row) return;
-    setView({
+    const jobId = row.id;
+    if (!jobId) return;
+
+    setView((v) => ({
+      ...v,
       open: true,
-      title: `View ${entity}`,
-      entity,
-      id: row?.id ?? row?.uid ?? null,
-      loading: false,
+      title: "Edit Job",
+      entity: "Job",
+      id: jobId,
+      loading: true,
       saving: false,
       error: "",
-      form: view.form,
       raw: row,
-    });
+      form: {
+        ...v.form,
+        jobId: String(jobId),
+        jobTitle: row.title ?? "",
+        jobDescription: "",
+        jobBudget: String(row.budgetAmount ?? "").replace(/[^0-9.]/g, ""),
+        jobStatus: row.status ?? "",
+        jobPosterId: row.posterId ?? "",
+        jobAddress: "",
+        jobLat: 0,
+        jobLng: 0,
+      },
+    }));
+
+    try {
+      const res = await api.adminJobGet(jobId);
+      const j = res?.job || {};
+      const loc = j.location || {};
+      setView((v) => ({
+        ...v,
+        loading: false,
+        raw: j,
+        form: {
+          ...v.form,
+          jobId: String(j.id ?? jobId),
+          jobTitle: j.title ?? "",
+          jobDescription: j.description ?? "",
+          jobBudget:
+            j.budgetAmount === null || j.budgetAmount === undefined
+              ? ""
+              : String(j.budgetAmount),
+          jobStatus: j.status ?? "",
+          jobPosterId: j.posterId ?? "",
+          jobAddress: typeof loc === "string" ? loc : (loc.address ?? ""),
+          jobLat:
+            typeof loc === "object" && typeof loc.lat === "number"
+              ? loc.lat
+              : 0,
+          jobLng:
+            typeof loc === "object" && typeof loc.lng === "number"
+              ? loc.lng
+              : 0,
+        },
+      }));
+    } catch (e) {
+      setView((v) => ({
+        ...v,
+        loading: false,
+        error:
+          e?.data?.error ||
+          e?.data?.detail ||
+          e?.message ||
+          "Failed to load job.",
+      }));
+    }
+  };
+
+  const openBidEditor = async (row) => {
+    if (!row) return;
+    const bidId = row.id;
+    if (!bidId) return;
+
+    setView((v) => ({
+      ...v,
+      open: true,
+      title: "Edit Bid",
+      entity: "Bid",
+      id: bidId,
+      loading: true,
+      saving: false,
+      error: "",
+      raw: row,
+      form: {
+        ...v.form,
+        bidId: String(bidId),
+        bidAmount:
+          row.amount === null || row.amount === undefined
+            ? ""
+            : String(row.amount).replace(/[^0-9.]/g, ""),
+        bidStatus: row.status ?? "",
+        bidNote: "",
+        bidStatusNote: "",
+        bidProviderId: row.providerId ?? "",
+        bidContractorId: row.contractorId ?? "",
+        bidJobId: row.jobId ?? "",
+        bidClosedAt: row.bidClosedAt ?? "",
+      },
+    }));
+
+    try {
+      const res = await api.adminBidGet(bidId);
+      const b = res?.bid || {};
+      setView((v) => ({
+        ...v,
+        loading: false,
+        raw: b,
+        form: {
+          ...v.form,
+          bidId: String(b.id ?? bidId),
+          bidAmount:
+            b.amount === null || b.amount === undefined ? "" : String(b.amount),
+          bidStatus: b.status ?? "",
+          bidNote: b.note ?? "",
+          bidStatusNote: b.statusNote ?? "",
+          bidProviderId: b.providerId ?? "",
+          bidContractorId: b.contractorId ?? "",
+          bidJobId: b.jobId ?? "",
+          bidClosedAt: b.bidClosedAt ?? "",
+        },
+      }));
+    } catch (e) {
+      setView((v) => ({
+        ...v,
+        loading: false,
+        error:
+          e?.data?.error ||
+          e?.data?.detail ||
+          e?.message ||
+          "Failed to load bid.",
+      }));
+    }
   };
 
   const saveUserEdits = async () => {
@@ -478,6 +625,97 @@ export default function AdminDashboard() {
           e?.data?.detail ||
           e?.message ||
           "Failed to update user.",
+      }));
+    }
+  };
+
+  const saveJobEdits = async () => {
+    if (view.entity !== "Job" || !view.id) return;
+    try {
+      setView((v) => ({ ...v, saving: true, error: "" }));
+
+      const budgetNum =
+        view.form.jobBudget === "" ? null : Number(view.form.jobBudget);
+
+      const payload = {
+        title: view.form.jobTitle,
+        description: view.form.jobDescription,
+        budgetAmount: Number.isFinite(budgetNum) ? budgetNum : null,
+        status: view.form.jobStatus,
+        posterId: view.form.jobPosterId,
+      };
+
+      if (cfg.prototype) {
+        payload.location = {
+          address: view.form.jobAddress || "",
+          lat: Number(view.form.jobLat) || 0,
+          lng: Number(view.form.jobLng) || 0,
+        };
+      } else {
+        payload.location =
+          view.form.jobAddress ||
+          (view.raw?.location ? fmtLocation(view.raw.location) : "");
+      }
+
+      const res = await api.adminJobUpdate(view.id, payload);
+      const updated = res?.job || {};
+
+      setJobs((prev) => prev.map((j) => (j.id === view.id ? updated : j)));
+
+      setToast({ kind: "success", title: "Updated", subtitle: "Job saved." });
+      window.setTimeout(() => setToast(null), 2500);
+
+      setView((v) => ({ ...v, saving: false, open: false }));
+    } catch (e) {
+      setView((v) => ({
+        ...v,
+        saving: false,
+        error:
+          e?.data?.error ||
+          e?.data?.detail ||
+          e?.message ||
+          "Failed to update job.",
+      }));
+    }
+  };
+
+  const saveBidEdits = async () => {
+    if (view.entity !== "Bid" || !view.id) return;
+    try {
+      setView((v) => ({ ...v, saving: true, error: "" }));
+
+      const amountNum =
+        view.form.bidAmount === "" ? null : Number(view.form.bidAmount);
+
+      const payload = {
+        amount: Number.isFinite(amountNum) ? amountNum : null,
+        status: view.form.bidStatus,
+        note: view.form.bidNote,
+        statusNote: view.form.bidStatusNote,
+        providerId: view.form.bidProviderId,
+        contractorId: view.form.bidContractorId,
+        jobId: view.form.bidJobId,
+        bidClosedAt: view.form.bidClosedAt || null,
+      };
+
+      const res = await api.adminBidUpdate(view.id, payload);
+      const updated = res?.bid || {};
+
+      setBids((prev) => prev.map((b) => (b.id === view.id ? updated : b)));
+
+      setToast({ kind: "success", title: "Updated", subtitle: "Bid saved." });
+      window.setTimeout(() => setToast(null), 2500);
+
+      setView((v) => ({ ...v, saving: false, open: false }));
+    } catch (e) {
+      setView((v) => ({
+        ...v,
+        saving: false,
+        error:
+          e?.data?.error ||
+          e?.data?.detail ||
+          e?.message ||
+          "Failed to update bid.",
       }));
     }
   };
@@ -529,6 +767,19 @@ export default function AdminDashboard() {
         await doDelete(entityName, row);
       },
     });
+  };
+
+  const handlePlaceSelection = (place) => {
+    if (!place) return;
+    setView((v) => ({
+      ...v,
+      form: {
+        ...v.form,
+        jobAddress: place.address || place.formatted_address || "",
+        jobLat: typeof place.lat === "number" ? place.lat : v.form.jobLat,
+        jobLng: typeof place.lng === "number" ? place.lng : v.form.jobLng,
+      },
+    }));
   };
 
   return (
@@ -631,7 +882,7 @@ export default function AdminDashboard() {
               headers={jobsHeaders}
               rawRows={jobsRows}
               searchFields={["id", "title", "posterId", "location", "status"]}
-              onViewRow={(row) => openReadOnlyView("Job", row)}
+              onViewRow={(row) => openJobEditor(row)}
               onDeleteRow={(row) => onDelete("Job", row)}
             />
           )}
@@ -649,7 +900,7 @@ export default function AdminDashboard() {
                 "providerId",
                 "status",
               ]}
-              onViewRow={(row) => openReadOnlyView("Bid", row)}
+              onViewRow={(row) => openBidEditor(row)}
               onDeleteRow={(row) => onDelete("Bid", row)}
             />
           )}
@@ -659,8 +910,8 @@ export default function AdminDashboard() {
       <Modal
         open={view.open}
         modalHeading={view.title}
-        primaryButtonText={view.entity === "User" ? "Save" : "Close"}
-        secondaryButtonText={view.entity === "User" ? "Cancel" : null}
+        primaryButtonText={view.entity ? "Save" : "Close"}
+        secondaryButtonText="Cancel"
         onRequestClose={() =>
           setView((v) => ({
             ...v,
@@ -672,137 +923,357 @@ export default function AdminDashboard() {
         }
         onRequestSubmit={() => {
           if (view.entity === "User") return saveUserEdits();
+          if (view.entity === "Job") return saveJobEdits();
+          if (view.entity === "Bid") return saveBidEdits();
           setView((v) => ({ ...v, open: false }));
         }}
-        primaryButtonDisabled={
-          view.entity === "User" ? view.loading || view.saving : false
-        }
+        primaryButtonDisabled={view.loading || view.saving}
       >
-        {view.entity === "User" ? (
-          <>
-            {view.error ? (
-              <InlineNotification
-                kind="error"
-                title="User edit failed"
-                subtitle={view.error}
-                lowContrast
-              />
-            ) : null}
+        {view.error ? (
+          <InlineNotification
+            kind="error"
+            title="Save failed"
+            subtitle={view.error}
+            lowContrast
+          />
+        ) : null}
 
-            {view.loading ? (
-              <InlineNotification
-                kind="info"
-                title="Loading user…"
-                subtitle="Fetching latest user details."
-                lowContrast
+        {view.loading ? (
+          <InlineNotification
+            kind="info"
+            title="Loading…"
+            subtitle="Fetching latest details."
+            lowContrast
+          />
+        ) : view.entity === "User" ? (
+          <Form
+            onSubmit={(e) => {
+              e.preventDefault();
+              saveUserEdits();
+            }}
+          >
+            <TextInput
+              id="admin-user-uid"
+              labelText="UID"
+              value={view.form.uid}
+              disabled
+            />
+
+            <TextInput
+              id="admin-user-email"
+              labelText="Email"
+              value={view.form.email}
+              onChange={(e) =>
+                setView((v) => ({
+                  ...v,
+                  form: { ...v.form, email: e.target.value },
+                }))
+              }
+            />
+
+            <div className="job-form-grid">
+              <TextInput
+                id="admin-user-first"
+                labelText="First name"
+                value={view.form.firstName}
+                onChange={(e) =>
+                  setView((v) => ({
+                    ...v,
+                    form: { ...v.form, firstName: e.target.value },
+                  }))
+                }
               />
+              <TextInput
+                id="admin-user-last"
+                labelText="Last name"
+                value={view.form.lastName}
+                onChange={(e) =>
+                  setView((v) => ({
+                    ...v,
+                    form: { ...v.form, lastName: e.target.value },
+                  }))
+                }
+              />
+            </div>
+
+            <Select
+              id="admin-user-role"
+              labelText="Role"
+              value={view.form.userType || ""}
+              onChange={(e) =>
+                setView((v) => ({
+                  ...v,
+                  form: { ...v.form, userType: e.target.value },
+                }))
+              }
+            >
+              <SelectItem value="admin" text="admin" />
+              <SelectItem value="contractor" text="contractor" />
+              <SelectItem value="bidder" text="bidder" />
+            </Select>
+
+            <Select
+              id="admin-user-email-verification"
+              labelText="Email verification"
+              value={view.form.emailVerification || ""}
+              onChange={(e) =>
+                setView((v) => ({
+                  ...v,
+                  form: { ...v.form, emailVerification: e.target.value },
+                }))
+              }
+            >
+              <SelectItem value="verified" text="verified" />
+              <SelectItem value="pending" text="pending" />
+            </Select>
+
+            <Select
+              id="admin-user-kyc"
+              labelText="KYC status"
+              value={view.form.kycStatus || ""}
+              onChange={(e) =>
+                setView((v) => ({
+                  ...v,
+                  form: { ...v.form, kycStatus: e.target.value },
+                }))
+              }
+            >
+              <SelectItem value="pending" text="pending" />
+              <SelectItem value="verified" text="verified" />
+              <SelectItem value="rejected" text="rejected" />
+            </Select>
+
+            <button type="submit" style={{ display: "none" }} />
+          </Form>
+        ) : view.entity === "Job" ? (
+          <Form
+            onSubmit={(e) => {
+              e.preventDefault();
+              saveJobEdits();
+            }}
+          >
+            <TextInput
+              id="admin-job-id"
+              labelText="Job ID"
+              value={view.form.jobId}
+              disabled
+            />
+
+            <TextInput
+              id="admin-job-title"
+              labelText="Title"
+              value={view.form.jobTitle}
+              onChange={(e) =>
+                setView((v) => ({
+                  ...v,
+                  form: { ...v.form, jobTitle: e.target.value },
+                }))
+              }
+              required
+            />
+
+            <TextInput
+              id="admin-job-desc"
+              labelText="Description"
+              value={view.form.jobDescription}
+              onChange={(e) =>
+                setView((v) => ({
+                  ...v,
+                  form: { ...v.form, jobDescription: e.target.value },
+                }))
+              }
+            />
+
+            <TextInput
+              id="admin-job-budget"
+              type="text"
+              labelText="Budget"
+              value={view.form.jobBudget}
+              onChange={(e) => {
+                const raw = e.target.value;
+                const cleaned = raw.replace(/[^0-9.]/g, "");
+                const normalized = cleaned.replace(/^0+(?=\d)/, "");
+                setView((v) => ({
+                  ...v,
+                  form: { ...v.form, jobBudget: normalized },
+                }));
+              }}
+            />
+
+            <TextInput
+              id="admin-job-poster"
+              labelText="Poster UID"
+              value={view.form.jobPosterId}
+              onChange={(e) =>
+                setView((v) => ({
+                  ...v,
+                  form: { ...v.form, jobPosterId: e.target.value },
+                }))
+              }
+            />
+
+            <Select
+              id="admin-job-status"
+              labelText="Status"
+              value={view.form.jobStatus || ""}
+              onChange={(e) =>
+                setView((v) => ({
+                  ...v,
+                  form: { ...v.form, jobStatus: e.target.value },
+                }))
+              }
+            >
+              <SelectItem value="open" text="open" />
+              <SelectItem value="closed" text="closed" />
+              <SelectItem value="awarded" text="awarded" />
+              <SelectItem value="cancelled" text="cancelled" />
+            </Select>
+
+            {cfg.prototype ? (
+              <div className="job-form-grid">
+                <NumberInput
+                  id="admin-job-lat"
+                  label="Latitude"
+                  value={view.form.jobLat}
+                  onChange={(_, { value }) =>
+                    setView((v) => ({
+                      ...v,
+                      form: { ...v.form, jobLat: Number(value) },
+                    }))
+                  }
+                />
+                <NumberInput
+                  id="admin-job-lng"
+                  label="Longitude"
+                  value={view.form.jobLng}
+                  onChange={(_, { value }) =>
+                    setView((v) => ({
+                      ...v,
+                      form: { ...v.form, jobLng: Number(value) },
+                    }))
+                  }
+                />
+              </div>
             ) : (
-              <Form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  saveUserEdits();
-                }}
-              >
-                <TextInput
-                  id="admin-user-uid"
-                  labelText="UID"
-                  value={view.form.uid}
-                  disabled
-                />
-
-                <TextInput
-                  id="admin-user-email"
-                  labelText="Email"
-                  value={view.form.email}
-                  onChange={(e) =>
-                    setView((v) => ({
-                      ...v,
-                      form: { ...v.form, email: e.target.value },
-                    }))
-                  }
-                />
-
-                <div className="job-form-grid">
-                  <TextInput
-                    id="admin-user-first"
-                    labelText="First name"
-                    value={view.form.firstName}
-                    onChange={(e) =>
-                      setView((v) => ({
-                        ...v,
-                        form: { ...v.form, firstName: e.target.value },
-                      }))
-                    }
-                  />
-                  <TextInput
-                    id="admin-user-last"
-                    labelText="Last name"
-                    value={view.form.lastName}
-                    onChange={(e) =>
-                      setView((v) => ({
-                        ...v,
-                        form: { ...v.form, lastName: e.target.value },
-                      }))
-                    }
-                  />
-                </div>
-
-                <Select
-                  id="admin-user-role"
-                  labelText="Role"
-                  value={view.form.userType || ""}
-                  onChange={(e) =>
-                    setView((v) => ({
-                      ...v,
-                      form: { ...v.form, userType: e.target.value },
-                    }))
-                  }
-                >
-                  <SelectItem value="admin" text="admin" />
-                  <SelectItem value="contractor" text="contractor" />
-                  <SelectItem value="bidder" text="bidder" />
-                </Select>
-
-                <Select
-                  id="admin-user-email-verification"
-                  labelText="Email verification"
-                  value={view.form.emailVerification || ""}
-                  onChange={(e) =>
-                    setView((v) => ({
-                      ...v,
-                      form: { ...v.form, emailVerification: e.target.value },
-                    }))
-                  }
-                >
-                  <SelectItem value="verified" text="verified" />
-                  <SelectItem value="pending" text="pending" />
-                </Select>
-
-                <Select
-                  id="admin-user-kyc"
-                  labelText="KYC status"
-                  value={view.form.kycStatus || ""}
-                  onChange={(e) =>
-                    setView((v) => ({
-                      ...v,
-                      form: { ...v.form, kycStatus: e.target.value },
-                    }))
-                  }
-                >
-                  <SelectItem value="pending" text="pending" />
-                  <SelectItem value="verified" text="verified" />
-                  <SelectItem value="rejected" text="rejected" />
-                </Select>
-
-                <button type="submit" style={{ display: "none" }} />
-              </Form>
+              <div className="job-location-search-container">
+                <SearchAutocomplete onSelectPlace={handlePlaceSelection} />
+                <div>Selected location: {view.form.jobAddress}</div>
+              </div>
             )}
-          </>
-        ) : (
-          <pre className="admin-modal-pre">
-            {JSON.stringify(view.raw, null, 2)}
-          </pre>
-        )}
+
+            <button type="submit" style={{ display: "none" }} />
+          </Form>
+        ) : view.entity === "Bid" ? (
+          <Form
+            onSubmit={(e) => {
+              e.preventDefault();
+              saveBidEdits();
+            }}
+          >
+            <TextInput
+              id="admin-bid-id"
+              labelText="Bid ID"
+              value={view.form.bidId}
+              disabled
+            />
+
+            <TextInput
+              id="admin-bid-amount"
+              type="text"
+              labelText="Amount"
+              value={view.form.bidAmount}
+              onChange={(e) => {
+                const raw = e.target.value;
+                const cleaned = raw.replace(/[^0-9.]/g, "");
+                const normalized = cleaned.replace(/^0+(?=\d)/, "");
+                setView((v) => ({
+                  ...v,
+                  form: { ...v.form, bidAmount: normalized },
+                }));
+              }}
+            />
+
+            <Select
+              id="admin-bid-status"
+              labelText="Status"
+              value={view.form.bidStatus || ""}
+              onChange={(e) =>
+                setView((v) => ({
+                  ...v,
+                  form: { ...v.form, bidStatus: e.target.value },
+                }))
+              }
+            >
+              <SelectItem value="declined" text="declined" />
+              <SelectItem value="accepted" text="accepted" />
+              <SelectItem value="cancelled" text="cancelled" />
+              <SelectItem value="active" text="active" />
+            </Select>
+
+            <TextInput
+              id="admin-bid-note"
+              labelText="Note"
+              value={view.form.bidNote}
+              onChange={(e) =>
+                setView((v) => ({
+                  ...v,
+                  form: { ...v.form, bidNote: e.target.value },
+                }))
+              }
+            />
+
+            <TextInput
+              id="admin-bid-provider"
+              labelText="Bidder UID"
+              value={view.form.bidProviderId}
+              onChange={(e) =>
+                setView((v) => ({
+                  ...v,
+                  form: { ...v.form, bidProviderId: e.target.value },
+                }))
+              }
+            />
+
+            <TextInput
+              id="admin-bid-contractor"
+              labelText="Contractor UID"
+              value={view.form.bidContractorId}
+              onChange={(e) =>
+                setView((v) => ({
+                  ...v,
+                  form: { ...v.form, bidContractorId: e.target.value },
+                }))
+              }
+            />
+
+            <TextInput
+              id="admin-bid-job"
+              labelText="Job ID"
+              value={view.form.bidJobId}
+              onChange={(e) =>
+                setView((v) => ({
+                  ...v,
+                  form: { ...v.form, bidJobId: e.target.value },
+                }))
+              }
+            />
+
+            <TextInput
+              id="admin-bid-closedAt"
+              labelText="Bid closed at (ISO)"
+              value={view.form.bidClosedAt || ""}
+              onChange={(e) =>
+                setView((v) => ({
+                  ...v,
+                  form: { ...v.form, bidClosedAt: e.target.value },
+                }))
+              }
+              placeholder="2026-02-25T12:34:56.000Z"
+            />
+
+            <button type="submit" style={{ display: "none" }} />
+          </Form>
+        ) : null}
       </Modal>
 
       <Modal
