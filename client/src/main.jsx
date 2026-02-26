@@ -31,6 +31,7 @@ createRoot(document.getElementById("root")).render(
         {/* Authenticated Routes*/}
         <Route element={<ProtectedApp />}>
           <Route path="/login/finish" element={<LoginFinish />} />
+
           {/* Bidder/Poster Routes*/}
           <Route element={<NonAdminRoute />}>
             <Route index element={<Navigate to="/jobs" replace />} />
