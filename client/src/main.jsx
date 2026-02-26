@@ -30,7 +30,7 @@ createRoot(document.getElementById("root")).render(
 
         {/* Authenticated Routes*/}
         <Route element={<ProtectedApp />}>
-
+          <Route path="/login/finish" element={<LoginFinish />} />
           {/* Bidder/Poster Routes*/}
           <Route element={<NonAdminRoute />}>
             <Route index element={<Navigate to="/jobs" replace />} />
@@ -45,7 +45,6 @@ createRoot(document.getElementById("root")).render(
               element={<BidDetail />}
             />
             <Route path="/new-job" element={<NewJob />} />
-            <Route path="/login/finish" element={<LoginFinish />} />
           </Route>
 
           {/* Admin Routes*/}
@@ -56,5 +55,5 @@ createRoot(document.getElementById("root")).render(
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
-  </React.StrictMode>
+  </React.StrictMode>,
 );
