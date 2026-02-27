@@ -154,14 +154,16 @@ router.post("/:conversationId", async (req, res, next) => {
             [`readBy.${session.uid}`]: message.createdAt
         });
 
-        // Emit socket event to all participants
+        // Emit socket event
         const io = req.app.get("io");
         if (io) {
             conversation.participants.forEach(uid => {
-                io.to(`user:${uid}`).emit("new_message", {
-                    conversationId,
-                    message
-                });
+                if (uid !== session.uid) {
+                    io.to(`user:${uid}`).emit("new_message", {
+                        conversationId,
+                        message
+                    });
+                }
             });
         }
 
