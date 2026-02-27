@@ -114,59 +114,66 @@ function SimpleTable({
             <Table {...getTableProps()} size="lg" useZebraStyles>
               <TableHead>
                 <TableRow>
-                  {headers.map((header) => (
-                    <TableHeader
-                      key={header.key}
-                      {...getHeaderProps({ header })}
-                    >
-                      {header.header}
-                    </TableHeader>
-                  ))}
+                  {headers.map((header) => {
+                    const headerProps = getHeaderProps({ header });
+                    const { key, ...restHeaderProps } = headerProps;
+
+                    return (
+                      <TableHeader key={key ?? header.key} {...restHeaderProps}>
+                        {header.header}
+                      </TableHeader>
+                    );
+                  })}
+
                   <TableHeader>Actions</TableHeader>
                 </TableRow>
               </TableHead>
 
               <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.id} {...getRowProps({ row })}>
-                    {row.cells.map((cell) => (
-                      <TableCell key={cell.id}>{cell.value}</TableCell>
-                    ))}
+                {rows.map((row) => {
+                  const rowProps = getRowProps({ row });
+                  const { key, ...restRowProps } = rowProps;
+                  return (
+                    <TableRow key={key ?? row.id} {...restRowProps}>
+                      {row.cells.map((cell) => (
+                        <TableCell key={cell.id}>{cell.value}</TableCell>
+                      ))}
 
-                    <TableCell>
-                      <div className="admin-table-actions">
-                        <Button
-                          kind="ghost"
-                          size="sm"
-                          renderIcon={View}
-                          onClick={() =>
-                            onViewRow?.(
-                              rawRows.find(
-                                (r) => String(r.id) === String(row.id),
-                              ),
-                            )
-                          }
-                        >
-                          View
-                        </Button>
-                        <Button
-                          kind="danger--ghost"
-                          size="sm"
-                          renderIcon={TrashCan}
-                          onClick={() =>
-                            onDeleteRow?.(
-                              rawRows.find(
-                                (r) => String(r.id) === String(row.id),
-                              ),
-                            )
-                          }
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      <TableCell>
+                        <div className="admin-table-actions">
+                          <Button
+                            kind="ghost"
+                            size="sm"
+                            renderIcon={View}
+                            onClick={() =>
+                              onViewRow?.(
+                                rawRows.find(
+                                  (r) => String(r.id) === String(row.id),
+                                ),
+                              )
+                            }
+                          >
+                            View
+                          </Button>
+                          <Button
+                            kind="danger--ghost"
+                            size="sm"
+                            renderIcon={TrashCan}
+                            onClick={() =>
+                              onDeleteRow?.(
+                                rawRows.find(
+                                  (r) => String(r.id) === String(row.id),
+                                ),
+                              )
+                            }
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
 
                 {rows.length === 0 ? (
                   <TableRow>
