@@ -518,20 +518,8 @@ router.get("/users", async (req, res, next) => {
     const ctx = await requireAdmin(req, res);
     if (!ctx) return;
 
-    if (typeof db.user.list === "function") {
-      const users = await db.user.list();
-      return res.json({ users: users.map(sanitizeUser) });
-    }
-
-    if (!config.prototype) {
-      const users = await listAllUsersReal();
-      return res.json({ users: users.map(sanitizeUser) });
-    }
-
-    return res.status(501).json({
-      error: "not_implemented",
-      detail: "db.user.list() missing in prototype mode (db.mock).",
-    });
+    const users = await db.user.list();
+    return res.json({ users: users.map(sanitizeUser) });
   } catch (e) {
     next(e);
   }
@@ -598,22 +586,10 @@ router.delete("/users/:uid", async (req, res, next) => {
       return res.status(409).json({ error: "cannot_delete_admin" });
     }
 
-    if (typeof db.user.delete === "function") {
-      const ok = await db.user.delete(uid);
-      if (!ok) return res.status(404).json({ error: "not_found" });
-      return res.status(204).end();
-    }
+    const ok = await db.user.delete(uid);
+    if (!ok) return res.status(404).json({ error: "not_found" });
 
-    if (!config.prototype) {
-      const ok = await deleteUserReal(uid);
-      if (!ok) return res.status(404).json({ error: "not_found" });
-      return res.status(204).end();
-    }
-
-    return res.status(501).json({
-      error: "not_implemented",
-      detail: "db.user.delete() missing in prototype mode (db.mock).",
-    });
+    return res.status(204).end();
   } catch (e) {
     next(e);
   }
@@ -691,30 +667,15 @@ router.get("/bids", async (req, res, next) => {
     const ctx = await requireAdmin(req, res);
     if (!ctx) return;
 
-    if (typeof db.bid.list === "function") {
-      const bids = await db.bid.list();
-      bids.sort((a, b) => {
-        const aCreated = new Date(a.bidCreatedAt || a.createdAt || 0).getTime();
-        const bCreated = new Date(b.bidCreatedAt || b.createdAt || 0).getTime();
-        return bCreated - aCreated;
-      });
-      return res.json({ bids });
-    }
+    const bids = await db.bid.list();
 
-    if (!config.prototype) {
-      const bids = await listAllBidsReal();
-      bids.sort((a, b) => {
-        const aCreated = new Date(a.bidCreatedAt || a.createdAt || 0).getTime();
-        const bCreated = new Date(b.bidCreatedAt || b.createdAt || 0).getTime();
-        return bCreated - aCreated;
-      });
-      return res.json({ bids });
-    }
-
-    return res.status(501).json({
-      error: "not_implemented",
-      detail: "db.bid.list() missing in prototype mode (db.mock).",
+    bids.sort((a, b) => {
+      const aCreated = new Date(a.bidCreatedAt || a.createdAt || 0).getTime();
+      const bCreated = new Date(b.bidCreatedAt || b.createdAt || 0).getTime();
+      return bCreated - aCreated;
     });
+
+    return res.json({ bids });
   } catch (e) {
     next(e);
   }
