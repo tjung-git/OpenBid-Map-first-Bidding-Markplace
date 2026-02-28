@@ -28,7 +28,7 @@ describe('Profile - KYC Integration', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     mockUser = {
       uid: 'test-user-123',
       email: 'contractor@test.com',
@@ -53,7 +53,7 @@ describe('Profile - KYC Integration', () => {
   describe('KYC Status Display', () => {
     it('displays pending KYC status', async () => {
       render(<Profile />);
-      
+
       expect(screen.getByText('Identity Verification (KYC)')).toBeInTheDocument();
       await waitFor(() => {
         expect(screen.getByText('Pending')).toBeInTheDocument();
@@ -65,9 +65,9 @@ describe('Profile - KYC Integration', () => {
       mockRequirements.kycVerified = true;
       useSessionHook.useSessionUser.mockReturnValue(mockUser);
       useSessionHook.useSessionRequirements.mockReturnValue(mockRequirements);
-      
+
       render(<Profile />);
-      
+
       await waitFor(() => {
         const verifiedTags = screen.getAllByText('Verified');
         expect(verifiedTags.length).toBeGreaterThanOrEqual(2);
@@ -77,9 +77,9 @@ describe('Profile - KYC Integration', () => {
     it('displays failed KYC status', async () => {
       mockUser.kycStatus = 'failed';
       useSessionHook.useSessionUser.mockReturnValue(mockUser);
-      
+
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Failed')).toBeInTheDocument();
       });
@@ -89,7 +89,7 @@ describe('Profile - KYC Integration', () => {
   describe('KYC Action Buttons', () => {
     it('shows Complete KYC button when status is pending', async () => {
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Complete KYC')).toBeInTheDocument();
         expect(screen.getByText('Refresh Status')).toBeInTheDocument();
@@ -99,9 +99,9 @@ describe('Profile - KYC Integration', () => {
     it('shows Retry KYC button when status is failed', async () => {
       mockUser.kycStatus = 'failed';
       useSessionHook.useSessionUser.mockReturnValue(mockUser);
-      
+
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Retry KYC')).toBeInTheDocument();
       });
@@ -112,9 +112,9 @@ describe('Profile - KYC Integration', () => {
       mockRequirements.kycVerified = true;
       useSessionHook.useSessionUser.mockReturnValue(mockUser);
       useSessionHook.useSessionRequirements.mockReturnValue(mockRequirements);
-      
+
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(screen.queryByText('Complete KYC')).not.toBeInTheDocument();
         expect(screen.queryByText('Refresh Status')).not.toBeInTheDocument();
@@ -127,16 +127,16 @@ describe('Profile - KYC Integration', () => {
       api.api.kycVerification.mockResolvedValue({ url: 'https://stripe.com/verify' });
       const user = userEvent.setup();
       const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
-      
+
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Complete KYC')).toBeInTheDocument();
       });
-      
+
       const completeButton = screen.getByText('Complete KYC');
       await user.click(completeButton);
-      
+
       await waitFor(() => {
         expect(api.api.kycVerification).toHaveBeenCalled();
       });
@@ -148,15 +148,15 @@ describe('Profile - KYC Integration', () => {
       api.api.kycVerification.mockResolvedValue({ url: 'https://stripe.com/verify' });
       const user = userEvent.setup();
       const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
-      
+
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Complete KYC')).toBeInTheDocument();
       });
-      
+
       await user.click(screen.getByText('Complete KYC'));
-      
+
       await waitFor(() => {
         expect(windowOpenSpy).toHaveBeenCalledWith('https://stripe.com/verify', '_blank');
         expect(screen.getByText(/KYC verification opened in new tab/)).toBeInTheDocument();
@@ -168,17 +168,17 @@ describe('Profile - KYC Integration', () => {
     it('handles verification error gracefully', async () => {
       api.api.kycVerification.mockRejectedValue(new Error('Network error'));
       const user = userEvent.setup();
-      
+
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Complete KYC')).toBeInTheDocument();
       });
-      
+
       await user.click(screen.getByText('Complete KYC'));
-      
+
       await waitFor(() => {
-        expect(screen.getByText(/Failed to start KYC verification/)).toBeInTheDocument();
+        expect(screen.getByText(/Network error/)).toBeInTheDocument();
       });
     });
   });
@@ -187,16 +187,16 @@ describe('Profile - KYC Integration', () => {
     it('calls kycStatus API when Refresh Status is clicked', async () => {
       api.api.kycStatus.mockResolvedValue({ status: 'verified' });
       const user = userEvent.setup();
-      
+
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Refresh Status')).toBeInTheDocument();
       });
-      
+
       const refreshButton = screen.getByText('Refresh Status');
       await user.click(refreshButton);
-      
+
       await waitFor(() => {
         expect(api.api.kycStatus).toHaveBeenCalled();
       });
@@ -205,15 +205,15 @@ describe('Profile - KYC Integration', () => {
     it('updates user status after refresh', async () => {
       api.api.kycStatus.mockResolvedValue({ status: 'verified' });
       const user = userEvent.setup();
-      
+
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Refresh Status')).toBeInTheDocument();
       });
-      
+
       await user.click(screen.getByText('Refresh Status'));
-      
+
       await waitFor(() => {
         expect(session.setUser).toHaveBeenCalledWith(
           expect.objectContaining({ kycStatus: 'verified' }),
@@ -226,15 +226,15 @@ describe('Profile - KYC Integration', () => {
     it('handles refresh error gracefully', async () => {
       api.api.kycStatus.mockRejectedValue(new Error('Network error'));
       const user = userEvent.setup();
-      
+
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Refresh Status')).toBeInTheDocument();
       });
-      
+
       await user.click(screen.getByText('Refresh Status'));
-      
+
       await waitFor(() => {
         expect(screen.getByText('Failed to check KYC status')).toBeInTheDocument();
       });
@@ -244,7 +244,7 @@ describe('Profile - KYC Integration', () => {
   describe('KYC Auto-Refresh on Mount', () => {
     it('auto-checks KYC status on mount for unverified users', async () => {
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(api.api.kycStatus).toHaveBeenCalled();
       });
@@ -254,19 +254,19 @@ describe('Profile - KYC Integration', () => {
       mockUser.kycStatus = 'verified';
       mockRequirements.kycVerified = true;
       useSessionHook.useSessionUser.mockReturnValue(mockUser);
-      
+
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(api.api.kycStatus).not.toHaveBeenCalled();
-      }, { timeout: 500 }).catch(() => {});
+      }, { timeout: 500 }).catch(() => { });
     });
 
     it('updates session when status changes from auto-check', async () => {
       api.api.kycStatus.mockResolvedValue({ status: 'verified' });
-      
+
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(session.setUser).toHaveBeenCalledWith(
           expect.objectContaining({ kycStatus: 'verified' }),
@@ -279,7 +279,7 @@ describe('Profile - KYC Integration', () => {
   describe('Avatar Upload', () => {
     it('displays Change Avatar button', async () => {
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Change Avatar')).toBeInTheDocument();
       });
@@ -289,16 +289,16 @@ describe('Profile - KYC Integration', () => {
       const mockFile = new File(['avatar'], 'avatar.png', { type: 'image/png' });
       api.api.uploadAvatar.mockResolvedValue({ avatarUrl: 'https://example.com/avatar.png' });
       const user = userEvent.setup();
-      
+
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Change Avatar')).toBeInTheDocument();
       });
-      
+
       const input = screen.getByRole('button', { name: /change avatar/i }).previousSibling;
       await user.upload(input, mockFile);
-      
+
       await waitFor(() => {
         expect(api.api.uploadAvatar).toHaveBeenCalledWith(mockFile);
         expect(session.setUser).toHaveBeenCalledWith(
@@ -313,39 +313,39 @@ describe('Profile - KYC Integration', () => {
       const largeFile = new File([new ArrayBuffer(6 * 1024 * 1024)], 'large.png', { type: 'image/png' });
       Object.defineProperty(largeFile, 'size', { value: 6 * 1024 * 1024 });
       const user = userEvent.setup();
-      
+
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Change Avatar')).toBeInTheDocument();
       });
-      
+
       const input = screen.getByRole('button', { name: /change avatar/i }).previousSibling;
       await user.upload(input, largeFile);
-      
+
       await waitFor(() => {
         expect(api.api.uploadAvatar).not.toHaveBeenCalled();
       });
-      
+
       expect(screen.getByText(/Image must be smaller than 5MB/i)).toBeInTheDocument();
     });
 
     it('handles upload error gracefully', async () => {
       const mockFile = new File(['avatar'], 'avatar.png', { type: 'image/png' });
-      api.api.uploadAvatar.mockRejectedValue({ 
+      api.api.uploadAvatar.mockRejectedValue({
         data: { error: 'Upload failed' }
       });
       const user = userEvent.setup();
-      
+
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Change Avatar')).toBeInTheDocument();
       });
-      
+
       const input = screen.getByRole('button', { name: /change avatar/i }).previousSibling;
       await user.upload(input, mockFile);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Upload failed')).toBeInTheDocument();
       });
@@ -354,9 +354,9 @@ describe('Profile - KYC Integration', () => {
     it('displays avatar preview when avatarUrl exists', async () => {
       mockUser.avatarUrl = 'https://example.com/existing-avatar.png';
       useSessionHook.useSessionUser.mockReturnValue(mockUser);
-      
+
       const { container } = render(<Profile />);
-      
+
       await waitFor(() => {
         const img = container.querySelector('.avatar-image');
         expect(img).toBeInTheDocument();
@@ -366,18 +366,18 @@ describe('Profile - KYC Integration', () => {
 
     it('shows uploading state while upload is in progress', async () => {
       const mockFile = new File(['avatar'], 'avatar.png', { type: 'image/png' });
-      api.api.uploadAvatar.mockImplementation(() => new Promise(() => {}));
+      api.api.uploadAvatar.mockImplementation(() => new Promise(() => { }));
       const user = userEvent.setup();
-      
+
       render(<Profile />);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Change Avatar')).toBeInTheDocument();
       });
-      
+
       const input = screen.getByRole('button', { name: /change avatar/i }).previousSibling;
       await user.upload(input, mockFile);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Uploading...')).toBeInTheDocument();
       });
