@@ -6,27 +6,39 @@ const stripe = new Stripe(config.stripe.secretKey);
 // Create a factory function that accepts a database adapter
 export const createRealKyc = (dbAdapter) => ({
   async verification(uid) {
+    console.log('KYC verification initiated for user:', uid);
     const user = await dbAdapter.user.get(uid);
     if (!user) {
+      console.error('User not found for KYC verification:', uid);
       throw new Error('User not found');
     }
 
-    const verificationSession = await stripe.identity.verificationSessions.create({
-      type: 'document',
-      provided_details: {
-        email: user.email,
-      },
-      metadata: {
-        user_id: uid,
-      },
-    });
+    console.log('Creating Stripe verification session for user:', uid, 'email:', user.email);
+    let verificationSession;
+    try {
+      verificationSession = await stripe.identity.verificationSessions.create({
+        type: 'document',
+        provided_details: {
+          email: user.email,
+        },
+        metadata: {
+          user_id: uid,
+        },
+      });
+      console.log('Stripe verification session created successfully:', verificationSession.id);
+    } catch (error) {
+      console.error('Failed to create Stripe verification session:', error);
+      throw new Error(`Failed to create verification session: ${error.message}`);
+    }
 
     // Store `verification_session_id` in database for later status checking
+    console.log('Storing verification session ID in database:', verificationSession.id);
     await dbAdapter.user.upsert({
       ...user,
       kycSessionId: verificationSession.id
     });
 
+    console.log('KYC verification session ready, returning URL and session ID');
     return {
       url: verificationSession.url,
       sessionId: verificationSession.id

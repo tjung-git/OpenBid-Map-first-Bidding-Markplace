@@ -82,7 +82,11 @@ export const api = {
       method: "POST",
       headers: headers(),
     });
-    return r.json();
+    const data = await r.json();
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
   },
   async kycStatus() {
     const r = await fetch(`${base}/api/kyc/status`, { headers: headers() });
@@ -208,6 +212,58 @@ export const api = {
     const data = await r.json();
     if (!r.ok) throw { status: r.status, data };
     return data;
+  },
+  async messagesStart(jobId, otherUserId) {
+    const r = await fetch(`${base}/api/messages/start`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ jobId, otherUserId }),
+    });
+    return r.json();
+  },
+  async messagesList() {
+    const r = await fetch(`${base}/api/messages/list`, { headers: headers() });
+    return r.json();
+  },
+  async messagesGet(conversationId) {
+    const r = await fetch(`${base}/api/messages/${conversationId}`, { headers: headers() });
+    return r.json();
+  },
+  async messagesSend(conversationId, content) {
+    const r = await fetch(`${base}/api/messages/${conversationId}`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ content }),
+    });
+    return r.json();
+  },
+  async messagesMarkRead(conversationId) {
+    const r = await fetch(`${base}/api/messages/${conversationId}/read`, {
+      method: "POST",
+      headers: headers(),
+    });
+    return r.json();
+  },
+  async messagesHide(conversationId) {
+    const r = await fetch(`${base}/api/messages/${conversationId}/hide`, {
+      method: "POST",
+      headers: headers(),
+    });
+    return r.json();
+  },
+  async messagesUnhide(conversationId) {
+    const r = await fetch(`${base}/api/messages/${conversationId}/unhide`, {
+      method: "POST",
+      headers: headers(),
+    });
+    return r.json();
+  },
+  async messagesDelete(conversationId) {
+    const r = await fetch(`${base}/api/messages/${conversationId}`, {
+      method: "DELETE",
+      headers: headers(),
+    });
+    return r.json();
   },
 
   async adminUsersList() {

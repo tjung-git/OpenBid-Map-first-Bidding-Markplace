@@ -11,6 +11,7 @@ export default function Nav() {
   const isJobBid = /^\/jobs\/[^/]+\/bid$/.test(path);
   const isMyBids = path === "/jobs/myBids";
   const inMyBidsSection = path.startsWith("/jobs/myBids/");
+  const isMessages = path.startsWith("/messages");
   const isJobDetail =
     /^\/jobs\/[^/]+$/.test(path) &&
     !isMyBids &&
@@ -53,6 +54,11 @@ export default function Nav() {
         {isMyBids && (
           <BreadcrumbItem isCurrentPage>
             My Bids
+          </BreadcrumbItem>
+        )}
+        {isMessages && (
+          <BreadcrumbItem isCurrentPage>
+            Messages
           </BreadcrumbItem>
         )}
       </Breadcrumb>

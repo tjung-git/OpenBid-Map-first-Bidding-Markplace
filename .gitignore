@@ -16,5 +16,8 @@ server/.env
 !client/.env.example
 !server/.env.example
 
+# Build output
+client/dist/
+
 # Test coverage
 coverage/

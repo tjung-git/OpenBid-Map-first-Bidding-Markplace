@@ -274,8 +274,8 @@ export default function JobBid() {
     if (!kycVerified) {
       setError("Complete KYC before bidding on jobs.");
       nav("/profile", {
-      replace: true,
-      state: { notice: "Complete KYC verification in your profile to bid on jobs." },
+        replace: true,
+        state: { notice: "Complete KYC verification in your profile to bid on jobs." },
       });
       return;
     }
@@ -336,6 +336,19 @@ export default function JobBid() {
       setError("Unable to delete bid. Please try again.");
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function startChat() {
+    if (!job?.posterId) return;
+    try {
+      const resp = await api.messagesStart(jobId, job.posterId);
+      if (resp.conversation) {
+        nav(`/messages/${resp.conversation.id}`);
+      }
+    } catch (err) {
+      console.error("Failed to start chat", err);
+      setError("Failed to start chat.");
     }
   }
 
@@ -453,8 +466,8 @@ export default function JobBid() {
                 isOwnJob
                   ? "You posted this job. Switch to contractor view to manage it."
                   : isBidder
-                  ? "Complete KYC before you can place bids."
-                  : "Switch to a bidder account to place bids."
+                    ? "Complete KYC before you can place bids."
+                    : "Switch to a bidder account to place bids."
               }
               kind="warning"
               lowContrast
@@ -462,9 +475,8 @@ export default function JobBid() {
           )}
           <p className="bid-detail-highest">
             {sortedBids.length > 0
-              ? `${sortedBids.length} bid${
-                  sortedBids.length === 1 ? "" : "s"
-                } placed so far.`
+              ? `${sortedBids.length} bid${sortedBids.length === 1 ? "" : "s"
+              } placed so far.`
               : "Be the first to bid."}
           </p>
           {budgetDisplay && (
@@ -499,8 +511,8 @@ export default function JobBid() {
                   ? "Updating…"
                   : "Update Bid"
                 : submitting
-                ? "Placing…"
-                : "Place Bid"}
+                  ? "Placing…"
+                  : "Place Bid"}
             </Button>
             {ownBidId && (
               <Button
@@ -513,6 +525,17 @@ export default function JobBid() {
               </Button>
             )}
           </Form>
+          {ownBidId && (
+            <Button
+              type="button"
+              kind="tertiary"
+              onClick={startChat}
+              className="bid-chat-button"
+              style={{ marginTop: "1rem", width: "100%" }}
+            >
+              Start Chat with Job Poster
+            </Button>
+          )}
         </Tile>
       </div>
 

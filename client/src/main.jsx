@@ -15,13 +15,14 @@ import BidDetail from "./pages/BidDetail.jsx";
 import MyBids from "./pages/MyBids.jsx";
 import ProtectedApp from "./components/ProtectedApp.jsx";
 import LoginFinish from "./pages/LoginFinish";
+import Messenger from "./pages/Messenger";
 import AdminRoute from "./components/AdminRoute";
 import NonAdminRoute from "./components/NonAdminRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         {/* Public Routes*/}
         <Route path="/login" element={<Login />} />
@@ -36,6 +37,8 @@ createRoot(document.getElementById("root")).render(
           <Route element={<NonAdminRoute />}>
             <Route index element={<Navigate to="/jobs" replace />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/messages" element={<Messenger />} />
+            <Route path="/messages/:conversationId" element={<Messenger />} />
             <Route path="/jobs" element={<JobList />} />
             <Route path="/jobs/:jobId" element={<JobDetail />} />
             <Route path="/jobs/:jobId/bid" element={<JobBid />} />

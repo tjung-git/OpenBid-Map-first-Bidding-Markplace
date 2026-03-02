@@ -51,9 +51,8 @@ export default function JobDetail() {
   };
 
   const handlePlaceSelection = (placeData) => {
-    const {address, latLng} = placeData;
-    console.log(address);
-    console.log(latLng);
+    const { address, latLng } = placeData;
+
     setAddress(address);
     setEditLat(latLng.lat);
     setEditLng(latLng.lng);
@@ -153,6 +152,31 @@ export default function JobDetail() {
     setFlash("Bid submitted.");
   }
 
+  async function startChat(jobId, otherUserId) {
+    if (!otherUserId) {
+      console.error("startChat called without otherUserId");
+      setUpdateError("Cannot start chat - missing user information.");
+      return;
+    }
+    try {
+      const resp = await api.messagesStart(jobId, otherUserId);
+      console.log("startChat response:", resp);
+      if (resp.conversation && resp.conversation.id) {
+        navigate(`/messages/${resp.conversation.id}`);
+      } else if (resp.error) {
+        console.error("Failed to start chat:", resp.error);
+        setUpdateError("Failed to start chat: " + resp.error);
+      } else {
+        // Fallback - navigate to messages page
+        console.warn("No conversation returned, navigating to messages page");
+        navigate("/messages");
+      }
+    } catch (err) {
+      console.error("Failed to start chat", err);
+      setUpdateError("Failed to start chat.");
+    }
+  }
+
   async function handleUpdate(e) {
     e.preventDefault();
     if (!isOwner) return;
@@ -217,6 +241,12 @@ export default function JobDetail() {
     }
   }
 
+  // Find my bid if I am a bidder
+  const myBid = bids.find(b => b.providerId === user?.uid);
+  const canChatAsBidder = !isOwner && myBid;
+
+
+
   async function handleAccept(bidId) {
     if (!isOwner || !bidId) return;
     setUpdateError("");
@@ -234,7 +264,7 @@ export default function JobDetail() {
         };
         setUpdateError(
           messages[resp.error] ||
-            "Unable to accept bid. Please try again."
+          "Unable to accept bid. Please try again."
         );
       } else {
         await Promise.all([refreshJob(), refreshBids()]);
@@ -328,7 +358,7 @@ export default function JobDetail() {
               placeholder="Enter budget"
               disabled={jobLocked}
             />
-            {cfg.prototype ? 
+            {cfg.prototype ?
               <div className="job-form-grid">
                 <NumberInput
                   key={`lat-${editLat}`}
@@ -344,9 +374,9 @@ export default function JobDetail() {
                   value={editLng}
                   onChange={(_, { value }) => setEditLng(Number(value))}
                 />
-                </div> :
-                <div className="job-location-search-container">
-                  <SearchAutocomplete onSelectPlace={handlePlaceSelection}/>
+              </div> :
+              <div className="job-location-search-container">
+                <SearchAutocomplete onSelectPlace={handlePlaceSelection} />
                 <div>Selected location: {address}</div>
               </div>
             }
@@ -437,6 +467,14 @@ export default function JobDetail() {
         </>
       )}
 
+      {canChatAsBidder && (
+        <div className="job-bidder-chat-action">
+          <Button kind="tertiary" onClick={() => startChat(jobId, job.posterId)}>
+            Start Chat with Job Poster
+          </Button>
+        </div>
+      )}
+
       <h3 className="job-section-title">Bids</h3>
       {biddingClosed && job.awardedBidId && (
         <InlineNotification
@@ -503,6 +541,25 @@ export default function JobDetail() {
                         {acceptingBidId === bid.id
                           ? "Accepting…"
                           : "Accept Bid"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        kind="tertiary"
+                        onClick={() => startChat(jobId, bid.providerId)}
+                      >
+                        Chat
+                      </Button>
+                    </div>
+                  )}
+                  {isOwner && !canAccept && (
+                    // Still allow chat even if accepted or not active, as long as owner
+                    <div className="job-bid-actions">
+                      <Button
+                        size="sm"
+                        kind="tertiary"
+                        onClick={() => startChat(jobId, bid.providerId)}
+                      >
+                        Chat
                       </Button>
                     </div>
                   )}

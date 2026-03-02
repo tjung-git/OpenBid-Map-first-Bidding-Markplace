@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import {
   Header,
@@ -6,15 +6,18 @@ import {
   HeaderGlobalBar,
   HeaderGlobalAction,
 } from "@carbon/react";
-import { Logout, Map, UserAvatar } from "@carbon/icons-react";
+import { Logout, Map, UserAvatar, Chat } from "@carbon/icons-react";
 import { logout } from "./services/session";
 import { useSessionUser } from "./hooks/useSession";
+import { api } from "./services/api";
+import { connectSocket, onNewMessage, onConversationUpdate, disconnectSocket } from "./services/socket";
 import Nav from "./components/Nav";
 import "./styles/components/header.css";
 
 export default function App() {
   const nav = useNavigate();
   const user = useSessionUser();
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const greetingName = user?.firstName || user?.name || "Guest";
   const fullName = user
@@ -24,6 +27,48 @@ export default function App() {
     ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1)
     : null;
   const isAdmin = user?.userType === "admin";
+
+  // Calculate unread from conversations
+  const calculateUnread = (conversations, userId) => {
+    if (!conversations || !userId) return 0;
+    return conversations.filter(conv => {
+      if (conv.hiddenBy && conv.hiddenBy.includes(userId)) return false;
+      const lastReadTime = conv.readBy?.[userId];
+      if (!lastReadTime) return conv.lastMessageAt != null;
+      return new Date(conv.lastMessageAt) > new Date(lastReadTime);
+    }).length;
+  };
+
+  // Fetch unread count via API and listen for updates
+  useEffect(() => {
+    if (!user?.uid) {
+      setUnreadCount(0);
+      return;
+    }
+
+    // Connect socket for real-time
+    connectSocket(user.uid);
+
+    const fetchUnread = () => {
+      api.messagesList().then(data => {
+        const count = calculateUnread(data.conversations || [], user.uid);
+        setUnreadCount(count);
+      }).catch(() => { });
+    };
+
+    // Initial fetch
+    fetchUnread();
+
+    // Listen for new messages or updates to update count
+    const unsubscribeMsg = onNewMessage(fetchUnread);
+    const unsubscribeUpd = onConversationUpdate(fetchUnread);
+
+    return () => {
+      unsubscribeMsg();
+      unsubscribeUpd();
+      disconnectSocket();
+    };
+  }, [user?.uid]);
 
   const handleBrandNavigation = useCallback(() => {
     if (!user) {
@@ -67,10 +112,19 @@ export default function App() {
             </HeaderGlobalAction>
           )}
           {!isAdmin && (
-            <HeaderGlobalAction
-              aria-label="Profile"
-              onClick={() => nav("/profile")}
-            >
+            <HeaderGlobalAction aria-label="Messages" onClick={() => nav("/messages")}>
+              <div className="header-chat-wrapper">
+                <Chat />
+                {unreadCount > 0 && (
+                  <span className="header-chat-badge">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </div>
+            </HeaderGlobalAction>
+          )}
+          {!isAdmin && (
+            <HeaderGlobalAction aria-label="Profile" onClick={() => nav("/profile")}>
               <UserAvatar />
             </HeaderGlobalAction>
           )}
