@@ -54,12 +54,20 @@ export const db = {
       const data = clean(
         withTimestamps(
           { ...user, email: user.email?.toLowerCase() },
-          { isNew: true }
-        )
+          { isNew: true },
+        ),
       );
       await ref.set(data);
       const snapshot = await ref.get();
       return toRecord(snapshot, "uid");
+    },
+    async list() {
+      const snapshot = await firestore()
+        .collection(collections.users)
+        .orderBy("createdAt", "desc")
+        .get();
+
+      return snapshot.docs.map((doc) => toRecord(doc, "uid")).filter(Boolean);
     },
     async upsert(user) {
       const ref = firestore().collection(collections.users).doc(user.uid);
@@ -67,8 +75,8 @@ export const db = {
       const data = clean(
         withTimestamps(
           { ...user, email: user.email?.toLowerCase() },
-          { isNew: !snapshot.exists }
-        )
+          { isNew: !snapshot.exists },
+        ),
       );
       await ref.set(data, { merge: true });
       const updated = await ref.get();
@@ -81,8 +89,8 @@ export const db = {
       const data = clean(
         withTimestamps(
           { ...patch, email: patch.email?.toLowerCase() },
-          { isNew: false }
-        )
+          { isNew: false },
+        ),
       );
       await ref.update(data);
       const updated = await ref.get();
@@ -105,6 +113,54 @@ export const db = {
         .get();
       if (snapshot.empty) return null;
       return toRecord(snapshot.docs[0], "uid");
+    },
+    async delete(uid) {
+      if (!uid) return false;
+
+      const dbRef = firestore();
+      const userRef = dbRef.collection(collections.users).doc(uid);
+      const snapshot = await userRef.get();
+      if (!snapshot.exists) return false;
+
+      await userRef.delete();
+
+      // Delete bids where providerId === uid
+      const bidsSnapshot = await dbRef
+        .collection(collections.bids)
+        .where("providerId", "==", uid)
+        .get();
+
+      if (!bidsSnapshot.empty) {
+        const batch = dbRef.batch();
+        bidsSnapshot.docs.forEach((doc) => batch.delete(doc.ref));
+        await batch.commit();
+      }
+
+      // Delete jobs where posterId === uid
+      const jobsSnapshot = await dbRef
+        .collection(collections.jobs)
+        .where("posterId", "==", uid)
+        .get();
+
+      if (!jobsSnapshot.empty) {
+        const batch = dbRef.batch();
+
+        for (const jobDoc of jobsSnapshot.docs) {
+          batch.delete(jobDoc.ref);
+
+          // Delete bids associated with that job
+          const jobBidsSnapshot = await dbRef
+            .collection(collections.bids)
+            .where("jobId", "==", jobDoc.id)
+            .get();
+
+          jobBidsSnapshot.docs.forEach((bidDoc) => batch.delete(bidDoc.ref));
+        }
+
+        await batch.commit();
+      }
+
+      return true;
     },
   },
   job: {
@@ -133,9 +189,9 @@ export const db = {
                 status: "open",
                 ...data,
               },
-              { isNew: true }
-            )
-          )
+              { isNew: true },
+            ),
+          ),
         );
       const doc = await ref.get();
       return toRecord(doc);
@@ -178,11 +234,13 @@ export const db = {
         .get();
       return toRecord(doc);
     },
+    async list() {
+      const snapshot = await firestore().collection(collections.bids).get();
+      return snapshot.docs.map((doc) => toRecord(doc)).filter(Boolean);
+    },
     async listByJob(jobId) {
       if (!jobId) return [];
-      const snapshot = await firestore()
-        .collection(collections.bids)
-        .get();
+      const snapshot = await firestore().collection(collections.bids).get();
       return snapshot.docs
         .map((doc) => toRecord(doc))
         .filter((bid) => bid.jobId === jobId);
@@ -196,8 +254,12 @@ export const db = {
       return snapshot.docs
         .map((doc) => toRecord(doc))
         .sort((a, b) => {
-          const aCreated = new Date(a.bidCreatedAt || a.createdAt || 0).getTime();
-          const bCreated = new Date(b.bidCreatedAt || b.createdAt || 0).getTime();
+          const aCreated = new Date(
+            a.bidCreatedAt || a.createdAt || 0,
+          ).getTime();
+          const bCreated = new Date(
+            b.bidCreatedAt || b.createdAt || 0,
+          ).getTime();
           return bCreated - aCreated;
         });
     },
@@ -210,13 +272,12 @@ export const db = {
               {
                 status: "active",
                 jobId: data.jobId,
-                bidCreatedAt:
-                  data.bidCreatedAt || new Date().toISOString(),
+                bidCreatedAt: data.bidCreatedAt || new Date().toISOString(),
                 ...data,
               },
-              { isNew: true }
-            )
-          )
+              { isNew: true },
+            ),
+          ),
         );
       const doc = await ref.get();
       return toRecord(doc);

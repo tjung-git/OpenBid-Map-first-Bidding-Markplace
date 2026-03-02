@@ -13,8 +13,10 @@ import passwordRoutes from "./routes/password.routes.js";
 import duoRoutes from "./routes/duo.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import messagesRoutes from "./routes/messages.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 import { db as mockDb } from "./adapters/db.mock.js";
 import { db as realDb } from "./adapters/db.real.js";
+import { requireRole, forbidRole } from "./middleware/requireRole.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -70,17 +72,18 @@ app.use(express.json());
 app.use(morgan("dev"));
 
 app.get("/api/health", (_, res) =>
-  res.json({ ok: true, prototype: config.prototype })
+  res.json({ ok: true, prototype: config.prototype }),
 );
 
 app.use("/api/auth", authRoutes);
-app.use("/api/kyc", kycRoutes);
-app.use("/api/jobs", jobsRoutes);
-app.use("/api/bids", bidsRoutes);
-app.use("/api/password", passwordRoutes);
+app.use("/api/kyc", forbidRole("admin"), kycRoutes);
+app.use("/api/jobs", forbidRole("admin"), jobsRoutes);
+app.use("/api/bids", forbidRole("admin"), bidsRoutes);
+app.use("/api/password", forbidRole("admin"), passwordRoutes);
 app.use("/api/auth/duo", duoRoutes);
-app.use("/api/upload", uploadRoutes);
+app.use("/api/upload", forbidRole("admin"), uploadRoutes);
 app.use("/api/messages", messagesRoutes);
+app.use("/api/admin", requireRole("admin"), adminRoutes);
 
 // Webhook handler for Stripe Identity (only when not in prototype)
 if (!config.prototype) {
@@ -97,7 +100,7 @@ if (!config.prototype) {
         event = stripeClient.webhooks.constructEvent(
           req.body,
           sig,
-          config.stripe.webhookSecret
+          config.stripe.webhookSecret,
         );
       } catch (err) {
         console.log(`Webhook signature verification failed.`, err.message);
@@ -122,7 +125,7 @@ if (!config.prototype) {
       }
 
       res.json({ received: true });
-    }
+    },
   );
 }
 
@@ -133,7 +136,7 @@ app.use((err, req, res, next) => {
 
 httpServer.listen(config.port, () => {
   console.log(
-    `[server] listening on :${config.port} PROTOTYPE=${config.prototype}`
+    `[server] listening on :${config.port} PROTOTYPE=${config.prototype}`,
   );
 });
 

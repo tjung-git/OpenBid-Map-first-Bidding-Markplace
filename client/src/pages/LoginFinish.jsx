@@ -28,13 +28,10 @@ export default function LoginFinish() {
         setSession(data);
         const selectedRole = "bidder";
         const currentRole = (data.user?.userType || "").toLowerCase();
-        if (currentRole !== selectedRole) {
+        if (currentRole !== selectedRole && currentRole !== "admin") {
           try {
             const roleResp = await api.updateRole(selectedRole);
-            setUser(
-              roleResp.user,
-              roleResp.requirements ?? data.requirements
-            );
+            setUser(roleResp.user, roleResp.requirements ?? data.requirements);
           } catch {
             setErr("Unable to apply selected role. Please try again.");
             return;

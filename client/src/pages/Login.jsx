@@ -113,7 +113,7 @@ export default function Login() {
       const selectedRole = "bidder";
       const currentRole = (data.user?.userType || "").toLowerCase();
 
-      if (currentRole !== selectedRole) {
+      if (currentRole !== selectedRole && currentRole !== "admin") {
         try {
           const roleResp = await api.updateRole(selectedRole);
           setUser(roleResp.user, roleResp.requirements ?? data.requirements);
@@ -128,12 +128,12 @@ export default function Login() {
 
       if (!data.requirements.emailVerified) {
         setError(
-          "Please verify your email address using the link we sent before logging in."
+          "Please verify your email address using the link we sent before logging in.",
         );
         return;
       }
 
-      nav("/jobs");
+      nav(data.user?.userType !== "admin" ? "/jobs" : "/admin");
     } catch (err) {
       if (err?.status === 403 && err?.data?.error === "verification_required") {
         const details = err.data || {};

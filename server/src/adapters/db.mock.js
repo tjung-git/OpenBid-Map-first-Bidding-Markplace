@@ -1,26 +1,49 @@
-// in-memory store
 const state = {
   users: new Map([
-    ['u_testexamplec', {
-      uid: 'u_testexamplec',
-      email: 'test@example.com',
-      kycStatus: 'pending',
-      kycSessionId: null
-    }],
-    ['u_openbid123', {
-      uid: 'u_openbid123',
-      email: 'openbid123@gmail.com',
-      firstName: 'OpenBid',
-      lastName: 'Developer',
-      userType: 'bidder',
-      emailVerification: 'verified',
-      kycStatus: 'pending',
-      kycSessionId: null,
-      passwordHash: '$2b$10$JIyQumAfY3GLNiNvSNu4.efls3iHM6CAiQyoHfr/H1mISNppvqSaC',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }]
-  ]), // key: uid -> user { uid, email, name, kycStatus, kycSessionId }
+    [
+      "u_testexamplec",
+      {
+        uid: "u_testexamplec",
+        email: "test@example.com",
+        kycStatus: "pending",
+        kycSessionId: null,
+      },
+    ],
+    [
+      "u_openbid123",
+      {
+        uid: "u_openbid123",
+        email: "openbid123@gmail.com",
+        firstName: "OpenBid",
+        lastName: "Developer",
+        userType: "bidder",
+        emailVerification: "verified",
+        kycStatus: "pending",
+        kycSessionId: null,
+        passwordHash:
+          "$2b$10$JIyQumAfY3GLNiNvSNu4.efls3iHM6CAiQyoHfr/H1mISNppvqSaC",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ],
+    [
+      "u_admin",
+      {
+        uid: "u_admin",
+        email: "openbidadmin@gmail.com",
+        firstName: "OpenBid",
+        lastName: "Admin",
+        userType: "admin",
+        emailVerification: "verified",
+        kycStatus: "pending",
+        kycSessionId: null,
+        passwordHash:
+          "$2b$10$tfCv9AKisSr53nOORsm6.ui.8LbOk6QQar9t9l4xTvBmb/kIGnc1e",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ],
+  ]), // key: uid -> user { uid, email, ... }
   jobs: new Map(), // jobId -> job
   bids: new Map(), // bidId -> bid
   conversations: new Map(), // conversationId -> conversation
@@ -38,14 +61,17 @@ export const db = {
       state.users.set(u.uid, merged);
       return merged;
     },
+
     async get(uid) {
       return state.users.get(uid) || null;
     },
+
     async create(user) {
       const newUser = { ...user };
       state.users.set(user.uid, newUser);
       return newUser;
     },
+
     async update(uid, patch) {
       const current = state.users.get(uid);
       if (!current) return null;
@@ -53,6 +79,7 @@ export const db = {
       state.users.set(uid, updated);
       return updated;
     },
+
     async findByEmail(email) {
       const normalized = email?.toLowerCase();
       if (!normalized) return null;
@@ -63,20 +90,67 @@ export const db = {
       }
       return null;
     },
+
+    async list() {
+      return Array.from(state.users.values());
+    },
+
+    async delete(uid) {
+      const exists = state.users.has(uid);
+      if (!exists) return false;
+
+      state.users.delete(uid);
+
+      for (const [bidId, bid] of Array.from(state.bids.entries())) {
+        if (bid?.jobID && !bid.jobId) {
+          bid.jobId = bid.jobID;
+          delete bid.jobID;
+          state.bids.set(bidId, bid);
+        }
+        if (bid.providerId === uid) {
+          state.bids.delete(bidId);
+        }
+      }
+
+      // Cleanup: delete jobs posted by this user (posterId),
+      // and delete bids associated with those jobs
+      for (const [jobId, job] of Array.from(state.jobs.entries())) {
+        if (job.posterId === uid) {
+          state.jobs.delete(jobId);
+
+          for (const [bidId, bid] of Array.from(state.bids.entries())) {
+            if (bid?.jobID && !bid.jobId) {
+              bid.jobId = bid.jobID;
+              delete bid.jobID;
+              state.bids.set(bidId, bid);
+            }
+            if (bid.jobId === jobId) {
+              state.bids.delete(bidId);
+            }
+          }
+        }
+      }
+
+      return true;
+    },
   },
+
   job: {
     list() {
       return Array.from(state.jobs.values());
     },
+
     get(jobId) {
       return state.jobs.get(jobId) || null;
     },
+
     create(data) {
       const jobId = id("job");
       const job = { id: jobId, status: "open", createdAt: Date.now(), ...data };
       state.jobs.set(jobId, job);
       return job;
     },
+
     update(jobId, patch) {
       const cur = state.jobs.get(jobId);
       if (!cur) return null;
@@ -84,18 +158,22 @@ export const db = {
       state.jobs.set(jobId, updated);
       return updated;
     },
+
     delete(jobId) {
       const exists = state.jobs.has(jobId);
       if (!exists) return false;
       state.jobs.delete(jobId);
+
       for (const [bidId, bid] of Array.from(state.bids.entries())) {
         if (bid.jobId === jobId) {
           state.bids.delete(bidId);
         }
       }
+
       return true;
     },
   },
+
   bid: {
     get(bidId) {
       const bid = state.bids.get(bidId) || null;
@@ -105,6 +183,7 @@ export const db = {
       }
       return bid;
     },
+
     listByJob(jobId) {
       return Array.from(state.bids.values())
         .map((bid) => {
@@ -116,6 +195,7 @@ export const db = {
         })
         .filter((b) => b.jobId === jobId);
     },
+
     listByUser(uid) {
       return Array.from(state.bids.values())
         .map((bid) => {
@@ -127,6 +207,7 @@ export const db = {
         })
         .filter((b) => b.providerId === uid);
     },
+
     create(data) {
       const bidId = id("bid");
       const bid = {
@@ -139,25 +220,31 @@ export const db = {
       state.bids.set(bidId, bid);
       return bid;
     },
+
     update(bidId, patch) {
       const cur = state.bids.get(bidId);
       if (!cur) return null;
+
       const updated = {
         ...cur,
         ...patch,
         updatedAt: Date.now(),
         bidUpdatedAt: new Date().toISOString(),
       };
+
       if (updated.jobID && !updated.jobId) {
         updated.jobId = updated.jobID;
       }
       delete updated.jobID;
+
       state.bids.set(bidId, updated);
       return updated;
     },
+
     delete(bidId) {
       return state.bids.delete(bidId);
     },
+
     deleteByJob(jobId) {
       let count = 0;
       for (const [bidId, bid] of Array.from(state.bids.entries())) {
@@ -172,6 +259,16 @@ export const db = {
         }
       }
       return count;
+    },
+
+    list() {
+      return Array.from(state.bids.values()).map((bid) => {
+        if (bid?.jobID && !bid.jobId) {
+          bid.jobId = bid.jobID;
+          delete bid.jobID;
+        }
+        return bid;
+      });
     },
   },
   conversations: {

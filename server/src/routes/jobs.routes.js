@@ -48,7 +48,8 @@ async function requireContractor(req, res) {
 
 router.get("/", async (req, res, next) => {
   try {
-    const filterMine = String(req.query.mine || "false").toLowerCase() === "true";
+    const filterMine =
+      String(req.query.mine || "false").toLowerCase() === "true";
     let uid = null;
 
     if (filterMine) {
@@ -113,12 +114,8 @@ router.get("/:jobId", async (req, res, next) => {
     if (job.posterId) {
       const contractorRecord = await db.user.get(job.posterId);
       if (contractorRecord) {
-        const {
-          passwordHash,
-          kycStatus,
-          emailVerification,
-          ...rest
-        } = contractorRecord;
+        const { passwordHash, kycStatus, emailVerification, ...rest } =
+          contractorRecord;
         contractor = {
           uid: contractorRecord.uid,
           firstName: contractorRecord.firstName,
@@ -151,7 +148,13 @@ router.patch("/:jobId", async (req, res, next) => {
     if (job.status && job.status !== "open") {
       return res.status(409).json({ error: "job_locked" });
     }
-    const fields = ["title", "description", "budgetAmount", "location", "status"];
+    const fields = [
+      "title",
+      "description",
+      "budgetAmount",
+      "location",
+      "status",
+    ];
     const patch = {};
     for (const key of fields) {
       if (req.body[key] !== undefined) patch[key] = req.body[key];
