@@ -151,7 +151,7 @@ export default function MyBids() {
                   <p className="bid-list-status-note">{bid.statusNote}</p>
                 )}
                 <div className="job-row-actions">
-                  {status === "accepted" && (
+                  {status === "accepted" && !bid.paymentIntentId && bid.paymentStatus !== "held" && bid.paymentStatus !== "captured" && (
                     <Button
                       size="sm"
                       kind="primary"
