@@ -31,5 +31,3 @@ export const payments = {
     };
   },
 };
-
-// Made with Bob
