@@ -10,6 +10,7 @@ import bidsRoutes from "./routes/bids.routes.js";
 import passwordRoutes from "./routes/password.routes.js";
 import duoRoutes from "./routes/duo.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
+import paymentsRoutes from "./routes/payments.routes.js";
 import { db as mockDb } from "./adapters/db.mock.js";
 import { db as realDb } from "./adapters/db.real.js";
 
@@ -32,6 +33,7 @@ app.use("/api/bids", bidsRoutes);
 app.use("/api/password", passwordRoutes);
 app.use("/api/auth/duo", duoRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/payments", paymentsRoutes);
 
 // Webhook handler for Stripe Identity (only when not in prototype)
 if (!config.prototype) {

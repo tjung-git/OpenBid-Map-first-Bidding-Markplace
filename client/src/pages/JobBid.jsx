@@ -239,7 +239,7 @@ export default function JobBid() {
       case "bid_already_exists":
         return "You already have a bid for this job. Update or delete it instead.";
       case "own_job_bid":
-        return "You posted this job. Switch to contractor view to manage it.";
+        return "You posted this job. Switch to Job Poster view to manage it.";
       case "invalid_amount":
         return "Enter a valid bid amount greater than zero.";
       case "no_update_fields":
@@ -264,11 +264,11 @@ export default function JobBid() {
     setSuccess("");
     const numericAmount = Number(amountInput);
     if (isOwnJob) {
-      setError("You posted this job. Switch to contractor view to manage it.");
+      setError("You posted this job. Switch to Job Poster view to manage it.");
       return;
     }
     if (!isBidder) {
-      setError("Only bidder accounts can place bids.");
+      setError("Only contractor accounts can place bids.");
       return;
     }
     if (!kycVerified) {
@@ -409,7 +409,7 @@ export default function JobBid() {
             Posted by{" "}
             {[contractor?.firstName, contractor?.lastName]
               .filter(Boolean)
-              .join(" ") || contractor?.email || "Unknown contractor"}
+              .join(" ") || contractor?.email || "Unknown"}
           </p>
         </div>
       </div>
@@ -451,10 +451,10 @@ export default function JobBid() {
               title="Bidding Restricted"
               subtitle={
                 isOwnJob
-                  ? "You posted this job. Switch to contractor view to manage it."
+                  ? "You posted this job. Switch to Job Poster view to manage it."
                   : isBidder
                   ? "Complete KYC before you can place bids."
-                  : "Switch to a bidder account to place bids."
+                  : "Switch to a contractor account to place bids."
               }
               kind="warning"
               lowContrast

@@ -44,7 +44,7 @@ For full functionality with persistent data, email verification, and KYC, see th
 ### Setups
 
 - Firebase account
-- Stripe account (for KYC - instructions in future iterations)
+- Stripe account (for KYC and payments)
 - Duo account (for 2FA - instructions in future iterations)
 - Google Maps API key (for Google map display - instructions in future iterations)
 
@@ -69,10 +69,15 @@ For full functionality with persistent data, email verification, and KYC, see th
    FIREBASE_CLIENT_EMAIL=<client_email>
    FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
    FIREBASE_WEB_API_KEY=<firebase web api key>
+   STRIPE_SECRET_KEY_FOR_TESTING=sk_test_<your_stripe_secret_key>
+   STRIPE_PUBLISHABLE_KEY=pk_test_<your_stripe_publishable_key>
+   STRIPE_WEBHOOK_SECRET=whsec_<your_webhook_secret>
    APP_URL=http://localhost:5173
    EMAIL_VERIFICATION_REDIRECT=http://localhost:5173/login
    APP_NAME=OpenBid
    ```
+
+  Get Stripe keys from [https://dashboard.stripe.com/test/apikeys](https://dashboard.stripe.com/test/apikeys)
 
 ### 3. Client Environment (`client/.env`)
 
@@ -82,6 +87,7 @@ Create `client/.env` with:
 VITE_PROTOTYPE=FALSE
 VITE_API_BASE=http://localhost:4000
 VITE_GOOGLE_MAPS_API_KEY=<google_map_api_key>
+VITE_STRIPE_PUBLISHABLE_KEY=<stripe_publishable_key>
 ```
 
 ### Email Verification & KYC

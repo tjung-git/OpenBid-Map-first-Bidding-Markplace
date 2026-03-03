@@ -146,11 +146,22 @@ export default function MyBids() {
                     {statusLabel}
                   </span>
                 </p>
-                {bid.note && <p className="bid-list-note">“{bid.note}”</p>}
+                {bid.note && <p className="bid-list-note">"{bid.note}"</p>}
                 {bid.statusNote && (
                   <p className="bid-list-status-note">{bid.statusNote}</p>
                 )}
                 <div className="job-row-actions">
+                  {status === "accepted" && (!bid.paymentStatus || bid.paymentStatus === "pending") && (
+                    <Button
+                      size="sm"
+                      kind="primary"
+                      onClick={() =>
+                        nav(`/payment?jobId=${bid.jobId}&bidId=${bid.id}&amount=${bid.amount}`)
+                      }
+                    >
+                      Pay Now
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     onClick={() =>

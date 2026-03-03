@@ -209,4 +209,41 @@ export const api = {
     if (!r.ok) throw { status: r.status, data };
     return data;
   },
+  async createPaymentIntent({ jobId, bidId, amount }) {
+    const r = await fetch(`${base}/api/payments/create-intent`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ jobId, bidId, amount }),
+    });
+    return r.json();
+  },
+  async confirmPayment(jobId, paymentIntentId) {
+    const r = await fetch(`${base}/api/payments/${jobId}/confirm`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ paymentIntentId }),
+    });
+    return r.json();
+  },
+  async capturePayment(jobId) {
+    const r = await fetch(`${base}/api/payments/${jobId}/capture`, {
+      method: "POST",
+      headers: headers(),
+    });
+    return r.json();
+  },
+  async refundPayment(jobId, amount) {
+    const r = await fetch(`${base}/api/payments/${jobId}/refund`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ amount }),
+    });
+    return r.json();
+  },
+  async getPaymentStatus(jobId) {
+    const r = await fetch(`${base}/api/payments/${jobId}/status`, {
+      headers: headers(),
+    });
+    return r.json();
+  },
 };
