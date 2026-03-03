@@ -63,6 +63,21 @@ export default function JobDetail() {
     setEditLng(latLng.lng);
   };
 
+  const refreshJob = useCallback(async () => {
+    const jobResp = await api.jobGet(jobId);
+    setJob(jobResp.job);
+    return jobResp.job;
+  }, [jobId]);
+
+  const refreshBids = useCallback(async () => {
+    const response = await api.bidsForJob(jobId);
+    const list = Array.isArray(response?.bids)
+      ? sortBidsByCreated(response.bids)
+      : [];
+    setBids(list);
+    return list;
+  }, [jobId]);
+
   useEffect(() => {
     if (location.state?.notice) {
       setFlash(location.state.notice);
@@ -79,21 +94,6 @@ export default function JobDetail() {
       navigate(".", { replace: true, state: {} });
     }
   }, [location.state, navigate, refreshJob, refreshBids]);
-
-  const refreshJob = useCallback(async () => {
-    const jobResp = await api.jobGet(jobId);
-    setJob(jobResp.job);
-    return jobResp.job;
-  }, [jobId]);
-
-  const refreshBids = useCallback(async () => {
-    const response = await api.bidsForJob(jobId);
-    const list = Array.isArray(response?.bids)
-      ? sortBidsByCreated(response.bids)
-      : [];
-    setBids(list);
-    return list;
-  }, [jobId]);
 
   useEffect(() => {
     refreshJob();
