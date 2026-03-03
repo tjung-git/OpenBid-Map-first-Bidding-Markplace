@@ -19,10 +19,14 @@ import Messenger from "./pages/Messenger";
 import AdminRoute from "./components/AdminRoute";
 import NonAdminRoute from "./components/NonAdminRoute";
 import AdminDashboard from "./pages/AdminDashboard";
+import UserReviews from "./pages/UserReviews.jsx";
+import UserPortfolio from "./pages/UserPortfolio.jsx";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <BrowserRouter
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <Routes>
         {/* Public Routes*/}
         <Route path="/login" element={<Login />} />
@@ -49,6 +53,8 @@ createRoot(document.getElementById("root")).render(
               element={<BidDetail />}
             />
             <Route path="/new-job" element={<NewJob />} />
+            <Route path="/users/:uid/reviews" element={<UserReviews />} />
+            <Route path="/users/:uid/portfolio" element={<UserPortfolio />} />
           </Route>
 
           {/* Admin Routes*/}

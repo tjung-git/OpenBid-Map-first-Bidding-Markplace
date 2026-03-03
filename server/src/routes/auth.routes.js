@@ -39,6 +39,23 @@ const sanitizeUser = (user) => {
   return rest;
 };
 
+async function attachProfileFields(user) {
+  if (!user) return null;
+  if (!db?.profile?.get) return user;
+  try {
+    const profile = await db.profile.get(user.uid);
+    if (profile?.avatarUrl) {
+      user.avatarUrl = profile.avatarUrl;
+    }
+  } catch (error) {
+    console.warn(
+      "[auth] Unable to attach profile fields",
+      error?.message || error,
+    );
+  }
+  return user;
+}
+
 const isKycVerified = (value) =>
   typeof value === "string" && value.trim().toLowerCase() === "verified";
 
@@ -143,7 +160,7 @@ router.post("/signup", async (req, res, next) => {
     try {
       const created = await db.user.create(userRecord);
       res.status(201).json({
-        user: sanitizeUser(created),
+        user: sanitizeUser(await attachProfileFields(created)),
       });
     } catch (error) {
       if (!config.prototype && firebaseIdToken) {
@@ -169,6 +186,7 @@ router.post("/login", async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ error: "user not found" });
     }
+    await attachProfileFields(user);
 
     let passwordOk = await verifyPassword(password, user.passwordHash);
     let firebaseSession = null;
@@ -233,7 +251,10 @@ router.post("/login", async (req, res, next) => {
       }
     }
 
-    if ((user.emailVerification || "").toLowerCase() !== "verified") {
+    if (
+      !config.prototype &&
+      (user.emailVerification || "").toLowerCase() !== "verified"
+    ) {
       return res.status(403).json({
         error: "verification_required",
         emailVerification: user.emailVerification || "pending",
@@ -292,7 +313,9 @@ router.post("/login", async (req, res, next) => {
     }
 
     const requirements = {
-      emailVerified: user.emailVerification === "verified",
+      emailVerified: config.prototype
+        ? true
+        : user.emailVerification === "verified",
       kycVerified: isKycVerified(user.kycStatus),
     };
 
@@ -362,11 +385,15 @@ router.patch("/role", async (req, res, next) => {
       return res.status(405).json({ error: "admin_cannot_change_role" });
     }
 
+    await attachProfileFields(user);
+
     if ((user.userType || "").toLowerCase() === requestedRole) {
       return res.json({
         user: sanitizeUser(user),
         requirements: {
-          emailVerified: user.emailVerification === "verified",
+          emailVerified: config.prototype
+            ? true
+            : user.emailVerification === "verified",
           kycVerified: isKycVerified(user.kycStatus),
         },
       });
@@ -377,11 +404,14 @@ router.patch("/role", async (req, res, next) => {
       userType: requestedRole,
       updatedAt: nowIso,
     })) || { ...user, userType: requestedRole, updatedAt: nowIso };
+    await attachProfileFields(updated);
 
     res.json({
       user: sanitizeUser(updated),
       requirements: {
-        emailVerified: updated.emailVerification === "verified",
+        emailVerified: config.prototype
+          ? true
+          : updated.emailVerification === "verified",
         kycVerified: isKycVerified(updated.kycStatus),
       },
     });
@@ -395,7 +425,10 @@ router.get("/me", async (req, res, next) => {
     const session = await auth.verify(req);
     if (!session) return res.status(401).json({ error: "unauthorized" });
     const user = await db.user.get(session.uid);
-    res.json({ user: sanitizeUser(user), prototype: config.prototype });
+    res.json({
+      user: sanitizeUser(await attachProfileFields(user)),
+      prototype: config.prototype,
+    });
   } catch (error) {
     next(error);
   }

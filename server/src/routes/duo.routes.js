@@ -82,7 +82,7 @@ router.get("/start", async (req, res) => {
   const client = duoClient();
   const duoState = client.generateState();
   const username = pending.email || pending.uid || "user";
-  putWithTTL(duoState, { ...pending, __duoUsername: username }, 5 * 60 * 1000);
+  putWithTTL(duoState, { ...pending, duoUsername: username }, 5 * 60 * 1000);
 
   try {
     const authUrl = await client.createAuthUrl(username, duoState);

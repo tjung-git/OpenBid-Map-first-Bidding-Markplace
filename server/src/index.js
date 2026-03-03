@@ -14,6 +14,8 @@ import duoRoutes from "./routes/duo.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import messagesRoutes from "./routes/messages.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import reviewsRoutes from "./routes/reviews.routes.js";
+import portfolioRoutes from "./routes/portfolio.routes.js";
 import { db as mockDb } from "./adapters/db.mock.js";
 import { db as realDb } from "./adapters/db.real.js";
 import { requireRole, forbidRole } from "./middleware/requireRole.js";
@@ -76,14 +78,16 @@ app.get("/api/health", (_, res) =>
 );
 
 app.use("/api/auth", authRoutes);
+app.use("/api/auth/duo", duoRoutes);
 app.use("/api/kyc", forbidRole("admin"), kycRoutes);
 app.use("/api/jobs", forbidRole("admin"), jobsRoutes);
 app.use("/api/bids", forbidRole("admin"), bidsRoutes);
 app.use("/api/password", forbidRole("admin"), passwordRoutes);
-app.use("/api/auth/duo", duoRoutes);
 app.use("/api/upload", forbidRole("admin"), uploadRoutes);
 app.use("/api/messages", forbidRole("admin"), messagesRoutes);
 app.use("/api/admin", requireRole("admin"), adminRoutes);
+app.use("/api/reviews", forbidRole("admin"), reviewsRoutes);
+app.use("/api/portfolio", forbidRole("admin"), portfolioRoutes);
 
 // Webhook handler for Stripe Identity (only when not in prototype)
 if (!config.prototype) {
