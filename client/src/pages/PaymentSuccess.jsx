@@ -109,7 +109,9 @@ export default function PaymentSuccess() {
         </div>
 
         <div className="payment-success-actions">
-          <Button onClick={() => navigate(`/jobs/${jobId}`)}>
+          <Button onClick={() => navigate(`/jobs/${jobId}`, {
+            state: { refreshData: true, notice: "Payment successfully processed and held in escrow." }
+          })}>
             View Job Details
           </Button>
           <Button kind="ghost" onClick={() => navigate("/jobs")}>

@@ -67,8 +67,18 @@ export default function JobDetail() {
     if (location.state?.notice) {
       setFlash(location.state.notice);
       navigate(".", { replace: true, state: {} });
+    } else if (location.state?.message) {
+      setFlash(location.state.message);
+      navigate(".", { replace: true, state: {} });
     }
-  }, [location.state, navigate]);
+    
+    // Force refresh if coming back from payment
+    if (location.state?.refreshData) {
+      refreshJob();
+      refreshBids();
+      navigate(".", { replace: true, state: {} });
+    }
+  }, [location.state, navigate, refreshJob, refreshBids]);
 
   const refreshJob = useCallback(async () => {
     const jobResp = await api.jobGet(jobId);

@@ -237,6 +237,13 @@ export default function Payment() {
       try {
         const result = await api.createPaymentIntent({ jobId, bidId, amount });
         if (result.error) {
+          // If payment already exists, redirect back to job page
+          if (result.error === "payment_already_exists") {
+            navigate(`/jobs/${jobId}`, {
+              state: { message: "Payment has already been processed for this job." }
+            });
+            return;
+          }
           setError(result.error);
         } else if (result.clientSecret) {
           setClientSecret(result.clientSecret);
