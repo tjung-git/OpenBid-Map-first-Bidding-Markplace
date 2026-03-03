@@ -572,7 +572,7 @@ export default function JobDetail() {
                       </Button>
                     </div>
                   )}
-                  {isOwner && status === "accepted" && !bid.paymentIntentId && job.paymentStatus !== "held" && job.paymentStatus !== "captured" && (
+                  {isOwner && status === "accepted" && (!job.paymentStatus || job.paymentStatus === "pending") && (
                     <div className="job-bid-actions">
                       <Button
                         size="sm"
