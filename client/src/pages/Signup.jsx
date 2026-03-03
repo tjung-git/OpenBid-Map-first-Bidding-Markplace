@@ -84,7 +84,7 @@ export default function Signup() {
           </p>
           <ul className="auth-intro-highlights">
             <li>Explore jobs on a live map before you bid</li>
-            <li>Compare offers quickly with clear contractor details</li>
+            <li>Compare offers quickly with clear job details</li>
             <li>Secure payments when the work is delivered</li>
           </ul>
         </div>

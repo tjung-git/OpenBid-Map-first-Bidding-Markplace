@@ -15,6 +15,8 @@ import BidDetail from "./pages/BidDetail.jsx";
 import MyBids from "./pages/MyBids.jsx";
 import ProtectedApp from "./components/ProtectedApp.jsx";
 import LoginFinish from "./pages/LoginFinish";
+import Payment from "./pages/Payment.jsx";
+import PaymentSuccess from "./pages/PaymentSuccess.jsx";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -37,7 +39,8 @@ createRoot(document.getElementById("root")).render(
           />
           <Route path="/new-job" element={<NewJob />} />
           <Route path="/login/finish" element={<LoginFinish />} />
-          
+          <Route path="/payment" element={<Payment />} />
+          <Route path="/payment/success" element={<PaymentSuccess />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
