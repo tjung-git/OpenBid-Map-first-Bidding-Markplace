@@ -178,8 +178,8 @@ export default function BidDetail() {
     }
     if (!kycVerified) {
       nav("/profile", {
-      replace: true,
-      state: { notice: "Complete KYC verification in your profile to bid on jobs." },
+        replace: true,
+        state: { notice: "Complete KYC verification in your profile to bid on jobs." },
       });
       return;
     }
@@ -204,7 +204,7 @@ export default function BidDetail() {
           };
           setError(
             messages[resp.error] ||
-              "Unable to update bid. Please try again."
+            "Unable to update bid. Please try again."
           );
         } else {
           setSuccess("Bid updated.");
@@ -222,7 +222,7 @@ export default function BidDetail() {
           };
           setError(
             messages[resp.error] ||
-              "Unable to place bid. Please try again."
+            "Unable to place bid. Please try again."
           );
         } else {
           setSuccess("Bid placed.");
@@ -256,6 +256,19 @@ export default function BidDetail() {
       setError("Unable to delete bid. Please try again.");
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function startChat() {
+    if (!job?.posterId) return;
+    try {
+      const resp = await api.messagesStart(jobId, job.posterId);
+      if (resp.conversation) {
+        nav(`/messages/${resp.conversation.id}`);
+      }
+    } catch (err) {
+      console.error("Failed to start chat", err);
+      setError("Failed to start chat.");
     }
   }
 
@@ -305,9 +318,8 @@ export default function BidDetail() {
     isBidder && ["accepted", "rejected"].includes(ownBidStatus);
   const bidsPlacedText =
     sortedBids.length > 0
-      ? `${sortedBids.length} bid${
-          sortedBids.length === 1 ? "" : "s"
-        } placed so far.`
+      ? `${sortedBids.length} bid${sortedBids.length === 1 ? "" : "s"
+      } placed so far.`
       : "Be the first to bid.";
 
   useEffect(() => {
@@ -463,8 +475,8 @@ export default function BidDetail() {
                   ? "Updating…"
                   : "Update Bid"
                 : submitting
-                ? "Placing…"
-                : "Place Bid"}
+                  ? "Placing…"
+                  : "Place Bid"}
             </Button>
             {ownBidId && (
               <Button
@@ -477,6 +489,17 @@ export default function BidDetail() {
               </Button>
             )}
           </Form>
+          {ownBidId && (
+            <Button
+              type="button"
+              kind="tertiary"
+              onClick={startChat}
+              className="bid-chat-button"
+              style={{ marginTop: "1rem", width: "100%" }}
+            >
+              Start Chat with Job Poster
+            </Button>
+          )}
         </Tile>
       </div>
 

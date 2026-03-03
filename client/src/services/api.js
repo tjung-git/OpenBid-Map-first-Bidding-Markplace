@@ -83,7 +83,11 @@ export const api = {
       method: "POST",
       headers: headers(),
     });
-    return r.json();
+    const data = await r.json();
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
   },
   async kycStatus() {
     const r = await fetch(`${base}/api/kyc/status`, { headers: headers() });
@@ -234,6 +238,225 @@ export const api = {
     if (!r.ok) throw { status: r.status, data };
     return data;
   },
+  async messagesStart(jobId, otherUserId) {
+    const r = await fetch(`${base}/api/messages/start`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ jobId, otherUserId }),
+    });
+    return r.json();
+  },
+  async messagesList() {
+    const r = await fetch(`${base}/api/messages/list`, { headers: headers() });
+    return r.json();
+  },
+  async messagesGet(conversationId) {
+    const r = await fetch(`${base}/api/messages/${conversationId}`, {
+      headers: headers(),
+    });
+    return r.json();
+  },
+  async messagesSend(conversationId, content) {
+    const r = await fetch(`${base}/api/messages/${conversationId}`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ content }),
+    });
+    return r.json();
+  },
+  async messagesMarkRead(conversationId) {
+    const r = await fetch(`${base}/api/messages/${conversationId}/read`, {
+      method: "POST",
+      headers: headers(),
+    });
+    return r.json();
+  },
+  async messagesHide(conversationId) {
+    const r = await fetch(`${base}/api/messages/${conversationId}/hide`, {
+      method: "POST",
+      headers: headers(),
+    });
+    return r.json();
+  },
+  async messagesUnhide(conversationId) {
+    const r = await fetch(`${base}/api/messages/${conversationId}/unhide`, {
+      method: "POST",
+      headers: headers(),
+    });
+    return r.json();
+  },
+  async messagesDelete(conversationId) {
+    const r = await fetch(`${base}/api/messages/${conversationId}`, {
+      method: "DELETE",
+      headers: headers(),
+    });
+    return r.json();
+  },
+
+  async adminUsersList() {
+    const r = await fetch(`${base}/api/admin/users`, { headers: headers() });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { users: [...] }
+  },
+
+  async adminUserGet(uid) {
+    const r = await fetch(
+      `${base}/api/admin/users/${encodeURIComponent(uid)}`,
+      {
+        headers: headers(),
+      },
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { user: {...} }
+  },
+
+  async adminUserUpdate(uid, payload) {
+    const r = await fetch(
+      `${base}/api/admin/users/${encodeURIComponent(uid)}`,
+      {
+        method: "PATCH",
+        headers: headers(),
+        body: JSON.stringify(payload),
+      },
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { user: {...} }
+  },
+
+  async adminUserDelete(uid) {
+    const r = await fetch(
+      `${base}/api/admin/users/${encodeURIComponent(uid)}`,
+      {
+        method: "DELETE",
+        headers: headers(),
+      },
+    );
+    if (!r.ok && r.status !== 204) {
+      const data = await r.json().catch(() => ({}));
+      throw { status: r.status, data };
+    }
+    return true;
+  },
+
+  // JOBS
+  async adminJobsList() {
+    const r = await fetch(`${base}/api/admin/jobs`, { headers: headers() });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { jobs: [...] }
+  },
+
+  async adminJobGet(jobId) {
+    const r = await fetch(
+      `${base}/api/admin/jobs/${encodeURIComponent(jobId)}`,
+      {
+        headers: headers(),
+      },
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { job: {...} }
+  },
+
+  async adminJobUpdate(jobId, payload) {
+    const r = await fetch(
+      `${base}/api/admin/jobs/${encodeURIComponent(jobId)}`,
+      {
+        method: "PATCH",
+        headers: headers(),
+        body: JSON.stringify(payload),
+      },
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { job: {...} }
+  },
+
+  async adminJobDelete(jobId) {
+    const r = await fetch(
+      `${base}/api/admin/jobs/${encodeURIComponent(jobId)}`,
+      {
+        method: "DELETE",
+        headers: headers(),
+      },
+    );
+    if (!r.ok && r.status !== 204) {
+      const data = await r.json().catch(() => ({}));
+      throw { status: r.status, data };
+    }
+    return true;
+  },
+  async adminBidsList() {
+    const r = await fetch(`${base}/api/admin/bids`, { headers: headers() });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { bids: [...] }
+  },
+
+  async adminBidGet(bidId) {
+    const r = await fetch(
+      `${base}/api/admin/bids/${encodeURIComponent(bidId)}`,
+      {
+        headers: headers(),
+      },
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { bid: {...} }
+  },
+
+  async adminBidsByJob(jobId) {
+    const r = await fetch(
+      `${base}/api/admin/bids/by-job/${encodeURIComponent(jobId)}`,
+      { headers: headers() },
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { bids: [...] }
+  },
+
+  async adminBidsByUser(uid) {
+    const r = await fetch(
+      `${base}/api/admin/bids/by-user/${encodeURIComponent(uid)}`,
+      { headers: headers() },
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { bids: [...] }
+  },
+
+  async adminBidUpdate(bidId, payload) {
+    const r = await fetch(
+      `${base}/api/admin/bids/${encodeURIComponent(bidId)}`,
+      {
+        method: "PATCH",
+        headers: headers(),
+        body: JSON.stringify(payload),
+      },
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { bid: {...} }
+  },
+
+  async adminBidDelete(bidId) {
+    const r = await fetch(
+      `${base}/api/admin/bids/${encodeURIComponent(bidId)}`,
+      {
+        method: "DELETE",
+        headers: headers(),
+      },
+    );
+    if (!r.ok && r.status !== 204) {
+      const data = await r.json().catch(() => ({}));
+      throw { status: r.status, data };
+    }
+
+    return true;
+  },
   async reviewsForUser(uid) {
     const safeUid = encodeURIComponent(String(uid || "").trim());
     const r = await fetch(`${base}/api/reviews/user/${safeUid}`, {
@@ -315,7 +538,9 @@ export const api = {
     const r = await fetch(`${base}/api/portfolio/${safeItemId}/photos`, {
       method: "DELETE",
       headers: headers(),
-      body: JSON.stringify({ photoUrls: Array.isArray(photoUrls) ? photoUrls : [] }),
+      body: JSON.stringify({
+        photoUrls: Array.isArray(photoUrls) ? photoUrls : [],
+      }),
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {

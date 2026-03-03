@@ -12,19 +12,57 @@ const isServerTimestamp = (value) =>
   value.constructor &&
   value.constructor.name === "ServerTimestampTransform";
 
-const normalizeValue = (value) => {
+const isArrayUnion = (value) =>
+  value &&
+  typeof value === "object" &&
+  value.constructor &&
+  value.constructor.name === "ArrayUnionTransform";
+
+const isArrayRemove = (value) =>
+  value &&
+  typeof value === "object" &&
+  value.constructor &&
+  value.constructor.name === "ArrayRemoveTransform";
+
+const normalizeValue = (value, existingValue) => {
   if (isServerTimestamp(value)) {
     return new Date().toISOString();
+  }
+  if (isArrayUnion(value)) {
+    // value.elements contains the items to add
+    const current = Array.isArray(existingValue) ? existingValue : [];
+    const newElems = value.elements.filter((e) => !current.includes(e));
+    return [...current, ...newElems];
+  }
+  if (isArrayRemove(value)) {
+    // value.elements contains the items to remove
+    const current = Array.isArray(existingValue) ? existingValue : [];
+    return current.filter((e) => !value.elements.includes(e));
   }
   if (Array.isArray(value)) {
     return value.map((entry) => normalizeValue(entry));
   }
   if (isPlainObject(value)) {
     return Object.fromEntries(
-      Object.entries(value).map(([key, entry]) => [key, normalizeValue(entry)])
+      Object.entries(value).map(([key, entry]) => [key, normalizeValue(entry)]),
     );
   }
   return value;
+};
+
+// Helper to set nested properties via dot notation
+const setDeep = (obj, path, value) => {
+  const keys = path.split(".");
+  let current = obj;
+  for (let i = 0; i < keys.length - 1; i++) {
+    const key = keys[i];
+    if (!current[key] || typeof current[key] !== "object") {
+      current[key] = {};
+    }
+    current = current[key];
+  }
+  const lastKey = keys[keys.length - 1];
+  current[lastKey] = normalizeValue(value, current[lastKey]);
 };
 
 class InMemoryDocumentSnapshot {
@@ -59,21 +97,31 @@ class InMemoryDocRef {
     const store = this.firestore._ensureCollection(this.collectionName);
     const record = store.get(this.id);
     const data =
-      record === undefined
-        ? undefined
-        : JSON.parse(JSON.stringify(record));
+      record === undefined ? undefined : JSON.parse(JSON.stringify(record));
     return new InMemoryDocumentSnapshot(this, data);
   }
 
   async set(data, options = {}) {
     const store = this.firestore._ensureCollection(this.collectionName);
-    const normalized = this.firestore._normalizeData(data);
+
+    let target = {};
     if (options.merge && store.has(this.id)) {
-      const existing = store.get(this.id) || {};
-      store.set(this.id, { ...existing, ...normalized });
-    } else {
-      store.set(this.id, normalized);
+      target = JSON.parse(JSON.stringify(store.get(this.id)));
     }
+
+    const applyObject = (tgt, src) => {
+      for (const [key, val] of Object.entries(src)) {
+        tgt[key] = normalizeValue(val, tgt[key]);
+      }
+    };
+
+    if (!options.merge) {
+      // Complete replacement
+      target = {};
+    }
+
+    applyObject(target, data);
+    store.set(this.id, target);
   }
 
   async update(data) {
@@ -81,9 +129,15 @@ class InMemoryDocRef {
     if (!store.has(this.id)) {
       throw new Error("not-found");
     }
-    const normalized = this.firestore._normalizeData(data);
-    const existing = store.get(this.id) || {};
-    store.set(this.id, { ...existing, ...normalized });
+
+    const target = JSON.parse(JSON.stringify(store.get(this.id)));
+
+    for (const [key, val] of Object.entries(data)) {
+      // Update supports dot notation
+      setDeep(target, key, val);
+    }
+
+    store.set(this.id, target);
   }
 
   async delete() {
@@ -126,11 +180,11 @@ class InMemoryQuery {
   }
 
   where(field, op, value) {
-    if (op !== "==") {
+    if (op !== "==" && op !== "array-contains") {
       throw new Error(`Unsupported operator "${op}" in InMemoryFirestore`);
     }
     return new InMemoryQuery(this.firestore, this.collectionName, {
-      filters: [...this._filters, { field, value }],
+      filters: [...this._filters, { field, op, value }],
       orderBy: this._orderBy,
       limit: this._limit,
     });
@@ -161,7 +215,13 @@ class InMemoryQuery {
 
     if (this._filters.length > 0) {
       entries = entries.filter(([_, data]) =>
-        this._filters.every(({ field, value }) => data[field] === value)
+        this._filters.every(({ field, op, value }) => {
+          if (op === "array-contains") {
+            return Array.isArray(data[field]) && data[field].includes(value);
+          }
+          // default is "=="
+          return data[field] === value;
+        }),
       );
     }
 
@@ -178,7 +238,7 @@ class InMemoryQuery {
     }
 
     const docs = entries.map(([id, data]) =>
-      this.firestore._createDocumentSnapshot(this.collectionName, id, data)
+      this.firestore._createDocumentSnapshot(this.collectionName, id, data),
     );
     return new InMemoryQuerySnapshot(docs);
   }
@@ -192,7 +252,9 @@ class InMemoryCollection {
 
   doc(id) {
     const docId =
-      id !== undefined && id !== null ? String(id) : this.firestore._generateId();
+      id !== undefined && id !== null
+        ? String(id)
+        : this.firestore._generateId();
     return new InMemoryDocRef(this.firestore, this.name, docId);
   }
 
@@ -207,13 +269,16 @@ class InMemoryCollection {
   }
 
   orderBy(field, direction) {
-    return new InMemoryQuery(this.firestore, this.name).orderBy(field, direction);
+    return new InMemoryQuery(this.firestore, this.name).orderBy(
+      field,
+      direction,
+    );
   }
 
   async get() {
     const store = this.firestore._ensureCollection(this.name);
     const docs = Array.from(store.entries()).map(([id, data]) =>
-      this.firestore._createDocumentSnapshot(this.name, id, data)
+      this.firestore._createDocumentSnapshot(this.name, id, data),
     );
     return new InMemoryQuerySnapshot(docs);
   }
@@ -276,7 +341,8 @@ class InMemoryFirestore {
   }
 
   _createDocumentSnapshot(collectionName, id, data) {
-    const cloned = data === undefined ? undefined : JSON.parse(JSON.stringify(data));
+    const cloned =
+      data === undefined ? undefined : JSON.parse(JSON.stringify(data));
     const ref = new InMemoryDocRef(this, collectionName, id);
     return new InMemoryDocumentSnapshot(ref, cloned);
   }
@@ -338,12 +404,14 @@ export async function createPrototypeApp({
   }
 
   if (password) {
-    const { default: passwordRoutes } = await import("../routes/password.routes.js");
+    const { default: passwordRoutes } =
+      await import("../routes/password.routes.js");
     app.use("/api/password", passwordRoutes);
   }
 
   if (reviews) {
-    const { default: reviewsRoutes } = await import("../routes/reviews.routes.js");
+    const { default: reviewsRoutes } =
+      await import("../routes/reviews.routes.js");
     app.use("/api/reviews", reviewsRoutes);
   }
 
@@ -358,7 +426,9 @@ export async function setupJaneDoe({
   email = "jane.doe@example.com",
 } = {}) {
   if (!app) {
-    throw new Error("setupJaneDoe requires an Express app with /api/auth mounted");
+    throw new Error(
+      "setupJaneDoe requires an Express app with /api/auth mounted",
+    );
   }
 
   const signupPayload = {
@@ -369,11 +439,13 @@ export async function setupJaneDoe({
     confirmPassword: password,
   };
 
-  const response = await request(app).post("/api/auth/signup").send(signupPayload);
+  const response = await request(app)
+    .post("/api/auth/signup")
+    .send(signupPayload);
 
   if (response.status !== 201) {
     throw new Error(
-      `Failed to create Jane Doe fixture: ${response.status} ${JSON.stringify(response.body)}`
+      `Failed to create Jane Doe fixture: ${response.status} ${JSON.stringify(response.body)}`,
     );
   }
 
@@ -388,8 +460,8 @@ export async function setupJaneDoe({
     if (roleResponse.status !== 200) {
       throw new Error(
         `Failed to switch Jane Doe role: ${roleResponse.status} ${JSON.stringify(
-          roleResponse.body
-        )}`
+          roleResponse.body,
+        )}`,
       );
     }
 
@@ -446,6 +518,7 @@ export async function createRealApp({
   bids = false,
   kyc = false,
   password = false,
+  messages = false,
   reviews = false,
   portfolio = false,
   upload = false,
@@ -509,7 +582,8 @@ export async function createRealApp({
     jest.fn(async () => ({ ...signInReturn }));
 
   const sendVerificationEmailMock =
-    identityOverrides.sendVerificationEmailMock || jest.fn(async () => undefined);
+    identityOverrides.sendVerificationEmailMock ||
+    jest.fn(async () => undefined);
 
   const deleteAccountMock =
     identityOverrides.deleteAccountMock || jest.fn(async () => undefined);
@@ -518,18 +592,18 @@ export async function createRealApp({
     identityOverrides.authSignInMock ||
     jest.fn(async () => ({ ...signInReturn }));
 
-  const firebaseAuthClient =
-    identityOverrides.firebaseAuthClient || {
-      getUser: jest.fn(async () => ({
-        emailVerified: identityOverrides.emailVerified ?? false,
-      })),
-      verifyIdToken: jest.fn(async () => (
+  const firebaseAuthClient = identityOverrides.firebaseAuthClient || {
+    getUser: jest.fn(async () => ({
+      emailVerified: identityOverrides.emailVerified ?? false,
+    })),
+    verifyIdToken: jest.fn(
+      async () =>
         identityOverrides.decodedToken || {
           uid: "firebase_jane_uid",
           email: "jane.doe@example.com",
-        }
-      )),
-    };
+        },
+    ),
+  };
 
   let FirebaseIdentityErrorClass;
 
@@ -634,22 +708,32 @@ export async function createRealApp({
   }
 
   if (password) {
-    const { default: passwordRoutes } = await import("../routes/password.routes.js");
+    const { default: passwordRoutes } =
+      await import("../routes/password.routes.js");
     app.use("/api/password", passwordRoutes);
   }
 
+  if (messages) {
+    const { default: messagesRoutes } =
+      await import("../routes/messages.routes.js");
+    app.use("/api/messages", messagesRoutes);
+  }
+
   if (reviews) {
-    const { default: reviewsRoutes } = await import("../routes/reviews.routes.js");
+    const { default: reviewsRoutes } =
+      await import("../routes/reviews.routes.js");
     app.use("/api/reviews", reviewsRoutes);
   }
 
   if (portfolio) {
-    const { default: portfolioRoutes } = await import("../routes/portfolio.routes.js");
+    const { default: portfolioRoutes } =
+      await import("../routes/portfolio.routes.js");
     app.use("/api/portfolio", portfolioRoutes);
   }
 
   if (upload) {
-    const { default: uploadRoutes } = await import("../routes/upload.routes.js");
+    const { default: uploadRoutes } =
+      await import("../routes/upload.routes.js");
     app.use("/api/upload", uploadRoutes);
   }
 
@@ -707,7 +791,7 @@ export async function publishJob(app, posterUid, overrides = {}) {
 
   if (response.status !== 200) {
     throw new Error(
-      `Failed to publish job: ${response.status} ${JSON.stringify(response.body)}`
+      `Failed to publish job: ${response.status} ${JSON.stringify(response.body)}`,
     );
   }
 

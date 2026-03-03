@@ -2,6 +2,14 @@
 
 OpenBid is a **map-first bidding marketplace platform** developed by Team 1: Tyler, Mani, Yanness, Alaister.
 
+## Features
+
+- **Map-First Discovery**: Find jobs visually with Google Maps integration.
+- **Real-Time Messaging**: Chat instantly with contractors or bidders using Socket.io.
+- **Bidding System**: Detailed bid management and awarding workflow.
+- **Role Switching**: Seamlessly toggle between Contractor and Bidder profiles.
+- **Secure Auth**: Email/Password authentication with optional 2FA and KYC verification.
+
 ## Quick Start
 
 ### Prerequisites

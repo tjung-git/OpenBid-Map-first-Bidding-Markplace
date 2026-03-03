@@ -180,8 +180,8 @@ export default function Profile() {
           
           if (isMounted && status !== currentKycStatus) {
             const updatedUser = { ...user, kycStatus: status };
-            setUser(updatedUser, { 
-              ...requirements, 
+            setUser(updatedUser, {
+              ...requirements,
               kycVerified: status === "verified"
             });
           }
@@ -228,8 +228,8 @@ export default function Profile() {
       
       // Update user with new KYC status
       const updatedUser = { ...user, kycStatus: status };
-      setUser(updatedUser, { 
-        ...requirements, 
+      setUser(updatedUser, {
+        ...requirements,
         kycVerified: status === "verified"
       });
       
@@ -265,7 +265,16 @@ export default function Profile() {
       }
     } catch (error) {
       console.error('KYC error:', error);
-      setNotice("Failed to start KYC verification");
+      // Extract error message from error object for better debugging
+      let errorMessage = "Failed to start KYC verification";
+      if (error?.data?.message) {
+        errorMessage = error.data.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.status) {
+        errorMessage = `Failed to start KYC verification (HTTP ${error.status})`;
+      }
+      setNotice(errorMessage);
     } finally {
       setUploading(false);
     }

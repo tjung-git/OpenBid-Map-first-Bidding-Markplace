@@ -3,6 +3,21 @@
   align-items: center;
   gap: 0.75rem;
   font-size: 0.875rem;
+  color: #fff;
+  /* Ensure text is visible on dark header */
+  margin-right: 1rem;
+}
+
+@media (max-width: 768px) {
+  .header-user-details {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-user-greeting {
+    display: none;
+  }
 }
 
 .header-user-greeting {
@@ -42,4 +57,29 @@
   font-size: 1.3rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+/* Chat notification badge */
+.header-chat-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.header-chat-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: #da1e28;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }

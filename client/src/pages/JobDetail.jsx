@@ -82,9 +82,8 @@ export default function JobDetail() {
   };
 
   const handlePlaceSelection = (placeData) => {
-    const {address, latLng} = placeData;
-    console.log(address);
-    console.log(latLng);
+    const { address, latLng } = placeData;
+
     setAddress(address);
     setEditLat(latLng.lat);
     setEditLng(latLng.lng);
@@ -179,7 +178,9 @@ export default function JobDetail() {
     setBidError("");
     setFlash("");
     if (isOwnJob) {
-      setBidError("You posted this job. Switch to contractor view to manage it.");
+      setBidError(
+        "You posted this job. Switch to contractor view to manage it.",
+      );
       return;
     }
     if (biddingClosed) {
@@ -209,12 +210,37 @@ export default function JobDetail() {
     setFlash("Bid submitted.");
   }
 
+  async function startChat(jobId, otherUserId) {
+    if (!otherUserId) {
+      console.error("startChat called without otherUserId");
+      setUpdateError("Cannot start chat - missing user information.");
+      return;
+    }
+    try {
+      const resp = await api.messagesStart(jobId, otherUserId);
+      console.log("startChat response:", resp);
+      if (resp.conversation && resp.conversation.id) {
+        navigate(`/messages/${resp.conversation.id}`);
+      } else if (resp.error) {
+        console.error("Failed to start chat:", resp.error);
+        setUpdateError("Failed to start chat: " + resp.error);
+      } else {
+        // Fallback - navigate to messages page
+        console.warn("No conversation returned, navigating to messages page");
+        navigate("/messages");
+      }
+    } catch (err) {
+      console.error("Failed to start chat", err);
+      setUpdateError("Failed to start chat.");
+    }
+  }
+
   async function handleUpdate(e) {
     e.preventDefault();
     if (!isOwner) return;
     if (jobLocked) {
       setUpdateError(
-        "This job is locked after accepting a bid. Finish the job to get paid."
+        "This job is locked after accepting a bid. Finish the job to get paid.",
       );
       return;
     }
@@ -231,7 +257,7 @@ export default function JobDetail() {
           ...(job?.location || {}),
           lat: editLat,
           lng: editLng,
-          address: address
+          address: address,
         },
       };
       const result = await api.jobUpdate(jobId, payload);
@@ -252,12 +278,12 @@ export default function JobDetail() {
     if (!isOwner || deleting) return;
     if (jobLocked) {
       setUpdateError(
-        "This job is locked after accepting a bid and cannot be deleted."
+        "This job is locked after accepting a bid and cannot be deleted.",
       );
       return;
     }
     const confirmed = window.confirm(
-      `Delete "${job.title}"? This cannot be undone.`
+      `Delete "${job.title}"? This cannot be undone.`,
     );
     if (!confirmed) return;
     setDeleting(true);
@@ -272,6 +298,10 @@ export default function JobDetail() {
       setDeleting(false);
     }
   }
+
+  // Find my bid if I am a bidder
+  const myBid = bids.find((b) => b.providerId === user?.uid);
+  const canChatAsBidder = !isOwner && myBid;
 
   async function handleAccept(bidId) {
     if (!isOwner || !bidId) return;
@@ -289,8 +319,7 @@ export default function JobDetail() {
           forbidden: "You do not have permission to accept this bid.",
         };
         setUpdateError(
-          messages[resp.error] ||
-            "Unable to accept bid. Please try again."
+          messages[resp.error] || "Unable to accept bid. Please try again.",
         );
       } else {
         await Promise.all([refreshJob(), refreshBids()]);
@@ -312,7 +341,7 @@ export default function JobDetail() {
           <StarFilled key={i} size={16} />
         ) : (
           <Star key={i} size={16} />
-        )
+        ),
       );
     }
     return <span className="review-stars">{stars}</span>;
@@ -342,7 +371,7 @@ export default function JobDetail() {
           aria-label={`${i} star${i === 1 ? "" : "s"}`}
         >
           {filled ? <StarFilled size={20} /> : <Star size={20} />}
-        </button>
+        </button>,
       );
     }
     return <div className="review-compose-stars">{stars}</div>;
@@ -428,7 +457,7 @@ export default function JobDetail() {
         setReviewsCache((prev) => ({ ...prev, [providerId]: data }));
       }
       const mine = (data?.reviews || []).find(
-        (r) => r?.jobId === jobId && r?.reviewerId === user?.uid
+        (r) => r?.jobId === jobId && r?.reviewerId === user?.uid,
       );
       setExistingReview(mine || null);
       if (mine) {
@@ -444,11 +473,13 @@ export default function JobDetail() {
               url,
               thumbUrl: thumbs[idx] || null,
             }))
-            .filter((p) => Boolean(p.url))
+            .filter((p) => Boolean(p.url)),
         );
       }
     } catch (err) {
-      setReviewSubmitError(err?.data?.error || "Unable to check existing review.");
+      setReviewSubmitError(
+        err?.data?.error || "Unable to check existing review.",
+      );
     } finally {
       setReviewComposeLoading(false);
     }
@@ -513,7 +544,7 @@ export default function JobDetail() {
         setReviewsData(refreshed);
       }
       const mine = (refreshed?.reviews || []).find(
-        (r) => r?.jobId === jobId && r?.reviewerId === user?.uid
+        (r) => r?.jobId === jobId && r?.reviewerId === user?.uid,
       );
       setExistingReview(mine || null);
       if (mine) {
@@ -527,13 +558,15 @@ export default function JobDetail() {
               url,
               thumbUrl: thumbs[idx] || null,
             }))
-            .filter((p) => Boolean(p.url))
+            .filter((p) => Boolean(p.url)),
         );
       } else {
         setReviewExistingPhotos([]);
       }
       clearReviewPhotos();
-      const baseMessage = existingReview?.id ? "Review updated." : "Review submitted.";
+      const baseMessage = existingReview?.id
+        ? "Review updated."
+        : "Review submitted.";
       if (cfg.prototype && wantsPhotos) {
         setFlash(`${baseMessage} Photos are disabled in prototype mode.`);
       } else {
@@ -547,7 +580,7 @@ export default function JobDetail() {
           const refreshed = await api.reviewsForUser(providerId);
           setReviewsCache((prev) => ({ ...prev, [providerId]: refreshed }));
           const mine = (refreshed?.reviews || []).find(
-            (r) => r?.jobId === jobId && r?.reviewerId === user?.uid
+            (r) => r?.jobId === jobId && r?.reviewerId === user?.uid,
           );
           setExistingReview(mine || null);
           setReviewSubmitError("You already submitted a review for this job.");
@@ -557,11 +590,11 @@ export default function JobDetail() {
       } else if (code === "storage_unavailable") {
         const extra = err?.data?.details ? ` (${err.data.details})` : "";
         setReviewSubmitError(
-          `Photo upload is unavailable right now. Your review text was saved; try photos again later.${extra}`
+          `Photo upload is unavailable right now. Your review text was saved; try photos again later.${extra}`,
         );
       } else if (code === "photo_upload_not_supported_in_prototype") {
         setReviewSubmitError(
-          "Prototype mode does not support review photo uploads. Your review text was saved."
+          "Prototype mode does not support review photo uploads. Your review text was saved.",
         );
       } else {
         const details = [
@@ -573,7 +606,7 @@ export default function JobDetail() {
           .filter(Boolean)
           .join(" · ");
         setReviewSubmitError(
-          details || "Unable to submit review. Please try again."
+          details || "Unable to submit review. Please try again.",
         );
       }
     } finally {
@@ -585,7 +618,7 @@ export default function JobDetail() {
     if (!existingReview?.id) return;
     if (reviewDeleting) return;
     const confirmed = window.confirm(
-      "Delete this review? This will remove the rating, description, and all uploaded photos."
+      "Delete this review? This will remove the rating, description, and all uploaded photos.",
     );
     if (!confirmed) return;
     setReviewSubmitError("");
@@ -621,7 +654,7 @@ export default function JobDetail() {
   const budgetDisplay =
     typeof job.budgetAmount === "number"
       ? `$${job.budgetAmount.toLocaleString()}`
-      : job.budgetAmount ?? "-";
+      : (job.budgetAmount ?? "-");
   const createdDisplay = job.createdAt
     ? new Date(job.createdAt).toLocaleString()
     : "Unknown";
@@ -632,7 +665,11 @@ export default function JobDetail() {
       : "—");
 
   const statusTagType =
-    jobStatus === "open" ? "blue" : jobStatus === "awarded" ? "green" : "cool-gray";
+    jobStatus === "open"
+      ? "blue"
+      : jobStatus === "awarded"
+        ? "green"
+        : "cool-gray";
 
   return (
     <div className="page-shell job-detail-page">
@@ -676,7 +713,6 @@ export default function JobDetail() {
           onClose={() => setUpdateError("")}
         />
       )}
-
       <div className="page-grid">
         <div className="page-stack">
           <Tile className="page-card">
@@ -724,72 +760,74 @@ export default function JobDetail() {
               )}
               <div className="page-card-body">
                 <Form onSubmit={handleUpdate} className="page-stack">
-                <TextInput
-                  id="job-title"
-                  labelText="Job Title"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  disabled={jobLocked}
-                  required
-                />
-                <TextArea
-                  id="job-desc"
-                  labelText="Job Description"
-                  value={editDesc}
-                  onChange={(e) => setEditDesc(e.target.value)}
-                  disabled={jobLocked}
-                  rows={4}
-                />
-                <TextInput
-                  id="job-budget"
-                  type="text"
-                  labelText="Job Budget"
-                  value={editBudget}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    const cleaned = raw.replace(/[^0-9.]/g, "");
-                    const normalized = cleaned.replace(/^0+(?=\d)/, "");
-                    setEditBudget(normalized);
-                  }}
-                  placeholder="Enter budget"
-                  disabled={jobLocked}
-                />
-                {cfg.prototype ? (
-                  <div className="job-form-grid">
-                    <NumberInput
-                      key={`lat-${editLat}`}
-                      id="lat"
-                      label="Latitude"
-                      value={editLat}
-                      onChange={(_, { value }) => setEditLat(Number(value))}
-                    />
-                    <NumberInput
-                      key={`lng-${editLng}`}
-                      id="lng"
-                      label="Longitude"
-                      value={editLng}
-                      onChange={(_, { value }) => setEditLng(Number(value))}
-                    />
+                  <TextInput
+                    id="job-title"
+                    labelText="Job Title"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    disabled={jobLocked}
+                    required
+                  />
+                  <TextArea
+                    id="job-desc"
+                    labelText="Job Description"
+                    value={editDesc}
+                    onChange={(e) => setEditDesc(e.target.value)}
+                    disabled={jobLocked}
+                    rows={4}
+                  />
+                  <TextInput
+                    id="job-budget"
+                    type="text"
+                    labelText="Job Budget"
+                    value={editBudget}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      const cleaned = raw.replace(/[^0-9.]/g, "");
+                      const normalized = cleaned.replace(/^0+(?=\d)/, "");
+                      setEditBudget(normalized);
+                    }}
+                    placeholder="Enter budget"
+                    disabled={jobLocked}
+                  />
+                  {cfg.prototype ? (
+                    <div className="job-form-grid">
+                      <NumberInput
+                        key={`lat-${editLat}`}
+                        id="lat"
+                        label="Latitude"
+                        value={editLat}
+                        onChange={(_, { value }) => setEditLat(Number(value))}
+                      />
+                      <NumberInput
+                        key={`lng-${editLng}`}
+                        id="lng"
+                        label="Longitude"
+                        value={editLng}
+                        onChange={(_, { value }) => setEditLng(Number(value))}
+                      />
+                    </div>
+                  ) : (
+                    <div className="job-location-search-container">
+                      <SearchAutocomplete
+                        onSelectPlace={handlePlaceSelection}
+                      />
+                      <div>Selected location: {address}</div>
+                    </div>
+                  )}
+                  <div className="job-detail-actions job-detail-actions--tight">
+                    <Button type="submit" disabled={saving || jobLocked}>
+                      {saving ? "Updating…" : "Update Job"}
+                    </Button>
+                    <Button
+                      type="button"
+                      kind="danger"
+                      disabled={deleting || jobLocked}
+                      onClick={handleDelete}
+                    >
+                      {deleting ? "Deleting…" : "Delete Job"}
+                    </Button>
                   </div>
-                ) : (
-                  <div className="job-location-search-container">
-                    <SearchAutocomplete onSelectPlace={handlePlaceSelection} />
-                    <div>Selected location: {address}</div>
-                  </div>
-                )}
-                <div className="job-detail-actions job-detail-actions--tight">
-                  <Button type="submit" disabled={saving || jobLocked}>
-                    {saving ? "Updating…" : "Update Job"}
-                  </Button>
-                  <Button
-                    type="button"
-                    kind="danger"
-                    disabled={deleting || jobLocked}
-                    onClick={handleDelete}
-                  >
-                    {deleting ? "Deleting…" : "Delete Job"}
-                  </Button>
-                </div>
                 </Form>
               </div>
             </Tile>
@@ -825,33 +863,36 @@ export default function JobDetail() {
                   )}
                   <div className="page-card-body">
                     <Form onSubmit={placeBid} className="page-stack">
-                    <NumberInput
-                      id="bid-amount"
-                      label="Bid amount"
-                      value={bidAmount === "" ? "" : Number(bidAmount)}
-                      allowEmpty
-                      onChange={(_, { value }) => {
-                        if (value === "" || value == null) {
-                          setBidAmount("");
-                        } else {
-                          const sanitized = String(value).replace(/[^0-9.]/g, "");
-                          setBidAmount(sanitized);
-                        }
-                      }}
-                      disabled={isOwnJob}
-                    />
-                    <TextInput
-                      id="bid-note"
-                      labelText="Note (optional)"
-                      value={bidNote}
-                      onChange={(e) => setBidNote(e.target.value)}
-                      disabled={isOwnJob}
-                    />
-                    <div className="job-detail-actions job-detail-actions--tight">
-                      <Button type="submit" disabled={isOwnJob}>
-                        Submit Bid
-                      </Button>
-                    </div>
+                      <NumberInput
+                        id="bid-amount"
+                        label="Bid amount"
+                        value={bidAmount === "" ? "" : Number(bidAmount)}
+                        allowEmpty
+                        onChange={(_, { value }) => {
+                          if (value === "" || value == null) {
+                            setBidAmount("");
+                          } else {
+                            const sanitized = String(value).replace(
+                              /[^0-9.]/g,
+                              "",
+                            );
+                            setBidAmount(sanitized);
+                          }
+                        }}
+                        disabled={isOwnJob}
+                      />
+                      <TextInput
+                        id="bid-note"
+                        labelText="Note (optional)"
+                        value={bidNote}
+                        onChange={(e) => setBidNote(e.target.value)}
+                        disabled={isOwnJob}
+                      />
+                      <div className="job-detail-actions job-detail-actions--tight">
+                        <Button type="submit" disabled={isOwnJob}>
+                          Submit Bid
+                        </Button>
+                      </div>
                     </Form>
                   </div>
                 </>
@@ -925,9 +966,13 @@ export default function JobDetail() {
                             ? new Date(createdAt).toLocaleString()
                             : "Unknown time"}
                         </p>
-                        {bid.note && <p className="job-bid-note">“{bid.note}”</p>}
+                        {bid.note && (
+                          <p className="job-bid-note">“{bid.note}”</p>
+                        )}
                         {bid.statusNote && (
-                          <p className="job-bid-status-note">{bid.statusNote}</p>
+                          <p className="job-bid-status-note">
+                            {bid.statusNote}
+                          </p>
                         )}
                         {(canAccept ||
                           canViewReviews ||
@@ -978,6 +1023,27 @@ export default function JobDetail() {
                                   : "Accept Bid"}
                               </Button>
                             )}
+                            {canAccept && (
+                              <Button
+                                size="sm"
+                                kind="tertiary"
+                                onClick={() => startChat(jobId, bid.providerId)}
+                              >
+                                Chat
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                        {isOwner && !canAccept && (
+                          // Still allow chat even if accepted or not active, as long as owner
+                          <div className="job-bid-actions">
+                            <Button
+                              size="sm"
+                              kind="tertiary"
+                              onClick={() => startChat(jobId, bid.providerId)}
+                            >
+                              Chat
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -996,9 +1062,7 @@ export default function JobDetail() {
             <div className="page-card-body">
               <MapView center={mapCenter} markers={mapMarkers} />
             </div>
-            <div className="job-map-meta">
-              {locationDisplay}
-            </div>
+            <div className="job-map-meta">{locationDisplay}</div>
           </Tile>
         </div>
       </div>
@@ -1011,7 +1075,9 @@ export default function JobDetail() {
       >
         <ModalHeader
           title="Bidder Reviews"
-          label={selectedBidder?.uid ? `User: ${selectedBidder.uid}` : undefined}
+          label={
+            selectedBidder?.uid ? `User: ${selectedBidder.uid}` : undefined
+          }
           buttonOnClick={closeReviews}
         />
         <ModalBody>
@@ -1043,7 +1109,7 @@ export default function JobDetail() {
                         reviewsData.reviewedUser?.firstName ||
                           reviewsData.reviewedUser?.email ||
                           selectedBidder?.bidderName ||
-                          "B"
+                          "B",
                       )
                         .trim()
                         .charAt(0)
@@ -1097,59 +1163,63 @@ export default function JobDetail() {
                     const start = (safePage - 1) * pageSize;
                     const pageItems = (reviewsData.reviews || []).slice(
                       start,
-                      start + pageSize
+                      start + pageSize,
                     );
                     return (
                       <>
                         {pageItems.map((review) => (
-                    <div key={review.id} className="review-card">
-                      <div className="review-card-header">
-                        <div className="review-card-rating">
-                          {renderStars(review.rating)}
-                        </div>
-                        <div className="review-card-meta">
-                          <div className="review-card-author">
-                            {review.reviewer?.email || "Contractor"}
+                          <div key={review.id} className="review-card">
+                            <div className="review-card-header">
+                              <div className="review-card-rating">
+                                {renderStars(review.rating)}
+                              </div>
+                              <div className="review-card-meta">
+                                <div className="review-card-author">
+                                  {review.reviewer?.email || "Contractor"}
+                                </div>
+                                <div className="review-card-date">
+                                  {review.createdAt
+                                    ? new Date(
+                                        review.createdAt,
+                                      ).toLocaleDateString()
+                                    : ""}
+                                </div>
+                              </div>
+                            </div>
+                            {review.description && (
+                              <div className="review-card-body">
+                                {review.description}
+                              </div>
+                            )}
+                            {Array.isArray(review.photoUrls) &&
+                              review.photoUrls.length > 0 && (
+                                <div className="review-photos">
+                                  {review.photoUrls.map((url, idx) => {
+                                    const thumb = Array.isArray(
+                                      review.photoThumbUrls,
+                                    )
+                                      ? review.photoThumbUrls[idx]
+                                      : null;
+                                    return (
+                                      <a
+                                        key={`${review.id}-${idx}`}
+                                        href={url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="review-photo-link"
+                                      >
+                                        <img
+                                          src={thumb || url}
+                                          alt="Work photo"
+                                          loading="lazy"
+                                          className="review-photo"
+                                        />
+                                      </a>
+                                    );
+                                  })}
+                                </div>
+                              )}
                           </div>
-                          <div className="review-card-date">
-                            {review.createdAt
-                              ? new Date(review.createdAt).toLocaleDateString()
-                              : ""}
-                          </div>
-                        </div>
-                      </div>
-                      {review.description && (
-                        <div className="review-card-body">
-                          {review.description}
-                        </div>
-                      )}
-                      {Array.isArray(review.photoUrls) &&
-                        review.photoUrls.length > 0 && (
-                          <div className="review-photos">
-                            {review.photoUrls.map((url, idx) => {
-                              const thumb = Array.isArray(review.photoThumbUrls)
-                                ? review.photoThumbUrls[idx]
-                                : null;
-                              return (
-                              <a
-                                key={`${review.id}-${idx}`}
-                                href={url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="review-photo-link"
-                              >
-                                <img
-                                  src={thumb || url}
-                                  alt="Work photo"
-                                  loading="lazy"
-                                  className="review-photo"
-                                />
-                              </a>
-                              );
-                            })}
-                          </div>
-                        )}
-                    </div>
                         ))}
                         {total > pageSize && (
                           <div className="list-pagination">
@@ -1275,7 +1345,9 @@ export default function JobDetail() {
                     <div className="review-compose-label">Current photos</div>
                     <div className="review-photo-previews">
                       {reviewExistingPhotos.map((p) => {
-                        const pendingRemove = reviewRemovePhotoUrls.includes(p.url);
+                        const pendingRemove = reviewRemovePhotoUrls.includes(
+                          p.url,
+                        );
                         return (
                           <div
                             key={p.url}
@@ -1288,11 +1360,14 @@ export default function JobDetail() {
                             />
                             <Button
                               size="sm"
-                              kind={pendingRemove ? "secondary" : "danger--tertiary"}
+                              kind={
+                                pendingRemove ? "secondary" : "danger--tertiary"
+                              }
                               onClick={() => {
                                 setReviewRemovePhotoUrls((prev) => {
                                   const exists = prev.includes(p.url);
-                                  if (exists) return prev.filter((u) => u !== p.url);
+                                  if (exists)
+                                    return prev.filter((u) => u !== p.url);
                                   return [...prev, p.url];
                                 });
                               }}
@@ -1316,7 +1391,7 @@ export default function JobDetail() {
                     const files = Array.from(e.target.files || []).slice(0, 6);
                     if (cfg.prototype && files.length > 0) {
                       setReviewSubmitError(
-                        "Prototype mode does not support review photo uploads. Your review text will still be saved."
+                        "Prototype mode does not support review photo uploads. Your review text will still be saved.",
                       );
                       try {
                         e.target.value = "";
@@ -1335,7 +1410,7 @@ export default function JobDetail() {
                     });
                     setReviewPhotos(files);
                     setReviewPhotoPreviews(
-                      files.map((file) => URL.createObjectURL(file))
+                      files.map((file) => URL.createObjectURL(file)),
                     );
                   }}
                 />
@@ -1372,7 +1447,9 @@ export default function JobDetail() {
           {existingReview?.id && (
             <Button
               kind="danger--tertiary"
-              disabled={reviewComposeLoading || reviewSubmitting || reviewDeleting}
+              disabled={
+                reviewComposeLoading || reviewSubmitting || reviewDeleting
+              }
               onClick={deleteReview}
             >
               {reviewDeleting ? "Deleting…" : "Delete Review"}
@@ -1381,7 +1458,9 @@ export default function JobDetail() {
           {reviewComposeBid?.providerId && (
             <Button
               kind="primary"
-              disabled={reviewComposeLoading || reviewSubmitting || reviewDeleting}
+              disabled={
+                reviewComposeLoading || reviewSubmitting || reviewDeleting
+              }
               onClick={submitReview}
             >
               {reviewSubmitting
