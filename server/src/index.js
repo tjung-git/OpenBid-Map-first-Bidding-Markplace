@@ -26,8 +26,8 @@ const db = config.prototype ? mockDb : realDb;
 const io = new Server(httpServer, {
   cors: {
     origin: true,
-    credentials: true
-  }
+    credentials: true,
+  },
 });
 
 // Make io available to routes
@@ -82,7 +82,7 @@ app.use("/api/bids", forbidRole("admin"), bidsRoutes);
 app.use("/api/password", forbidRole("admin"), passwordRoutes);
 app.use("/api/auth/duo", duoRoutes);
 app.use("/api/upload", forbidRole("admin"), uploadRoutes);
-app.use("/api/messages", messagesRoutes);
+app.use("/api/messages", forbidRole("admin"), messagesRoutes);
 app.use("/api/admin", requireRole("admin"), adminRoutes);
 
 // Webhook handler for Stripe Identity (only when not in prototype)
