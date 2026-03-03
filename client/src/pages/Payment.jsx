@@ -9,11 +9,86 @@ import {
 } from "@stripe/react-stripe-js";
 import { Button, InlineNotification, Loading } from "@carbon/react";
 import { api } from "../services/api";
+import { cfg } from "../services/config";
 import "../styles/pages/payment.css";
 
-const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || ""
-);
+const stripePromise = !cfg.prototype
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "")
+  : null;
+
+function MockPaymentForm({ jobId, bidId, amount }) {
+  const navigate = useNavigate();
+  const [processing, setProcessing] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setProcessing(true);
+
+    // Simulate payment processing
+    setTimeout(() => {
+      navigate(`/payment/success?jobId=${jobId}&bidId=${bidId}&payment_intent=mock_pi_${jobId}`);
+    }, 1000);
+  }
+
+  return (
+    <div className="payment-form-container">
+      <div className="payment-header">
+        <h2>Mock Payment (Prototype Mode)</h2>
+        <p className="payment-amount">
+          Amount: <strong>${amount.toFixed(2)} CAD</strong>
+        </p>
+      </div>
+
+      <InlineNotification
+        title="Prototype Mode"
+        subtitle="This is a mock payment form for testing. No real payment will be processed."
+        kind="info"
+        lowContrast
+        hideCloseButton
+      />
+
+      <form onSubmit={handleSubmit} className="payment-form">
+        <div className="mock-payment-info">
+          <p><strong>Mock Payment Details:</strong></p>
+          <ul>
+            <li>Job ID: {jobId}</li>
+            <li>Bid ID: {bidId}</li>
+            <li>Amount: ${amount.toFixed(2)} CAD</li>
+          </ul>
+        </div>
+
+        <div className="payment-actions">
+          <Button
+            type="submit"
+            disabled={processing}
+            className="payment-submit-btn"
+          >
+            {processing ? "Processing..." : "Simulate Payment"}
+          </Button>
+          <Button
+            kind="ghost"
+            onClick={() => navigate(`/jobs/${jobId}`)}
+            disabled={processing}
+          >
+            Cancel
+          </Button>
+        </div>
+      </form>
+
+      <div className="payment-info">
+        <p>
+          <strong>What happens next?</strong>
+        </p>
+        <ul>
+          <li>Payment is simulated and marked as held</li>
+          <li>The contractor is notified to begin work</li>
+          <li>You confirm completion when the job is done</li>
+          <li>Payment is released to the contractor</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
 
 function PaymentForm({ jobId, bidId, amount }) {
   const stripe = useStripe();
@@ -219,6 +294,24 @@ export default function Payment() {
     );
   }
 
+  // Prototype mode: Use mock payment form
+  if (cfg.prototype) {
+    return (
+      <div className="container payment-container">
+        <Button
+          kind="ghost"
+          onClick={() => navigate(`/jobs/${jobId}`)}
+          className="payment-back-btn"
+        >
+          ← Back to Job
+        </Button>
+
+        <MockPaymentForm jobId={jobId} bidId={bidId} amount={amount} />
+      </div>
+    );
+  }
+
+  // Production mode: Use Stripe Elements
   const options = {
     clientSecret,
     appearance: {
@@ -246,3 +339,4 @@ export default function Payment() {
   );
 }
 
+// Made with Bob
