@@ -21,6 +21,8 @@ import NonAdminRoute from "./components/NonAdminRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserReviews from "./pages/UserReviews.jsx";
 import UserPortfolio from "./pages/UserPortfolio.jsx";
+import Payment from "./pages/Payment.jsx";
+import PaymentSuccess from "./pages/PaymentSuccess.jsx";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -55,6 +57,8 @@ createRoot(document.getElementById("root")).render(
             <Route path="/new-job" element={<NewJob />} />
             <Route path="/users/:uid/reviews" element={<UserReviews />} />
             <Route path="/users/:uid/portfolio" element={<UserPortfolio />} />
+            <Route path="/payment" element={<Payment />} />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
           </Route>
 
           {/* Admin Routes*/}

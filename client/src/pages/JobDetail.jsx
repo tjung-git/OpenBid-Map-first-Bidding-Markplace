@@ -14,6 +14,7 @@ import {
   ModalBody,
   ModalFooter,
   InlineLoading,
+  Modal,
 } from "@carbon/react";
 import { StarFilled, Star } from "@carbon/icons-react";
 import { api } from "../services/api";
@@ -48,6 +49,9 @@ export default function JobDetail() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [acceptingBidId, setAcceptingBidId] = useState(null);
+  const [releasingPayment, setReleasingPayment] = useState(false);
+  const [showReleaseModal, setShowReleaseModal] = useState(false);
+  const [paymentIntentStatus, setPaymentIntentStatus] = useState(null);
   const [address, setAddress] = useState("Toronto, ON, Canada");
   const [reviewsOpen, setReviewsOpen] = useState(false);
   const [reviewsLoading, setReviewsLoading] = useState(false);
@@ -89,13 +93,6 @@ export default function JobDetail() {
     setEditLng(latLng.lng);
   };
 
-  useEffect(() => {
-    if (location.state?.notice) {
-      setFlash(location.state.notice);
-      navigate(".", { replace: true, state: {} });
-    }
-  }, [location.state, navigate]);
-
   const refreshJob = useCallback(async () => {
     const jobResp = await api.jobGet(jobId);
     setJob(jobResp.job);
@@ -112,9 +109,43 @@ export default function JobDetail() {
   }, [jobId]);
 
   useEffect(() => {
+    if (location.state?.notice) {
+      setFlash(location.state.notice);
+      navigate(".", { replace: true, state: {} });
+    } else if (location.state?.message) {
+      setFlash(location.state.message);
+      navigate(".", { replace: true, state: {} });
+    }
+    
+    // Force refresh if coming back from payment
+    if (location.state?.refreshData) {
+      refreshJob();
+      refreshBids();
+      navigate(".", { replace: true, state: {} });
+    }
+  }, [location.state, navigate, refreshJob, refreshBids]);
+
+  useEffect(() => {
     refreshJob();
     refreshBids();
   }, [refreshJob, refreshBids]);
+
+  // Check payment intent status if it exists
+  useEffect(() => {
+    async function checkPaymentStatus() {
+      if (job?.paymentIntentId) {
+        try {
+          const status = await api.getPaymentStatus(job.id);
+          setPaymentIntentStatus(status.status);
+        } catch (error) {
+          console.error("[JobDetail] Failed to check payment status:", error);
+        }
+      } else {
+        setPaymentIntentStatus(null);
+      }
+    }
+    checkPaymentStatus();
+  }, [job?.paymentIntentId, job?.id]);
 
   useEffect(() => {
     if (!job) return;
@@ -178,9 +209,7 @@ export default function JobDetail() {
     setBidError("");
     setFlash("");
     if (isOwnJob) {
-      setBidError(
-        "You posted this job. Switch to contractor view to manage it.",
-      );
+      setBidError("You posted this job. Switch to Job Poster view to manage it.");
       return;
     }
     if (biddingClosed) {
@@ -323,7 +352,13 @@ export default function JobDetail() {
         );
       } else {
         await Promise.all([refreshJob(), refreshBids()]);
-        setFlash("Bid accepted. Job awarded.");
+        
+        const acceptedBid = resp.acceptedBid;
+        if (acceptedBid && user?.uid === acceptedBid.providerId && resp.requiresPayment) {
+          navigate(`/payment?jobId=${jobId}&bidId=${bidId}&amount=${resp.paymentAmount}`);
+        } else {
+          setFlash("Bid accepted. The contractor will be notified to complete payment.");
+        }
       }
     } catch (error) {
       setUpdateError("Unable to accept bid. Please try again.");
@@ -649,6 +684,26 @@ export default function JobDetail() {
     setReviewsPage(1);
   };
 
+  async function handleReleasePayment() {
+    setReleasingPayment(true);
+    setUpdateError("");
+    setShowReleaseModal(false);
+
+    try {
+      const resp = await api.capturePayment(jobId);
+      if (resp.error) {
+        setUpdateError("Unable to release payment. Please try again.");
+      } else {
+        await Promise.all([refreshJob(), refreshBids()]);
+        setFlash("Payment released successfully! Funds have been transferred to the contractor.");
+      }
+    } catch (error) {
+      setUpdateError("Unable to release payment. Please try again.");
+    } finally {
+      setReleasingPayment(false);
+    }
+  }
+
   if (!job) return null;
 
   const budgetDisplay =
@@ -751,12 +806,31 @@ export default function JobDetail() {
                 Update details while the job is open.
               </p>
               {jobLocked && (
-                <InlineNotification
-                  title="Job Locked"
-                  subtitle="You accepted a bid. Finish your job and get paid."
-                  kind="info"
-                  lowContrast
-                />
+                <>
+                  <InlineNotification
+                    title="Job Locked"
+                    subtitle={
+                      job.paymentStatus === "held"
+                        ? "Payment is held in escrow. Release it when work is complete."
+                        : job.paymentStatus === "captured"
+                        ? "Payment has been released to the contractor."
+                        : "You accepted a bid. Finish your job and get paid."
+                    }
+                    kind="info"
+                    lowContrast
+                  />
+                  {job.paymentStatus === "held" && (
+                    <div style={{ marginBottom: "1rem" }}>
+                      <Button
+                        kind="primary"
+                        onClick={() => setShowReleaseModal(true)}
+                        disabled={releasingPayment}
+                      >
+                        {releasingPayment ? "Releasing Payment..." : "Release Payment to Contractor"}
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
               <div className="page-card-body">
                 <Form onSubmit={handleUpdate} className="page-stack">
@@ -1116,6 +1190,33 @@ export default function JobDetail() {
                         .toUpperCase()}
                     </div>
                   )}
+                  {isOwner && status === "accepted" && (!job.paymentStatus || job.paymentStatus === "pending") && (
+                    <div className="job-bid-actions">
+                      <Button
+                        size="sm"
+                        kind="primary"
+                        onClick={() =>
+                          navigate(`/payment?jobId=${jobId}&bidId=${bid.id}&amount=${bid.amount}`)
+                        }
+                      >
+                        Pay Now
+                      </Button>
+                    </div>
+                  )}
+                  {isOwner && status === "accepted" && bid.paymentIntentId &&
+                   paymentIntentStatus === "requires_payment_method" && (
+                    <div className="job-bid-actions">
+                      <Button
+                        size="sm"
+                        kind="tertiary"
+                        onClick={() =>
+                          navigate(`/payment?jobId=${jobId}&bidId=${bid.id}&amount=${bid.amount}`)
+                        }
+                      >
+                        ⚠️ Payment Failed - Retry
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <div className="reviews-bidder-meta">
                   <div className="reviews-bidder-name">
@@ -1472,6 +1573,31 @@ export default function JobDetail() {
           )}
         </ModalFooter>
       </ComposedModal>
+
+      <Modal
+        open={showReleaseModal}
+        onRequestClose={() => setShowReleaseModal(false)}
+        modalHeading="Release Payment to Contractor"
+        primaryButtonText="Release Payment"
+        secondaryButtonText="Cancel"
+        onRequestSubmit={handleReleasePayment}
+        danger
+      >
+        <p style={{ marginBottom: "1rem" }}>
+          You are about to release the escrowed payment to the contractor. This action cannot be undone.
+        </p>
+        <p style={{ marginBottom: "1rem" }}>
+          <strong>Please confirm:</strong>
+        </p>
+        <ul style={{ marginLeft: "1.5rem", marginBottom: "1rem" }}>
+          <li>The work has been completed to your satisfaction</li>
+          <li>You have reviewed and approved the final deliverables</li>
+          <li>You understand this payment is final and irreversible</li>
+        </ul>
+        <p>
+          Once released, the funds will be transferred to the contractor immediately.
+        </p>
+      </Modal>
     </div>
   );
 }

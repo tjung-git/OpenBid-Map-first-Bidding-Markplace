@@ -62,7 +62,7 @@ export default function NewJob() {
     setErr("");
     if (submitting) return;
     if (user?.userType !== "contractor") {
-      setErr("Only contractors can post jobs.");
+      setErr("Only job posters can post jobs.");
       return;
     }
     if (!requirements.kycVerified) {

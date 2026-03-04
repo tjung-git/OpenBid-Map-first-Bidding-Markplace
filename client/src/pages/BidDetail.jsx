@@ -64,7 +64,7 @@ export default function BidDetail() {
     const name =
       [contractor?.firstName, contractor?.lastName].filter(Boolean).join(" ") ||
       contractor?.email ||
-      "Unknown contractor";
+      "Unknown";
     return name;
   }, [contractor?.firstName, contractor?.lastName, contractor?.email]);
   const jobStatus = (job?.status || "open").toLowerCase();
@@ -169,7 +169,7 @@ export default function BidDetail() {
       return;
     }
     if (isOwnJob) {
-      setError("You posted this job. Switch to contractor view to manage it.");
+      setError("You posted this job. Switch to Job Poster view to manage it.");
       return;
     }
     if (!isBidder) {
@@ -200,7 +200,7 @@ export default function BidDetail() {
             bidding_closed: "Bidding is closed for this job.",
             bid_closed: "This bid is closed and cannot be updated.",
             own_job_bid:
-              "You posted this job. Switch to contractor view to manage it.",
+              "You posted this job. Switch to Job Poster view to manage it.",
           };
           setError(
             messages[resp.error] ||
@@ -218,7 +218,7 @@ export default function BidDetail() {
             bid_already_exists:
               "You have already placed a bid on this job.",
             own_job_bid:
-              "You posted this job. Switch to contractor view to manage it.",
+              "You posted this job. Switch to Job Poster view to manage it.",
           };
           setError(
             messages[resp.error] ||
@@ -443,7 +443,7 @@ export default function BidDetail() {
           {isOwnJob && (
             <InlineNotification
               title="Bidding Restricted"
-              subtitle="You posted this job. Switch to contractor view to manage it."
+              subtitle="You posted this job. Switch to Job Poster view to manage it."
               kind="info"
               lowContrast
             />

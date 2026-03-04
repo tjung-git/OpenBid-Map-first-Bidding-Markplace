@@ -271,6 +271,29 @@ export const api = {
     });
     return r.json();
   },
+  async createPaymentIntent({ jobId, bidId, amount }) {
+    const r = await fetch(`${base}/api/payments/create-intent`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ jobId, bidId, amount }),
+    });
+    return r.json();
+  },
+  async confirmPayment(jobId, paymentIntentId) {
+    const r = await fetch(`${base}/api/payments/${jobId}/confirm`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ paymentIntentId }),
+    });
+    return r.json();
+  },
+  async capturePayment(jobId) {
+    const r = await fetch(`${base}/api/payments/${jobId}/capture`, {
+      method: "POST",
+      headers: headers(),
+    });
+    return r.json();
+  },
   async messagesHide(conversationId) {
     const r = await fetch(`${base}/api/messages/${conversationId}/hide`, {
       method: "POST",
@@ -638,5 +661,19 @@ export const api = {
     const data = await r.json().catch(() => ({}));
     if (!r.ok) throw { status: r.status, data };
     return true;
+  },
+  async refundPayment(jobId, amount) {
+    const r = await fetch(`${base}/api/payments/${jobId}/refund`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ amount }),
+    });
+    return r.json();
+  },
+  async getPaymentStatus(jobId) {
+    const r = await fetch(`${base}/api/payments/${jobId}/status`, {
+      headers: headers(),
+    });
+    return r.json();
   },
 };

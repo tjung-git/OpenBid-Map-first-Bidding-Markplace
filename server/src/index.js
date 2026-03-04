@@ -16,6 +16,7 @@ import messagesRoutes from "./routes/messages.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import reviewsRoutes from "./routes/reviews.routes.js";
 import portfolioRoutes from "./routes/portfolio.routes.js";
+import paymentsRoutes from "./routes/payments.routes.js";
 import { db as mockDb } from "./adapters/db.mock.js";
 import { db as realDb } from "./adapters/db.real.js";
 import { requireRole, forbidRole } from "./middleware/requireRole.js";
@@ -88,6 +89,7 @@ app.use("/api/messages", forbidRole("admin"), messagesRoutes);
 app.use("/api/admin", requireRole("admin"), adminRoutes);
 app.use("/api/reviews", forbidRole("admin"), reviewsRoutes);
 app.use("/api/portfolio", forbidRole("admin"), portfolioRoutes);
+app.use("/api/payments", paymentsRoutes);
 
 // Webhook handler for Stripe Identity (only when not in prototype)
 if (!config.prototype) {
