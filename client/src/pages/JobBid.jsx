@@ -7,6 +7,7 @@ import {
   Button,
   InlineNotification,
   Tile,
+  Tag,
 } from "@carbon/react";
 import { api } from "../services/api";
 import {
@@ -15,6 +16,7 @@ import {
 } from "../hooks/useSession";
 import MapView from "../components/MapView";
 import "../styles/pages/bid.css";
+import "../styles/components/page-shell.css";
 
 const PAGE_SIZE = 5;
 
@@ -274,8 +276,8 @@ export default function JobBid() {
     if (!kycVerified) {
       setError("Complete KYC before bidding on jobs.");
       nav("/profile", {
-      replace: true,
-      state: { notice: "Complete KYC verification in your profile to bid on jobs." },
+        replace: true,
+        state: { notice: "Complete KYC verification in your profile to bid on jobs." },
       });
       return;
     }
@@ -339,9 +341,22 @@ export default function JobBid() {
     }
   }
 
+  async function startChat() {
+    if (!job?.posterId) return;
+    try {
+      const resp = await api.messagesStart(jobId, job.posterId);
+      if (resp.conversation) {
+        nav(`/messages/${resp.conversation.id}`);
+      }
+    } catch (err) {
+      console.error("Failed to start chat", err);
+      setError("Failed to start chat.");
+    }
+  }
+
   if (loading) {
     return (
-      <div className="container">
+      <div className="page-shell">
         <p>Loading bid details…</p>
       </div>
     );
@@ -349,7 +364,7 @@ export default function JobBid() {
 
   if (!job) {
     return (
-      <div className="container">
+      <div className="page-shell">
         <InlineNotification
           title="Not Found"
           subtitle="Job could not be found."
@@ -398,19 +413,27 @@ export default function JobBid() {
   };
 
   return (
-    <div className="container bid-detail-container">
-      <div className="bid-detail-header">
-        <Button kind="ghost" onClick={() => nav("/jobs")}>
-          Back to Job List
-        </Button>
-        <div>
-          <h2>{job.title}</h2>
-          <p className="job-detail-meta">
-            Posted by{" "}
-            {[contractor?.firstName, contractor?.lastName]
-              .filter(Boolean)
-              .join(" ") || contractor?.email || "Unknown"}
-          </p>
+    <div className="page-shell bid-detail-container">
+      <div className="page-hero">
+        <div className="page-hero-left">
+          <Button kind="ghost" onClick={() => nav("/jobs")}>
+            Back to Job List
+          </Button>
+          <div className="page-hero-titles">
+            <h2 className="page-hero-title">{job.title}</h2>
+            <p className="page-hero-subtitle">
+              Posted by{" "}
+              {[contractor?.firstName, contractor?.lastName]
+                .filter(Boolean)
+                .join(" ") || contractor?.email || "Unknown contractor"}
+              {" · "}
+              Location: {job.location?.address || "—"}
+            </p>
+          </div>
+        </div>
+        <div className="page-hero-actions">
+          {budgetDisplay && <Tag type="outline">Budget: {budgetDisplay}</Tag>}
+          <Tag type="cool-gray">{sortedBids.length} bids</Tag>
         </div>
       </div>
 
@@ -434,7 +457,7 @@ export default function JobBid() {
       )}
 
       <div className="bid-detail-content">
-        <Tile className="bid-detail-card">
+        <Tile className="page-card bid-detail-card">
           <MapView markers={mapMarkers} center={mapMarkers[0]} />
           <div className="bid-detail-job-info">
             <p className="bid-detail-label">Job Description</p>
@@ -444,7 +467,7 @@ export default function JobBid() {
           </div>
         </Tile>
 
-        <Tile className="bid-detail-card">
+        <Tile className="page-card bid-detail-card">
           <h3>{ownBidId ? "Update Your Bid" : "Place Your Bid"}</h3>
           {!canBid && (
             <InlineNotification
@@ -453,8 +476,8 @@ export default function JobBid() {
                 isOwnJob
                   ? "You posted this job. Switch to Job Poster view to manage it."
                   : isBidder
-                  ? "Complete KYC before you can place bids."
-                  : "Switch to a contractor account to place bids."
+                    ? "Complete KYC before you can place bids."
+                    : "Switch to a bidder account to place bids."
               }
               kind="warning"
               lowContrast
@@ -462,9 +485,8 @@ export default function JobBid() {
           )}
           <p className="bid-detail-highest">
             {sortedBids.length > 0
-              ? `${sortedBids.length} bid${
-                  sortedBids.length === 1 ? "" : "s"
-                } placed so far.`
+              ? `${sortedBids.length} bid${sortedBids.length === 1 ? "" : "s"
+              } placed so far.`
               : "Be the first to bid."}
           </p>
           {budgetDisplay && (
@@ -499,8 +521,8 @@ export default function JobBid() {
                   ? "Updating…"
                   : "Update Bid"
                 : submitting
-                ? "Placing…"
-                : "Place Bid"}
+                  ? "Placing…"
+                  : "Place Bid"}
             </Button>
             {ownBidId && (
               <Button
@@ -513,10 +535,21 @@ export default function JobBid() {
               </Button>
             )}
           </Form>
+          {ownBidId && (
+            <Button
+              type="button"
+              kind="tertiary"
+              onClick={startChat}
+              className="bid-chat-button"
+              style={{ marginTop: "1rem", width: "100%" }}
+            >
+              Start Chat with Job Poster
+            </Button>
+          )}
         </Tile>
       </div>
 
-      <Tile className="bid-detail-card">
+      <Tile className="page-card bid-detail-card">
         <h3>Your Bid</h3>
         {ownBid ? (
           <ul className="bid-list">
@@ -529,7 +562,7 @@ export default function JobBid() {
         )}
       </Tile>
 
-      <Tile className="bid-detail-card">
+      <Tile className="page-card bid-detail-card">
         <h3>Other Bids</h3>
         {otherBids.length === 0 ? (
           <p>No other bids yet.</p>

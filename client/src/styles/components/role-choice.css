@@ -1,10 +1,16 @@
 .role-choice-panel {
   margin: 1.5rem 0;
   padding: 1.5rem;
-  background: var(--cds-layer, #fff);
+  background: linear-gradient(
+      135deg,
+      rgba(15, 98, 254, 0.16) 0%,
+      rgba(15, 98, 254, 0.04) 60%,
+      rgba(0, 0, 0, 0) 100%
+    ),
+    var(--cds-layer-01, #262626);
   border-radius: 0.75rem;
-  border: 1px solid var(--cds-border-subtle-00, #e0e0e0);
-  box-shadow: 0 8px 24px rgba(22, 22, 22, 0.08);
+  border: 1px solid var(--cds-border-subtle-01, #393939);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
 }
 
 .role-choice-header {
@@ -20,7 +26,7 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 0.75rem;
-  color: #8d8d8d;
+  color: var(--cds-text-secondary, #c6c6c6);
   margin: 0;
 }
 
@@ -38,10 +44,10 @@
 
 .role-choice-card {
   flex: 1;
-  border: 1px solid var(--cds-border-subtle-01, #d1d1d1);
+  border: 1px solid var(--cds-border-subtle-01, #393939);
   border-radius: 0.75rem;
   padding: 1.25rem 1.5rem;
-  background: var(--cds-layer, #fff);
+  background: var(--cds-layer-02, #393939);
   text-align: left;
   cursor: pointer;
   display: flex;
@@ -49,7 +55,7 @@
   gap: 0.4rem;
   transition: border-color 0.2s ease, box-shadow 0.2s ease,
     transform 0.2s ease;
-  color: var(--cds-text-primary, #161616);
+  color: var(--cds-text-primary, #f4f4f4);
 }
 
 .role-choice-card:disabled {
@@ -60,14 +66,14 @@
 .role-choice-card:not(:disabled):hover,
 .role-choice-card:not(:disabled):focus-visible {
   border-color: #0f62fe;
-  box-shadow: 0 8px 24px rgba(15, 98, 254, 0.1);
+  box-shadow: 0 14px 34px rgba(15, 98, 254, 0.18);
   transform: translateY(-2px);
   outline: none;
 }
 
 .role-choice-card--active {
   border-color: #0f62fe;
-  box-shadow: 0 10px 26px rgba(15, 98, 254, 0.16);
+  box-shadow: 0 18px 40px rgba(15, 98, 254, 0.22);
 }
 
 .role-choice-card--loading {
@@ -83,7 +89,7 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 0.78rem;
-  color: #8d8d8d;
+  color: var(--cds-text-secondary, #c6c6c6);
 }
 
 .role-choice-card--active .role-choice-role {
@@ -92,7 +98,7 @@
 
 .role-choice-copy {
   margin: 0;
-  color: var(--cds-text-secondary, #525252);
+  color: var(--cds-text-secondary, #c6c6c6);
   flex: 1;
 }
 
@@ -113,6 +119,6 @@
 
 .role-choice-hint {
   font-size: 0.9rem;
-  color: var(--cds-text-secondary, #6f6f6f);
+  color: var(--cds-text-secondary, #c6c6c6);
   margin-bottom: 1rem;
 }

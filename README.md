@@ -2,6 +2,14 @@
 
 OpenBid is a **map-first bidding marketplace platform** developed by Team 1: Tyler, Mani, Yanness, Alaister.
 
+## Features
+
+- **Map-First Discovery**: Find jobs visually with Google Maps integration.
+- **Real-Time Messaging**: Chat instantly with contractors or bidders using Socket.io.
+- **Bidding System**: Detailed bid management and awarding workflow.
+- **Role Switching**: Seamlessly toggle between Contractor and Bidder profiles.
+- **Secure Auth**: Email/Password authentication with optional 2FA and KYC verification.
+
 ## Quick Start
 
 ### Prerequisites
@@ -69,12 +77,27 @@ For full functionality with persistent data, email verification, and KYC, see th
    FIREBASE_CLIENT_EMAIL=<client_email>
    FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
    FIREBASE_WEB_API_KEY=<firebase web api key>
+   FIREBASE_WEB_API_KEY=<firebase web api key>
+   # Firebase Storage bucket used for avatar/review/portfolio photos.
+   # Examples: <project_id>.appspot.com OR <project_id>.firebasestorage.app
+   FIREBASE_STORAGE_BUCKET=<firebase storage bucket>
+   STRIPE_SECRET_KEY_FOR_TESTING=sk_test_<your_stripe_secret_key>
+   STRIPE_PUBLISHABLE_KEY=pk_test_<your_stripe_publishable_key>
+   FIREBASE_STORAGE_BUCKET=<firebase storage bucket>
    STRIPE_SECRET_KEY_FOR_TESTING=sk_test_<your_stripe_secret_key>
    STRIPE_PUBLISHABLE_KEY=pk_test_<your_stripe_publishable_key>
    STRIPE_WEBHOOK_SECRET=whsec_<your_webhook_secret>
    APP_URL=http://localhost:5173
    EMAIL_VERIFICATION_REDIRECT=http://localhost:5173/login
-   APP_NAME=OpenBid
+   # Optional (only needed if using Stripe Identity webhooks for KYC)
+   STRIPE_SECRET_KEY_FOR_TESTING=sk_test_
+   STRIPE_WEBHOOK_SECRET=whsec_xxx
+
+   # Optional (only needed if enabling Duo 2FA)
+   DUO_CLIENT_ID=
+   DUO_CLIENT_SECRET=
+   DUO_API_HOST=
+   DUO_REDIRECT_URI=
    ```
 
   Get Stripe keys from [https://dashboard.stripe.com/test/apikeys](https://dashboard.stripe.com/test/apikeys)

@@ -11,7 +11,8 @@ function headers() {
   if (session?.user?.uid) {
     h["x-user-id"] = session.user.uid;
   }
-  if (cfg.prototype && uid) {
+  const proto = Boolean(session?.prototype ?? cfg.prototype);
+  if (proto && uid) {
     h["x-mock-uid"] = uid;
   }
   const authToken = session?.session?.token || session?.session?.idToken;
@@ -82,7 +83,11 @@ export const api = {
       method: "POST",
       headers: headers(),
     });
-    return r.json();
+    const data = await r.json();
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
   },
   async kycStatus() {
     const r = await fetch(`${base}/api/kyc/status`, { headers: headers() });
@@ -199,6 +204,30 @@ export const api = {
     }
     return r.json();
   },
+  async deleteAvatar() {
+    const session = getSession();
+    const authToken = session?.session?.token || session?.session?.idToken;
+    const h = {};
+    if (authToken) {
+      h.Authorization = `Bearer ${authToken}`;
+    }
+    if (session?.user?.uid) {
+      h["x-user-id"] = session.user.uid;
+    }
+    if (cfg.prototype && session?.user?.uid) {
+      h["x-mock-uid"] = session.user.uid;
+    }
+
+    const r = await fetch(`${base}/api/upload/avatar`, {
+      method: "DELETE",
+      headers: h,
+    });
+    if (!r.ok && r.status !== 204) {
+      const data = await r.json().catch(() => ({}));
+      throw { status: r.status, data };
+    }
+    return true;
+  },
   async duoFinalize(code) {
     const r = await fetch(`${base}/api/auth/duo/finalize`, {
       method: "POST",
@@ -208,6 +237,39 @@ export const api = {
     const data = await r.json();
     if (!r.ok) throw { status: r.status, data };
     return data;
+  },
+  async messagesStart(jobId, otherUserId) {
+    const r = await fetch(`${base}/api/messages/start`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ jobId, otherUserId }),
+    });
+    return r.json();
+  },
+  async messagesList() {
+    const r = await fetch(`${base}/api/messages/list`, { headers: headers() });
+    return r.json();
+  },
+  async messagesGet(conversationId) {
+    const r = await fetch(`${base}/api/messages/${conversationId}`, {
+      headers: headers(),
+    });
+    return r.json();
+  },
+  async messagesSend(conversationId, content) {
+    const r = await fetch(`${base}/api/messages/${conversationId}`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ content }),
+    });
+    return r.json();
+  },
+  async messagesMarkRead(conversationId) {
+    const r = await fetch(`${base}/api/messages/${conversationId}/read`, {
+      method: "POST",
+      headers: headers(),
+    });
+    return r.json();
   },
   async createPaymentIntent({ jobId, bidId, amount }) {
     const r = await fetch(`${base}/api/payments/create-intent`, {
@@ -231,6 +293,374 @@ export const api = {
       headers: headers(),
     });
     return r.json();
+  },
+  async messagesHide(conversationId) {
+    const r = await fetch(`${base}/api/messages/${conversationId}/hide`, {
+      method: "POST",
+      headers: headers(),
+    });
+    return r.json();
+  },
+  async messagesUnhide(conversationId) {
+    const r = await fetch(`${base}/api/messages/${conversationId}/unhide`, {
+      method: "POST",
+      headers: headers(),
+    });
+    return r.json();
+  },
+  async messagesDelete(conversationId) {
+    const r = await fetch(`${base}/api/messages/${conversationId}`, {
+      method: "DELETE",
+      headers: headers(),
+    });
+    return r.json();
+  },
+
+  async adminUsersList() {
+    const r = await fetch(`${base}/api/admin/users`, { headers: headers() });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { users: [...] }
+  },
+
+  async adminUserGet(uid) {
+    const r = await fetch(
+      `${base}/api/admin/users/${encodeURIComponent(uid)}`,
+      {
+        headers: headers(),
+      },
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { user: {...} }
+  },
+
+  async adminUserUpdate(uid, payload) {
+    const r = await fetch(
+      `${base}/api/admin/users/${encodeURIComponent(uid)}`,
+      {
+        method: "PATCH",
+        headers: headers(),
+        body: JSON.stringify(payload),
+      },
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { user: {...} }
+  },
+
+  async adminUserDelete(uid) {
+    const r = await fetch(
+      `${base}/api/admin/users/${encodeURIComponent(uid)}`,
+      {
+        method: "DELETE",
+        headers: headers(),
+      },
+    );
+    if (!r.ok && r.status !== 204) {
+      const data = await r.json().catch(() => ({}));
+      throw { status: r.status, data };
+    }
+    return true;
+  },
+
+  // JOBS
+  async adminJobsList() {
+    const r = await fetch(`${base}/api/admin/jobs`, { headers: headers() });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { jobs: [...] }
+  },
+
+  async adminJobGet(jobId) {
+    const r = await fetch(
+      `${base}/api/admin/jobs/${encodeURIComponent(jobId)}`,
+      {
+        headers: headers(),
+      },
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { job: {...} }
+  },
+
+  async adminJobUpdate(jobId, payload) {
+    const r = await fetch(
+      `${base}/api/admin/jobs/${encodeURIComponent(jobId)}`,
+      {
+        method: "PATCH",
+        headers: headers(),
+        body: JSON.stringify(payload),
+      },
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { job: {...} }
+  },
+
+  async adminJobDelete(jobId) {
+    const r = await fetch(
+      `${base}/api/admin/jobs/${encodeURIComponent(jobId)}`,
+      {
+        method: "DELETE",
+        headers: headers(),
+      },
+    );
+    if (!r.ok && r.status !== 204) {
+      const data = await r.json().catch(() => ({}));
+      throw { status: r.status, data };
+    }
+    return true;
+  },
+  async adminBidsList() {
+    const r = await fetch(`${base}/api/admin/bids`, { headers: headers() });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { bids: [...] }
+  },
+
+  async adminBidGet(bidId) {
+    const r = await fetch(
+      `${base}/api/admin/bids/${encodeURIComponent(bidId)}`,
+      {
+        headers: headers(),
+      },
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { bid: {...} }
+  },
+
+  async adminBidsByJob(jobId) {
+    const r = await fetch(
+      `${base}/api/admin/bids/by-job/${encodeURIComponent(jobId)}`,
+      { headers: headers() },
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { bids: [...] }
+  },
+
+  async adminBidsByUser(uid) {
+    const r = await fetch(
+      `${base}/api/admin/bids/by-user/${encodeURIComponent(uid)}`,
+      { headers: headers() },
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { bids: [...] }
+  },
+
+  async adminBidUpdate(bidId, payload) {
+    const r = await fetch(
+      `${base}/api/admin/bids/${encodeURIComponent(bidId)}`,
+      {
+        method: "PATCH",
+        headers: headers(),
+        body: JSON.stringify(payload),
+      },
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return data; // { bid: {...} }
+  },
+
+  async adminBidDelete(bidId) {
+    const r = await fetch(
+      `${base}/api/admin/bids/${encodeURIComponent(bidId)}`,
+      {
+        method: "DELETE",
+        headers: headers(),
+      },
+    );
+    if (!r.ok && r.status !== 204) {
+      const data = await r.json().catch(() => ({}));
+      throw { status: r.status, data };
+    }
+
+    return true;
+  },
+  async reviewsForUser(uid) {
+    const safeUid = encodeURIComponent(String(uid || "").trim());
+    const r = await fetch(`${base}/api/reviews/user/${safeUid}`, {
+      headers: headers(),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async portfolioForUser(uid) {
+    const safeUid = encodeURIComponent(String(uid || "").trim());
+    const r = await fetch(`${base}/api/portfolio/user/${safeUid}`, {
+      headers: headers(),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async portfolioCreate(payload) {
+    const r = await fetch(`${base}/api/portfolio`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify(payload || {}),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async portfolioUpdate(itemId, payload) {
+    const safeItemId = encodeURIComponent(String(itemId || "").trim());
+    const r = await fetch(`${base}/api/portfolio/${safeItemId}`, {
+      method: "PATCH",
+      headers: headers(),
+      body: JSON.stringify(payload || {}),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async portfolioUploadPhotos(itemId, files) {
+    const safeItemId = encodeURIComponent(String(itemId || "").trim());
+    const formData = new FormData();
+    (Array.isArray(files) ? files : []).forEach((file) => {
+      if (file) formData.append("photos", file);
+    });
+    const session = getSession();
+    const authToken = session?.session?.token || session?.session?.idToken;
+    const h = {};
+    if (authToken) {
+      h.Authorization = `Bearer ${authToken}`;
+    }
+    if (session?.user?.uid) {
+      h["x-user-id"] = session.user.uid;
+    }
+    if (cfg.prototype && session?.user?.uid) {
+      h["x-mock-uid"] = session.user.uid;
+    }
+    const r = await fetch(`${base}/api/portfolio/${safeItemId}/photos`, {
+      method: "POST",
+      headers: h,
+      body: formData,
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async portfolioDeletePhotos(itemId, photoUrls) {
+    const safeItemId = encodeURIComponent(String(itemId || "").trim());
+    const r = await fetch(`${base}/api/portfolio/${safeItemId}/photos`, {
+      method: "DELETE",
+      headers: headers(),
+      body: JSON.stringify({
+        photoUrls: Array.isArray(photoUrls) ? photoUrls : [],
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async portfolioDelete(itemId) {
+    const safeItemId = encodeURIComponent(String(itemId || "").trim());
+    const r = await fetch(`${base}/api/portfolio/${safeItemId}`, {
+      method: "DELETE",
+      headers: headers(),
+    });
+    if (r.status === 204) return true;
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return true;
+  },
+  async reviewCreate(payload) {
+    const r = await fetch(`${base}/api/reviews`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify(payload || {}),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async reviewUploadPhotos(reviewId, files) {
+    const safeReviewId = encodeURIComponent(String(reviewId || "").trim());
+    const formData = new FormData();
+    (Array.isArray(files) ? files : []).forEach((file) => {
+      if (file) formData.append("photos", file);
+    });
+    const session = getSession();
+    const authToken = session?.session?.token || session?.session?.idToken;
+    const h = {};
+    if (authToken) {
+      h.Authorization = `Bearer ${authToken}`;
+    }
+    if (session?.user?.uid) {
+      h["x-user-id"] = session.user.uid;
+    }
+    if (cfg.prototype && session?.user?.uid) {
+      h["x-mock-uid"] = session.user.uid;
+    }
+    const r = await fetch(`${base}/api/reviews/${safeReviewId}/photos`, {
+      method: "POST",
+      headers: h,
+      body: formData,
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async reviewUpdate(reviewId, payload) {
+    const safeReviewId = encodeURIComponent(String(reviewId || "").trim());
+    const r = await fetch(`${base}/api/reviews/${safeReviewId}`, {
+      method: "PATCH",
+      headers: headers(),
+      body: JSON.stringify(payload || {}),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async reviewDeletePhotos(reviewId, photoUrls) {
+    const safeReviewId = encodeURIComponent(String(reviewId || "").trim());
+    const r = await fetch(`${base}/api/reviews/${safeReviewId}/photos`, {
+      method: "DELETE",
+      headers: headers(),
+      body: JSON.stringify({
+        photoUrls: Array.isArray(photoUrls) ? photoUrls : [],
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw { status: r.status, data };
+    }
+    return data;
+  },
+  async reviewDelete(reviewId) {
+    const safeReviewId = encodeURIComponent(String(reviewId || "").trim());
+    const r = await fetch(`${base}/api/reviews/${safeReviewId}`, {
+      method: "DELETE",
+      headers: headers(),
+    });
+    if (r.status === 204) return true;
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { status: r.status, data };
+    return true;
   },
   async refundPayment(jobId, amount) {
     const r = await fetch(`${base}/api/payments/${jobId}/refund`, {
