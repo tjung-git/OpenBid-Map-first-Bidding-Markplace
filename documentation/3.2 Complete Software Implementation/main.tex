@@ -1,0 +1,695 @@
+% !TEX root = main.tex
+\documentclass[11pt]{article}
+
+% ---------- Basics -----------
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{parskip}
+\usepackage{listings}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{float}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue!60!black,
+  citecolor=black
+}
+
+% ---------- Listings ----------
+\lstset{
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  breaklines=true,
+  frame=single,
+  framerule=0.2pt,
+  tabsize=2,
+  showstringspaces=false
+}
+
+% ---------- Title ----------
+\newcommand{\product}{OpenBid}
+\title{DIGT2107: Practice of Software Development\\
+\Large Project Iteration 3.2: Completed Implementation\\[4pt]
+\large \product}
+\author{Team 1: Tyler \and Mani \and Yanness \and Alaister}
+\date{Due: March 8, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\textbf{Course:} DIGT2107 -- Winter Term 2026 \quad|\quad
+\textbf{Instructor:} Dr.\ May Haidar
+\end{center}
+
+\newpage
+
+% ===================== 1. Introduction =====================
+\section{Introduction}
+\textbf{Project Name:} \product \\
+\textbf{Team Number:} \textbf{1} \\
+\textbf{Team Members:} Tyler, Mani, Yanness, Alaister
+
+\paragraph{Document Overview}
+This document outlines Deliverable 3.2, focusing on the refactoring of the codebase, final implementation of core features, and improvements based on feedback from earlier iterations. This deliverable represents a significant milestone, demonstrating the transition from initial designs and prototypes to a fully functional version of the system, ready for final testing and deployment.
+
+\paragraph{Development Period}
+This iteration covers work completed between February 1, 2026 and March 5, 2026, comprising 39 non-merge commits across 4 major feature branches and resulting in 13,451 lines added and 894 lines removed across 69 files.
+
+% ===================== 2. Refactoring and Codebase Improvements =====================
+\section{Refactoring and Codebase Improvements}
+
+\subsection{Overview}
+During Iteration 3.2, the team focused on enhancing code quality, implementing missing core features, and ensuring the system works seamlessly in both prototype and production modes. Major refactoring efforts centered around role-based access control, payment system integration, messaging infrastructure, and admin dashboard functionality.
+
+\subsection{Major Refactoring Actions}
+
+\subsubsection{Role-Based Access Control (RBAC) Implementation}
+\paragraph{Changes Made}
+\begin{itemize}[leftmargin=1.4em]
+  \item Created \texttt{requireRole.js} middleware for server-side authorization
+  \item Implemented \texttt{requireRole(...allowedRoles)} function to restrict routes to specific user types
+  \item Implemented \texttt{forbidRole(...blockedRoles)} function to exclude specific user types from routes
+  \item Added \texttt{AdminRoute} and \texttt{NonAdminRoute} components for client-side route protection
+  \item Integrated RBAC checks across all sensitive API endpoints
+\end{itemize}
+
+\paragraph{Why Necessary}
+The initial implementation lacked proper role-based authorization, allowing any authenticated user to access admin functions and potentially creating security vulnerabilities.
+
+\paragraph{Impact on System}
+\begin{itemize}[leftmargin=1.4em]
+  \item Centralized authorization logic in reusable middleware
+  \item Prevented unauthorized access to admin dashboard and functions
+  \item Separated admin and non-admin user experiences
+  \item Improved security posture of the application
+  \item Made it easier to add new role-based restrictions
+\end{itemize}
+
+\paragraph{Files Modified}
+\begin{itemize}[leftmargin=1.4em]
+  \item \texttt{server/src/middleware/requireRole.js} (87 lines, new file)
+  \item \texttt{server/src/routes/admin.routes.js} (765 lines, new file)
+  \item \texttt{client/src/components/AdminRoute.jsx} (16 lines, new file)
+  \item \texttt{client/src/components/NonAdminRoute.jsx} (17 lines, new file)
+  \item \texttt{server/src/routes/messages.routes.js} (updated to forbid admin access)
+\end{itemize}
+
+\subsubsection{Stripe Payment System Integration}
+\paragraph{Changes Made}
+\begin{itemize}[leftmargin=1.4em]
+  \item Implemented complete Stripe escrow payment flow with manual capture
+  \item Created \texttt{payments.real.js} adapter for production Stripe integration
+  \item Created \texttt{payments.mock.js} adapter for prototype mode testing
+  \item Added payment intent creation, capture, refund, and cancellation endpoints
+  \item Implemented payment status checking and error recovery logic
+  \item Fixed race conditions in payment intent creation
+  \item Added proper handling for \texttt{payment\_already\_exists} errors
+  \item Integrated Stripe Elements for secure payment form rendering
+\end{itemize}
+
+\paragraph{Why Necessary}
+The platform required a secure escrow payment system to hold funds when a bid is accepted and release them upon job completion, protecting both job posters and bidders.
+
+\paragraph{Impact on System}
+\begin{itemize}[leftmargin=1.4em]
+  \item Enabled secure payment processing with PCI compliance via Stripe
+  \item Implemented escrow workflow: hold funds → complete job → capture payment
+  \item Added support for payment cancellation and refunds
+  \item Ensured prototype mode works without real Stripe credentials
+  \item Improved user experience with clear payment status indicators
+  \item Fixed critical bugs in payment intent lifecycle management
+\end{itemize}
+
+\paragraph{Files Modified}
+\begin{itemize}[leftmargin=1.4em]
+  \item \texttt{server/src/routes/payments.routes.js} (updated with robust error handling)
+  \item \texttt{server/src/adapters/payments.real.js} (86 lines, new file)
+  \item \texttt{server/src/adapters/payments.mock.js} (33 lines, new file)
+  \item \texttt{client/src/pages/Payment.jsx} (updated with Stripe Elements integration)
+  \item \texttt{client/src/pages/PaymentSuccess.jsx} (new file)
+  \item \texttt{client/src/pages/JobDetail.jsx} (updated with payment flow integration)
+\end{itemize}
+
+\subsubsection{Real-Time Messaging System}
+\paragraph{Changes Made}
+\begin{itemize}[leftmargin=1.4em]
+  \item Implemented Socket.io-based real-time messaging infrastructure
+  \item Created \texttt{messages.routes.js} with conversation and message endpoints
+  \item Added conversation management (start, list, hide, delete)
+  \item Implemented message sending and retrieval with real-time updates
+  \item Created \texttt{Messenger.jsx} page with chat interface
+  \item Added message notifications and unread indicators
+  \item Implemented conversation hiding and deletion features
+  \item Fixed message duplication issues on sender side
+\end{itemize}
+
+\paragraph{Why Necessary}
+Job posters and bidders needed a secure way to communicate within the platform without exposing personal contact information before job acceptance.
+
+\paragraph{Impact on System}
+\begin{itemize}[leftmargin=1.4em]
+  \item Enabled real-time communication between users
+  \item Improved user engagement and job coordination
+  \item Reduced need for external communication channels
+  \item Enhanced platform security by keeping communications internal
+  \item Added 421 lines of new messaging UI code
+  \item Added 271 lines of server-side messaging logic
+\end{itemize}
+
+\paragraph{Files Modified}
+\begin{itemize}[leftmargin=1.4em]
+  \item \texttt{server/src/routes/messages.routes.js} (271 lines, new file)
+  \item \texttt{client/src/pages/Messenger.jsx} (421 lines, new file)
+  \item \texttt{client/src/services/socket.js} (67 lines, new file)
+  \item \texttt{client/src/styles/pages/messenger.css} (359 lines, new file)
+  \item \texttt{server/src/index.js} (updated with Socket.io integration)
+\end{itemize}
+
+\subsubsection{Reviews and Portfolio System}
+\paragraph{Changes Made}
+\begin{itemize}[leftmargin=1.4em]
+  \item Implemented reviews system with ratings and comments
+  \item Created portfolio management for service providers
+  \item Added photo upload support for reviews and portfolio items
+  \item Implemented public user profile pages with reviews and portfolio
+  \item Added review aggregation and rating calculations
+  \item Created \texttt{UserReviews.jsx} and \texttt{UserPortfolio.jsx} pages
+  \item Integrated Jimp for server-side image processing and resizing
+\end{itemize}
+
+\paragraph{Why Necessary}
+Users needed a way to build reputation and showcase their work, while others needed to evaluate potential contractors or bidders based on past performance.
+
+\paragraph{Impact on System}
+\begin{itemize}[leftmargin=1.4em]
+  \item Enabled trust-building through transparent reviews
+  \item Allowed service providers to showcase their work
+  \item Improved decision-making for job posters
+  \item Added 570 lines of review route logic
+  \item Added 425 lines of portfolio route logic
+  \item Added 357 lines of reviews UI code
+  \item Added 283 lines of portfolio UI code
+\end{itemize}
+
+\paragraph{Files Modified}
+\begin{itemize}[leftmargin=1.4em]
+  \item \texttt{server/src/routes/reviews.routes.js} (570 lines, new file)
+  \item \texttt{server/src/routes/portfolio.routes.js} (425 lines, new file)
+  \item \texttt{client/src/pages/UserReviews.jsx} (357 lines, new file)
+  \item \texttt{client/src/pages/UserPortfolio.jsx} (283 lines, new file)
+  \item \texttt{client/src/styles/pages/reviews.css} (186 lines, new file)
+  \item \texttt{client/src/styles/pages/portfolio.css} (209 lines, new file)
+\end{itemize}
+
+\subsubsection{Admin Dashboard Implementation}
+\paragraph{Changes Made}
+\begin{itemize}[leftmargin=1.4em]
+  \item Created comprehensive admin dashboard with user, job, and bid management
+  \item Implemented CRUD operations for all major entities
+  \item Added search and filtering capabilities
+  \item Created modular edit forms for users, jobs, and bids
+  \item Implemented admin authentication and authorization
+  \item Added real-time data updates in dashboard
+  \item Restricted admin access to messaging routes
+  \item Fixed CSS issues preventing unpredictable behavior
+  \item Addressed key missing errors in dashboard tables
+\end{itemize}
+
+\paragraph{Why Necessary}
+Platform administrators needed tools to manage users, moderate content, handle disputes, and monitor system health.
+
+\paragraph{Impact on System}
+\begin{itemize}[leftmargin=1.4em]
+  \item Enabled efficient platform moderation and management
+  \item Provided visibility into system operations
+  \item Allowed quick resolution of user issues
+  \item Added 979 lines of admin dashboard UI code
+  \item Added 765 lines of admin API routes
+  \item Improved platform governance capabilities
+\end{itemize}
+
+\paragraph{Files Modified}
+\begin{itemize}[leftmargin=1.4em]
+  \item \texttt{client/src/pages/AdminDashboard.jsx} (979 lines, new file)
+  \item \texttt{server/src/routes/admin.routes.js} (765 lines, new file)
+  \item \texttt{client/src/components/admin/UserEditForm.jsx} (78 lines, new file)
+  \item \texttt{client/src/components/admin/JobEditForm.jsx} (107 lines, new file)
+  \item \texttt{client/src/components/admin/BidEditForm.jsx} (82 lines, new file)
+  \item \texttt{client/src/components/admin/EditorModal.jsx} (45 lines, new file)
+  \item \texttt{client/src/styles/pages/admin-dashboard.css} (69 lines, new file)
+\end{itemize}
+
+\subsubsection{Profile and Avatar Management Enhancements}
+\paragraph{Changes Made}
+\begin{itemize}[leftmargin=1.4em]
+  \item Enhanced profile page with portfolio and reviews sections
+  \item Improved avatar upload functionality with image processing
+  \item Added profile photo removal capability
+  \item Integrated Firebase Storage for photo uploads
+  \item Added support for review and portfolio photo uploads
+  \item Implemented prototype mode support for photo uploads
+  \item Fixed profile UI styling issues
+  \item Updated profile tests to cover new functionality
+\end{itemize}
+
+\paragraph{Why Necessary}
+Users needed better profile management tools and the ability to showcase their work and reputation directly from their profile.
+
+\paragraph{Impact on System}
+\begin{itemize}[leftmargin=1.4em]
+  \item Improved user profile completeness and quality
+  \item Enhanced trust through visual identity
+  \item Integrated portfolio and reviews into profile workflow
+  \item Added 781 lines to Profile.jsx (from original implementation)
+  \item Updated 462 lines in Profile.test.jsx
+\end{itemize}
+
+\paragraph{Files Modified}
+\begin{itemize}[leftmargin=1.4em]
+  \item \texttt{client/src/pages/Profile.jsx} (significantly enhanced)
+  \item \texttt{client/src/\_\_tests\_\_/Profile.test.jsx} (updated with new tests)
+  \item \texttt{server/src/routes/upload.routes.js} (177 lines updated)
+  \item \texttt{client/src/styles/pages/profile.css} (197 lines updated)
+\end{itemize}
+
+\subsection{Database Adapter Improvements}
+\paragraph{Changes Made}
+\begin{itemize}[leftmargin=1.4em]
+  \item Added missing methods to \texttt{db.mock.js} to match \texttt{db.real.js}
+  \item Implemented conversation and message storage methods
+  \item Added portfolio and review data management
+  \item Enhanced user profile data handling
+  \item Improved consistency between mock and real adapters
+\end{itemize}
+
+\paragraph{Impact}
+\begin{itemize}[leftmargin=1.4em]
+  \item \texttt{server/src/adapters/db.mock.js}: +439 lines
+  \item \texttt{server/src/adapters/db.real.js}: +497 lines
+  \item Ensured prototype mode accurately reflects production behavior
+  \item Improved testability of all features
+\end{itemize}
+
+\subsection{Code Quality Improvements}
+\begin{itemize}[leftmargin=1.4em]
+  \item Removed commented-out unused code from admin dashboard
+  \item Removed unnecessary imports across multiple files
+  \item Fixed formatting issues in Duo authentication files
+  \item Simplified admin authentication logic
+  \item Improved error handling in payment flows
+  \item Added proper TypeScript-style JSDoc comments
+  \item Standardized naming conventions across codebase
+\end{itemize}
+
+% ===================== 3. Final Implementation of Core Features =====================
+\section{Final Implementation of Core Features}
+
+\subsection{Completed Features Summary}
+
+\begin{longtable}{@{}p{0.30\linewidth} p{0.15\linewidth} p{0.50\linewidth}@{}}
+\toprule
+\textbf{Feature} & \textbf{Status} & \textbf{Implementation Details} \\
+\midrule
+\endhead
+
+Stripe Escrow Payments & Complete & Full payment intent lifecycle with manual capture, refunds, cancellation, and error recovery \\
+\midrule
+
+Real-Time Messaging & Complete & Socket.io-based chat with conversation management, message history, and notifications \\
+\midrule
+
+Reviews \& Ratings & Complete & Post-job reviews with 1-5 star ratings, comments, photo uploads, and aggregated ratings \\
+\midrule
+
+Portfolio Management & Complete & Service provider portfolios with project showcases, descriptions, and photo galleries \\
+\midrule
+
+Admin Dashboard & Complete & Comprehensive admin interface for user, job, and bid management with CRUD operations \\
+\midrule
+
+Role-Based Access Control & Complete & Middleware-based RBAC with admin and non-admin route protection \\
+\midrule
+
+Profile Enhancements & Complete & Enhanced profiles with avatar management, portfolio integration, and reviews display \\
+\midrule
+
+Photo Upload System & Complete & Firebase Storage integration with image processing, resizing, and prototype mode support \\
+\midrule
+
+Payment Status Tracking & Complete & Real-time payment status updates with proper error handling and user feedback \\
+\midrule
+
+Conversation Management & Complete & Hide, delete, and manage conversations with unread indicators \\
+\bottomrule
+\end{longtable}
+
+\subsection{Feature Implementation Details}
+
+\subsubsection{Stripe Escrow Payment System}
+\paragraph{Implementation}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Payment Intent Creation:} Creates Stripe payment intent with manual capture when bid is accepted
+  \item \textbf{Escrow Hold:} Authorizes payment but doesn't capture until job completion
+  \item \textbf{Payment Capture:} Captures held funds when job poster confirms completion
+  \item \textbf{Refund Support:} Allows full or partial refunds for disputes
+  \item \textbf{Cancellation:} Cancels payment intents if bid is rejected or job cancelled
+  \item \textbf{Error Recovery:} Handles payment failures and allows retry with new payment method
+  \item \textbf{Prototype Mode:} Mock payment adapter for testing without real Stripe credentials
+\end{itemize}
+
+\paragraph{Key Commits}
+\begin{itemize}[leftmargin=1.4em]
+  \item \texttt{2984100d}: feat: Implement complete Stripe escrow payment system
+  \item \texttt{4a58cdfa}: feat: Implement Stripe escrow payment system with prototype mode support
+  \item \texttt{8f551e5e}: fix: Handle payment\_already\_exists error with data refresh
+  \item \texttt{1d054c64}: fix: Prevent Pay Now button from showing after payment exists
+\end{itemize}
+
+\subsubsection{Real-Time Messaging System}
+\paragraph{Implementation}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Socket.io Integration:} Real-time bidirectional communication between client and server
+  \item \textbf{Conversation Management:} Start, list, hide, and delete conversations
+  \item \textbf{Message Sending:} Send text messages with real-time delivery
+  \item \textbf{Message History:} Retrieve and display conversation history
+  \item \textbf{Notifications:} Real-time notifications for new messages
+  \item \textbf{Unread Indicators:} Track and display unread message counts
+  \item \textbf{Access Control:} Only job-related participants can message each other
+\end{itemize}
+
+\paragraph{Key Commits}
+\begin{itemize}[leftmargin=1.4em]
+  \item \texttt{e309f9eb}: fixed messages sent both on the sender side
+  \item \texttt{fb8b9b3a}: Forbid admin access to messages routes
+\end{itemize}
+
+\subsubsection{Admin Dashboard}
+\paragraph{Implementation}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{User Management:} View, edit, and manage user accounts
+  \item \textbf{Job Management:} View, edit, and moderate job postings
+  \item \textbf{Bid Management:} View, edit, and manage bids
+  \item \textbf{Search \& Filter:} Search across all entities with real-time filtering
+  \item \textbf{Edit Modals:} Dedicated edit forms for users, jobs, and bids
+  \item \textbf{Authentication:} Admin-only access with role verification
+  \item \textbf{Real-Time Updates:} Dashboard data updates automatically
+\end{itemize}
+
+\paragraph{Key Commits}
+\begin{itemize}[leftmargin=1.4em]
+  \item \texttt{c7c1ab6d}: Added middleware for RBAC in server, added admin routes to api.js service on frontend
+  \item \texttt{31093928}: Updated admin dashboard to include editing for bids/jobs
+  \item \texttt{48085c92}: Split up edit forms in dashboard into components
+  \item \texttt{d58e4da3}: Addresses admin dashboard key missing error in table
+\end{itemize}
+
+\subsection{Integration Testing Results}
+
+\subsubsection{Payment Flow Integration}
+We tested the complete payment lifecycle from bid acceptance through payment completion. The flow begins when a job poster accepts a bid, triggering payment intent creation through Stripe. The job poster then completes the payment, which updates the job status to "paid" and releases funds to escrow. This integration works seamlessly in both prototype mode (with mock payments) and production mode (with real Stripe API calls). Edge cases tested include payment failures, duplicate payment attempts, and payment cancellations.
+
+\subsubsection{Messaging Flow Integration}
+The messaging system integration was validated end-to-end, starting from bid placement which automatically creates a conversation between the job poster and bidder. Messages are exchanged in real-time using Socket.io, with proper notifications delivered to both parties. The system handles offline scenarios by queuing messages, prevents duplicate message delivery, and properly manages conversation deletion. All real-time updates work correctly across multiple browser sessions.
+
+\subsubsection{Admin Dashboard Integration}
+Admin functionality was tested through the complete workflow of authentication, data viewing, and editing. Admin users can successfully log in, view all system entities (users, jobs, bids), make edits, and see changes immediately reflected in the database. The system properly prevents non-admin users from accessing administrative functions, handles concurrent edits gracefully, and validates all data modifications before persisting them.
+
+\subsubsection{Reviews and Portfolio Integration}
+The review system integration spans from job completion through public profile display. After a job is completed, both parties can leave reviews with ratings and photos. These reviews appear on user profiles with properly aggregated ratings calculated from all reviews. The system prevents duplicate reviews for the same job, validates rating values, and handles photo upload failures gracefully while maintaining data integrity.
+
+% ===================== 4. Testing and Validation =====================
+\section{Testing and Validation}
+
+\subsection{Test Suite Additions}
+
+\subsubsection{New Test Files Created}
+During this iteration, we significantly expanded our test coverage to ensure the reliability and correctness of newly implemented features. The following test suites were created:
+
+\paragraph{Server-Side Test Suites}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Admin Routes Tests:} Comprehensive testing of admin dashboard functionality in both mock and production modes, covering user management, job oversight, and bid administration
+  \item \textbf{Messages Integration Tests:} Real-time messaging functionality including conversation creation, message sending/receiving, and Socket.io integration
+  \item \textbf{Reviews System Tests:} Complete test coverage for the review and rating system, including photo uploads, aggregated ratings, and duplicate prevention
+  \item \textbf{Avatar Upload Tests:} Image upload, processing, and storage validation for user profile pictures
+  \item \textbf{Payment System Tests:} Extensive testing of the Stripe escrow payment flow with 30 test cases covering all payment endpoints and edge cases
+\end{itemize}
+
+\paragraph{Client-Side Test Suites}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Admin Dashboard Component Tests:} UI testing for the admin interface including table rendering, search functionality, and modal interactions
+  \item \textbf{Profile Component Updates:} Enhanced profile tests to cover new KYC verification flows and payment integration
+\end{itemize}
+
+\subsection{Smoke Test Suite}
+\paragraph{Implementation}
+Added smoke suite of tests to test critical components when running with \texttt{PROTOTYPE=FALSE}, ensuring production mode works correctly with real Firebase and Stripe integrations.
+
+\paragraph{Key Commit}
+\texttt{5873c225}: Added smoke suite of tests to test critical components when running with prototype false
+
+\subsection{Bug Fixes and Resolutions}
+
+\begin{longtable}{@{}p{0.12\linewidth} p{0.35\linewidth} p{0.15\linewidth} p{0.33\linewidth}@{}}
+\toprule
+\textbf{Commit} & \textbf{Issue} & \textbf{Severity} & \textbf{Resolution} \\
+\midrule
+\endhead
+
+\texttt{8f551e5e} & Payment already exists error not handled & High & Added proper error handling with data refresh \\
+\midrule
+
+\texttt{1d054c64} & Pay Now button showing after payment exists & Medium & Fixed button visibility logic \\
+\midrule
+
+\texttt{b69c79dc} & Complex Pay Now button visibility logic & Low & Simplified logic for maintainability \\
+\midrule
+
+\texttt{5ec642be} & useEffect dependency issues in JobDetail & Medium & Moved refreshJob/refreshBids before useEffect \\
+\midrule
+
+\texttt{e309f9eb} & Messages sent both on sender side & High & Fixed message duplication issue \\
+\midrule
+
+\texttt{d58e4da3} & Admin dashboard table key missing error & Medium & Added proper key props to table rows \\
+\midrule
+
+\texttt{f1e0c968} & Unpredictable CSS behavior in admin dashboard & Low & Fixed CSS to prevent layout issues \\
+\bottomrule
+\end{longtable}
+
+\subsection{Functional Testing Results}
+
+\subsubsection{Payment System Testing}
+The payment system underwent comprehensive testing to ensure the Stripe escrow integration works correctly across all scenarios. We developed 30 test cases covering the complete payment lifecycle from intent creation through capture or refund.
+
+\paragraph{Payment Intent Creation}
+Tests verify that payment intents are created correctly for accepted bids, with proper validation of authentication, authorization, and business logic. The system correctly handles edge cases such as missing fields, invalid amounts, non-existent resources, and duplicate payment attempts.
+
+\paragraph{Payment Confirmation}
+The confirmation flow was tested to ensure that when a job poster confirms payment, the system properly transitions the job to "in progress" status and updates all related records. Authorization checks prevent unauthorized users from confirming payments.
+
+\paragraph{Payment Capture and Completion}
+Capture tests validate that payments are successfully captured when jobs are marked as completed, with proper status updates across jobs, bids, and payment records. The system correctly prevents captures when payments aren't in the proper state.
+
+\paragraph{Refund Processing}
+Refund functionality was tested for both full and partial refunds, ensuring that disputed or cancelled jobs properly return funds to job posters while maintaining accurate payment records.
+
+\paragraph{Payment Status Queries}
+Status endpoint tests confirm that both job posters and awarded providers can view payment information, while unauthorized users are properly blocked from accessing sensitive payment data.
+
+\paragraph{Test Infrastructure}
+To enable reliable testing without incurring Stripe API costs, we implemented a mock payment adapter that simulates Stripe behavior. This required fixing several test infrastructure issues including bid acceptance route patterns, KYC verification requirements, and proper route registration in the test application factory. All 30 payment tests now pass consistently.
+
+\subsubsection{Messaging System Testing}
+The real-time messaging system was tested end-to-end, validating conversation creation, message delivery, history loading, and conversation management features. Tests confirm that Socket.io integration works correctly and that admin users are properly excluded from messaging functionality.
+
+\subsubsection{Admin Dashboard Testing}
+Admin dashboard tests verify that role-based access control works as intended, with admin users able to view and edit all system entities while non-admin users are blocked from accessing administrative functions. Search and filter functionality was validated across users, jobs, and bids.
+
+\subsubsection{Reviews and Portfolio Testing}
+The review system tests ensure that users can leave reviews with ratings and photos, that aggregated ratings are calculated correctly, and that duplicate reviews are prevented. Portfolio tests validate that users can showcase their work with photos and descriptions on their public profiles.
+
+% ===================== 5. System Architecture Updates =====================
+\section{System Architecture Updates}
+
+\subsection{New Components Added}
+
+\subsubsection{Server-Side Components}
+\begin{itemize}[leftmargin=1.4em]
+  \item \texttt{middleware/requireRole.js} - RBAC middleware for authorization
+  \item \texttt{routes/admin.routes.js} - Admin API endpoints for system management
+  \item \texttt{routes/messages.routes.js} - Messaging API endpoints
+  \item \texttt{routes/reviews.routes.js} - Reviews API endpoints
+  \item \texttt{routes/portfolio.routes.js} - Portfolio API endpoints
+  \item \texttt{routes/payments.routes.js} - Payment processing endpoints
+  \item \texttt{adapters/payments.real.js} - Stripe integration adapter
+  \item \texttt{adapters/payments.mock.js} - Mock payment adapter for testing
+\end{itemize}
+
+\subsubsection{Client-Side Components}
+\begin{itemize}[leftmargin=1.4em]
+  \item \texttt{pages/AdminDashboard.jsx} - Comprehensive admin interface
+  \item \texttt{pages/Messenger.jsx} - Real-time chat interface
+  \item \texttt{pages/UserReviews.jsx} - Public reviews display page
+  \item \texttt{pages/UserPortfolio.jsx} - Public portfolio showcase page
+  \item \texttt{pages/Payment.jsx} - Payment processing interface
+  \item \texttt{pages/PaymentSuccess.jsx} - Payment confirmation page
+  \item \texttt{components/AdminRoute.jsx} - Admin-only route guard
+  \item \texttt{components/NonAdminRoute.jsx} - Non-admin route guard
+  \item \texttt{components/admin/UserEditForm.jsx} - User editing form
+  \item \texttt{components/admin/JobEditForm.jsx} - Job editing form
+  \item \texttt{components/admin/BidEditForm.jsx} - Bid editing form
+  \item \texttt{components/admin/EditorModal.jsx} - Reusable modal wrapper
+  \item \texttt{services/socket.js} - Socket.io client service
+\end{itemize}
+
+\subsection{Technology Stack Additions}
+
+\subsubsection{Server Dependencies}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{socket.io} - Real-time bidirectional communication
+  \item \textbf{stripe} - Payment processing integration
+  \item \textbf{jimp} - Server-side image processing and resizing
+\end{itemize}
+
+\subsubsection{Client Dependencies}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{@stripe/stripe-js} - Stripe JavaScript SDK
+  \item \textbf{@stripe/react-stripe-js} - Stripe React components
+  \item \textbf{socket.io-client} - Socket.io client library
+\end{itemize}
+
+% ===================== 6. Performance and Scalability =====================
+\section{Performance and Scalability}
+
+\subsection{Performance Optimizations}
+\begin{itemize}[leftmargin=1.4em]
+  \item Implemented efficient Socket.io event handling to prevent memory leaks
+  \item Added proper cleanup in React useEffect hooks
+  \item Optimized database queries in admin dashboard
+  \item Implemented image resizing to reduce storage and bandwidth usage
+  \item Added pagination support for large datasets
+  \item Cached frequently accessed data in client state
+\end{itemize}
+
+\subsection{Scalability Improvements}
+\begin{itemize}[leftmargin=1.4em]
+  \item Stateless API design allows horizontal scaling
+  \item Socket.io supports multiple server instances with Redis adapter (future)
+  \item Firebase Firestore provides automatic scaling
+  \item Stripe handles payment processing at scale
+  \item Image processing can be offloaded to cloud functions
+\end{itemize}
+
+% ===================== 7. Documentation Updates =====================
+\section{Documentation Updates}
+
+\subsection{README Updates}
+\begin{itemize}[leftmargin=1.4em]
+  \item Added Firebase Storage bucket configuration instructions
+  \item Updated environment variable documentation
+  \item Added Stripe setup instructions
+  \item Documented prototype vs production mode differences
+  \item Added troubleshooting section for common issues
+\end{itemize}
+
+\subsection{Code Documentation}
+\begin{itemize}[leftmargin=1.4em]
+  \item Added JSDoc comments to all new functions
+  \item Documented API endpoints with request/response examples
+  \item Added inline comments for complex logic
+  \item Created component documentation for admin forms
+  \item Documented Socket.io event structure
+\end{itemize}
+
+% ===================== 8. Submission Requirements =====================
+\section{Submission Requirements}
+
+\subsection{Deliverables Checklist}
+All required deliverables for Iteration 3.2 have been completed:
+\begin{itemize}[leftmargin=1.4em]
+  \item Refactored codebase with documented improvements
+  \item All core features fully implemented (payments, messaging, reviews, portfolio, admin)
+  \item Comprehensive testing suite with extensive coverage
+  \item All discovered bugs fixed and retested
+  \item Role-based access control implemented
+  \item Real-time messaging system operational
+  \item Stripe payment integration complete
+  \item Admin dashboard fully functional
+  \item Reviews and portfolio systems implemented
+  \item Code pushed to GitHub with proper commit history
+  \item Documentation complete and submitted as PDF
+\end{itemize}
+
+\subsection{GitHub Repository}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Repository:} \url{https://github.com/tjung-git/OpenBid-Map-first-Bidding-Markplace}
+  \item \textbf{Branch:} main (merged from feature branches)
+  \item \textbf{Commits:} 39 non-merge commits in this iteration
+  \item \textbf{Lines Changed:} +13,451 / -894 across 69 files
+  \item \textbf{Tag:} ITR3.2 (to be created)
+\end{itemize}
+
+\subsection{Key Statistics}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Development Period:} February 1 - March 5, 2026 (33 days)
+  \item \textbf{Team Members:} 4 (Tyler, Mani, Yanness, Alaister)
+  \item \textbf{Pull Requests:} 4 major feature branches merged
+  \item \textbf{New Files Created:} 27 files
+  \item \textbf{Files Modified:} 42 files
+  \item \textbf{Test Files Added:} 6 new test files
+  \item \textbf{Total Test Lines:} 1,848 lines of new tests
+\end{itemize}
+
+% ===================== 9. Conclusion =====================
+\section{Conclusion}
+
+\subsection{Project Status}
+The OpenBid platform has successfully completed Iteration 3.2 with all planned features implemented, tested, and integrated. The system now includes a complete payment processing system, real-time messaging, reviews and portfolio management, and a comprehensive admin dashboard. The codebase has been significantly refactored to improve maintainability, security, and scalability.
+
+\subsection{Key Achievements}
+\begin{itemize}[leftmargin=1.4em]
+  \item Implemented complete Stripe escrow payment system with manual capture
+  \item Built real-time messaging infrastructure using Socket.io
+  \item Created comprehensive admin dashboard with full CRUD operations
+  \item Implemented reviews and portfolio systems for reputation building
+  \item Added role-based access control across the entire platform
+  \item Enhanced profile management with photo uploads and integrations
+  \item Added 13,451 lines of new code across 69 files
+  \item Created 1,848 lines of new tests for comprehensive coverage
+  \item Fixed 7 critical bugs and numerous minor issues
+  \item Ensured both prototype and production modes work seamlessly
+\end{itemize}
+
+\subsection{Team Contributions}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Tyler Jung:} Payment system integration, deployment configuration, bug fixes
+  \item \textbf{Mani (FTP-droid):} Admin dashboard implementation, RBAC middleware, testing
+  \item \textbf{Yanness (Biyan Huang):} Messaging system, profile enhancements, bug fixes
+  \item \textbf{Alaister:} Reviews and portfolio systems, photo uploads, integration testing
+\end{itemize}
+
+\subsection{Next Steps}
+\begin{itemize}[leftmargin=1.4em]
+  \item Final user acceptance testing with stakeholders
+  \item Production deployment preparation and configuration
+  \item Performance monitoring and optimization
+  \item User feedback collection and analysis
+  \item Planning for future feature enhancements
+  \item Security audit and penetration testing
+  \item Documentation finalization for end users
+\end{itemize}
+
+\end{document}
