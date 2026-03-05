@@ -522,6 +522,7 @@ export async function createRealApp({
   reviews = false,
   portfolio = false,
   upload = false,
+  payments = false,
   verifySession,
   identityOverrides = {},
 } = {}) {
@@ -682,6 +683,39 @@ export async function createRealApp({
     return { __esModule: true, default: JimpMock };
   });
 
+  // Mock payments adapter to avoid real Stripe API calls in tests
+  jest.doMock("../adapters/payments.real.js", () => ({
+    payments: {
+      async createPaymentIntent({ jobId, bidId, amount, customerId }) {
+        return {
+          clientSecret: `mock_cs_${jobId}_${amount}`,
+          paymentIntentId: `mock_pi_${jobId}_${bidId}`,
+        };
+      },
+      async capture({ paymentIntentId }) {
+        return {
+          ok: true,
+          status: 'succeeded',
+        };
+      },
+      async refund({ paymentIntentId, amount }) {
+        return {
+          ok: true,
+          status: 'succeeded',
+        };
+      },
+      async cancel({ paymentIntentId }) {
+        return { ok: true };
+      },
+      async getStatus({ paymentIntentId }) {
+        return {
+          status: 'requires_capture',
+          amount: 1000,
+        };
+      },
+    },
+  }));
+
   const { db } = await import("../adapters/db.real.js");
 
   const app = express();
@@ -735,6 +769,12 @@ export async function createRealApp({
     const { default: uploadRoutes } =
       await import("../routes/upload.routes.js");
     app.use("/api/upload", uploadRoutes);
+  }
+
+  if (payments) {
+    const { default: paymentsRoutes } =
+      await import("../routes/payments.routes.js");
+    app.use("/api/payments", paymentsRoutes);
   }
 
   return {
