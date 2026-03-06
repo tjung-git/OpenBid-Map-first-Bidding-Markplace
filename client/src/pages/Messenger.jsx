@@ -157,7 +157,10 @@ export default function Messenger() {
 
     const scrollToBottom = () => {
         setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            const el = messagesEndRef.current;
+            if (el && typeof el.scrollIntoView === "function") {
+                el.scrollIntoView({ behavior: "smooth" });
+            }
         }, 100);
     };
 
