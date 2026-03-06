@@ -85,7 +85,7 @@ During Iteration 3.2, the team focused on enhancing code quality, implementing m
   \item Integrated RBAC checks across all sensitive API endpoints
 \end{itemize}
 
-\paragraph{Why Necessary}
+\paragraph{Issue Addressed}
 The initial implementation lacked proper role-based authorization, allowing any authenticated user to access admin functions and potentially creating security vulnerabilities.
 
 \paragraph{Impact on System}
@@ -119,7 +119,7 @@ The initial implementation lacked proper role-based authorization, allowing any 
   \item Integrated Stripe Elements for secure payment form rendering
 \end{itemize}
 
-\paragraph{Why Necessary}
+\paragraph{Issue Addressed}
 The platform required a secure escrow payment system to hold funds when a bid is accepted and release them upon job completion, protecting both job posters and bidders.
 
 \paragraph{Impact on System}
@@ -155,7 +155,7 @@ The platform required a secure escrow payment system to hold funds when a bid is
   \item Fixed message duplication issues on sender side
 \end{itemize}
 
-\paragraph{Why Necessary}
+\paragraph{Issue Addressed}
 Job posters and bidders needed a secure way to communicate within the platform without exposing personal contact information before job acceptance.
 
 \paragraph{Impact on System}
@@ -189,7 +189,7 @@ Job posters and bidders needed a secure way to communicate within the platform w
   \item Integrated Jimp for server-side image processing and resizing
 \end{itemize}
 
-\paragraph{Why Necessary}
+\paragraph{Issue Addressed}
 Users needed a way to build reputation and showcase their work, while others needed to evaluate potential contractors or bidders based on past performance.
 
 \paragraph{Impact on System}
@@ -227,7 +227,7 @@ Users needed a way to build reputation and showcase their work, while others nee
   \item Addressed key missing errors in dashboard tables
 \end{itemize}
 
-\paragraph{Why Necessary}
+\paragraph{Issue Addressed}
 Platform administrators needed tools to manage users, moderate content, handle disputes, and monitor system health.
 
 \paragraph{Impact on System}
@@ -264,7 +264,7 @@ Platform administrators needed tools to manage users, moderate content, handle d
   \item Updated profile tests to cover new functionality
 \end{itemize}
 
-\paragraph{Why Necessary}
+\paragraph{Issue Addressed}
 Users needed better profile management tools and the ability to showcase their work and reputation directly from their profile.
 
 \paragraph{Impact on System}
@@ -519,7 +519,25 @@ To enable reliable testing without incurring Stripe API costs, we implemented a 
 The real-time messaging system was tested end-to-end, validating conversation creation, message delivery, history loading, and conversation management features. Tests confirm that Socket.io integration works correctly and that admin users are properly excluded from messaging functionality. Unit tests were added for the messages API (29 tests with mocked db/auth), the socket service (7 tests), and the Messenger component (6 tests), covering auth, validation, and UI behavior.
 
 \subsubsection{Admin Dashboard Testing}
-Admin dashboard tests verify that role-based access control works as intended, with admin users able to view and edit all system entities while non-admin users are blocked from accessing administrative functions. Search and filter functionality was validated across users, jobs, and bids.
+The admin dashboard underwent comprehensive testing to ensure administrative functionality works correctly across both the frontend interface and backend API layers. We developed 19 test cases covering dashboard loading, navigation, entity management, authorization checks, and data validation.
+
+\paragraph{Dashboard Loading and Navigation}
+Tests verify that the dashboard correctly loads users, jobs, and bids when the page initializes, with the Users section displayed by default. Tab navigation was validated to ensure administrators can switch between Users, Jobs, and Bids while displaying the correct data in each section.
+
+\paragraph{Entity View and Editing}
+View actions were tested to confirm that selecting a user, job, or bid opens the correct editor modal and fetches the latest entity details from the backend. These tests verify that the appropriate edit form is rendered and that administrators can inspect and update system records.
+
+\paragraph{Authorization and Access Control}
+Authorization tests ensure that admin routes enforce proper access restrictions. The system returns appropriate responses when authentication fails, when a session cannot be mapped to a valid user, or when a non-admin user attempts to access administrative endpoints.
+
+\paragraph{Input Validation and Business Rules}
+Validation tests confirm that administrative updates reject invalid inputs such as improperly formatted email addresses. Additional tests verify that administrators cannot delete their own account, preventing accidental loss of administrative access.
+
+\paragraph{Data Integrity and Response Formatting}
+Response formatting tests confirm that sensitive information is excluded from administrative responses. For example, user listings are sanitized to remove fields such as password hashes, and bid listings are returned in descending chronological order so the newest bids appear first.
+
+\paragraph{Test Infrastructure}
+To enable reliable testing without relying on production services, we implemented mocked API services, authentication adapters, and database layers. Frontend tests use stubbed editor components to simulate administrative workflows. This infrastructure ensures consistent and isolated testing of the admin dashboard functionality.
 
 \subsubsection{Reviews and Portfolio Testing}
 The review system tests ensure that users can leave reviews with ratings and photos, that aggregated ratings are calculated correctly, and that duplicate reviews are prevented. Portfolio tests validate that users can showcase their work with photos and descriptions on their public profiles.
@@ -679,9 +697,9 @@ The OpenBid platform has successfully completed Iteration 3.2 with all planned f
 \subsection{Team Contributions}
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Tyler Jung:} Payment system integration, deployment configuration, bug fixes
-  \item \textbf{Mani (FTP-droid):} Admin dashboard implementation, RBAC middleware, testing
+  \item \textbf{Mani:} Reviews and portfolio systems, photo uploads, integration testing
   \item \textbf{Yanness (Biyan Huang):} Messaging system, profile enhancements, bug fixes
-  \item \textbf{Alaister:} Reviews and portfolio systems, photo uploads, integration testing
+  \item \textbf{Alaister:} Admin dashboard implementation, RBAC middleware, testing
 \end{itemize}
 
 \subsection{Next Steps}

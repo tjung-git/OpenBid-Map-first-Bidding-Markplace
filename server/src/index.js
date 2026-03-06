@@ -89,7 +89,7 @@ app.use("/api/messages", forbidRole("admin"), messagesRoutes);
 app.use("/api/admin", requireRole("admin"), adminRoutes);
 app.use("/api/reviews", forbidRole("admin"), reviewsRoutes);
 app.use("/api/portfolio", forbidRole("admin"), portfolioRoutes);
-app.use("/api/payments", paymentsRoutes);
+app.use("/api/payments", forbidRole("admin"), paymentsRoutes);
 
 // Webhook handler for Stripe Identity (only when not in prototype)
 if (!config.prototype) {
