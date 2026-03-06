@@ -441,6 +441,7 @@ During this iteration, we significantly expanded our test coverage to ensure the
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Admin Routes Tests:} Comprehensive testing of admin dashboard functionality in both mock and production modes, covering user management, job oversight, and bid administration
   \item \textbf{Messages Integration Tests:} Real-time messaging functionality including conversation creation, message sending/receiving, and Socket.io integration
+  \item \textbf{Messages Routes Unit Tests (mock):} 29 unit tests for the messages API with mocked auth and db, covering start, list, get conversation, send message, read, hide, unhide, and delete (401/400/403/404/200 cases)
   \item \textbf{Reviews System Tests:} Complete test coverage for the review and rating system, including photo uploads, aggregated ratings, and duplicate prevention
   \item \textbf{Avatar Upload Tests:} Image upload, processing, and storage validation for user profile pictures
   \item \textbf{Payment System Tests:} Extensive testing of the Stripe escrow payment flow with 30 test cases covering all payment endpoints and edge cases
@@ -449,6 +450,8 @@ During this iteration, we significantly expanded our test coverage to ensure the
 \paragraph{Client-Side Test Suites}
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Admin Dashboard Component Tests:} UI testing for the admin interface including table rendering, search functionality, and modal interactions
+  \item \textbf{Messenger Component Tests:} Conversation list loading, placeholder when no conversation selected, navigation to conversation, send message flow, and send button disabled when input empty (6 tests)
+  \item \textbf{Socket Service Unit Tests:} getSocket singleton, connectSocket/disconnectSocket, onNewMessage and onConversationUpdate subscription and unsubscribe (7 tests)
   \item \textbf{Profile Component Updates:} Enhanced profile tests to cover new KYC verification flows and payment integration
 \end{itemize}
 
@@ -513,7 +516,7 @@ Status endpoint tests confirm that both job posters and awarded providers can vi
 To enable reliable testing without incurring Stripe API costs, we implemented a mock payment adapter that simulates Stripe behavior. This required fixing several test infrastructure issues including bid acceptance route patterns, KYC verification requirements, and proper route registration in the test application factory. All 30 payment tests now pass consistently.
 
 \subsubsection{Messaging System Testing}
-The real-time messaging system was tested end-to-end, validating conversation creation, message delivery, history loading, and conversation management features. Tests confirm that Socket.io integration works correctly and that admin users are properly excluded from messaging functionality.
+The real-time messaging system was tested end-to-end, validating conversation creation, message delivery, history loading, and conversation management features. Tests confirm that Socket.io integration works correctly and that admin users are properly excluded from messaging functionality. Unit tests were added for the messages API (29 tests with mocked db/auth), the socket service (7 tests), and the Messenger component (6 tests), covering auth, validation, and UI behavior.
 
 \subsubsection{Admin Dashboard Testing}
 Admin dashboard tests verify that role-based access control works as intended, with admin users able to view and edit all system entities while non-admin users are blocked from accessing administrative functions. Search and filter functionality was validated across users, jobs, and bids.
@@ -649,7 +652,7 @@ All required deliverables for Iteration 3.2 have been completed:
   \item \textbf{Pull Requests:} 4 major feature branches merged
   \item \textbf{New Files Created:} 27 files
   \item \textbf{Files Modified:} 42 files
-  \item \textbf{Test Files Added:} 6 new test files
+  \item \textbf{Test Files Added:} 9 new test files (including 3 messaging unit test files: \texttt{messages.mock.routes.test.js}, \texttt{socket.test.js}, \texttt{Messenger.test.jsx})
   \item \textbf{Total Test Lines:} 1,848 lines of new tests
 \end{itemize}
 
