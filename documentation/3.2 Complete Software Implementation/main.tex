@@ -516,7 +516,28 @@ Status endpoint tests confirm that both job posters and awarded providers can vi
 To enable reliable testing without incurring Stripe API costs, we implemented a mock payment adapter that simulates Stripe behavior. This required fixing several test infrastructure issues including bid acceptance route patterns, KYC verification requirements, and proper route registration in the test application factory. All 30 payment tests now pass consistently.
 
 \subsubsection{Messaging System Testing}
-The real-time messaging system was tested end-to-end, validating conversation creation, message delivery, history loading, and conversation management features. Tests confirm that Socket.io integration works correctly and that admin users are properly excluded from messaging functionality. Unit tests were added for the messages API (29 tests with mocked db/auth), the socket service (7 tests), and the Messenger component (6 tests), covering auth, validation, and UI behavior.
+The in-app messaging system underwent comprehensive testing to ensure real-time chat functionality works correctly across both the frontend interface and backend API layers. We developed test cases covering conversation lifecycle, message delivery, history loading, authorization, and Socket.io integration, aligned with Section~4 requirements for functional testing including edge cases and error conditions.
+
+\paragraph{Conversation Creation and Listing}
+Tests verify that conversations are created when a bid is placed (linking job poster and bidder), that authenticated users can list their conversations, and that only participants of the related job can access each conversation. Edge cases include missing job or user context, invalid conversation IDs, and unauthenticated requests returning 401.
+
+\paragraph{Message Sending and Delivery}
+Message send and receive flows were tested to confirm that messages are persisted, delivered in real time via Socket.io to the other participant, and that the sender sees their own message without duplication. Tests cover empty or invalid message body (400), unauthorized send attempts (403), and correct 200 responses with message payload.
+
+\paragraph{Message History and Read State}
+Retrieval of conversation history and read/unread state was validated. Tests ensure that message history loads in correct order, that read markers are updated when messages are read, and that participants only see messages for conversations they are allowed to access. Unauthorized or non-participant access returns 403 or 404 as appropriate.
+
+\paragraph{Conversation Management (Hide, Unhide, Delete)}
+Conversation management endpoints were tested for hide, unhide, and delete. Tests confirm that users can hide conversations from their list, unhide them, and delete conversations with proper authorization. Business rules (e.g., only participants can delete, idempotent behavior where applicable) and 401/403/404 for invalid or unauthorized requests are validated.
+
+\paragraph{Authorization and Access Control}
+Authorization tests ensure that messaging routes enforce access restrictions. Admin users are forbidden from messaging (403) via \texttt{forbidRole("admin")}. Unauthenticated requests receive 401. Requests with valid auth but for another user's conversation or non-participant access receive 403 or 404. Session and user mapping are validated in both mock and real auth setups.
+
+\paragraph{Socket.io Integration and Real-Time Updates}
+Socket.io integration was tested to confirm that new messages and conversation updates are emitted to the correct clients, that subscribers can subscribe and unsubscribe without leaking listeners, and that the socket service singleton and connect/disconnect lifecycle behave correctly. Tests include 7 socket service unit tests covering getSocket, connectSocket, disconnectSocket, and event subscription/unsubscription.
+
+\paragraph{Test Infrastructure}
+To enable reliable testing without relying on production Socket.io or real-time dependencies, we used mocked auth and database adapters for the 29 messages API unit tests, and isolated socket and Messenger component tests (6 Messenger tests, 7 socket tests). This infrastructure ensures consistent and isolated testing of the messaging feature and confirms that bugs discovered during testing (e.g., message duplication on sender side, commit \texttt{e309f9eb}) were addressed and retested.
 
 \subsubsection{Admin Dashboard Testing}
 The admin dashboard underwent comprehensive testing to ensure administrative functionality works correctly across both the frontend interface and backend API layers. We developed 19 test cases covering dashboard loading, navigation, entity management, authorization checks, and data validation.
