@@ -540,7 +540,31 @@ Response formatting tests confirm that sensitive information is excluded from ad
 To enable reliable testing without relying on production services, we implemented mocked API services, authentication adapters, and database layers. Frontend tests use stubbed editor components to simulate administrative workflows. This infrastructure ensures consistent and isolated testing of the admin dashboard functionality.
 
 \subsubsection{Reviews and Portfolio Testing}
-The review system tests ensure that users can leave reviews with ratings and photos, that aggregated ratings are calculated correctly, and that duplicate reviews are prevented. Portfolio tests validate that users can showcase their work with photos and descriptions on their public profiles.
+We wrote 7 automated review tests. Each test checks a real user workflow end-to-end, using seeded users/jobs and real request/response behavior.
+
+\paragraph{Create Review After Award}
+Checks that a user can only leave a review after the job is awarded, and that the review must be for the awarded provider. The test tries the same action before the job is awarded and confirms it is rejected. It also tries reviewing the wrong user and confirms the system blocks it.
+
+\paragraph{Block Self/Unauthorized/Duplicate Reviews}
+Checks that users cannot review themselves and that users without permission cannot leave a review for a job they were not part of. It also confirms that once a valid review is created, the same reviewer cannot submit a second review for the same job and person. This prevents spam and keeps the rating averages fair.
+
+\paragraph{Upload Review Photos}
+Checks that a reviewer can upload photos to a review and that the system saves them correctly. The test verifies the review returns photo links and thumbnail links after upload. It then loads the reviewed user's reviews/profile page and confirms the photos show up in the returned review data.
+
+\paragraph{Edit Review}
+Checks that only the person who wrote the review can edit the rating and text. The test first confirms another user is blocked from editing. It then confirms the reviewer can update the rating and description, and can also clear the description without breaking the review.
+
+\paragraph{Remove Review Photos}
+Checks that a reviewer can remove specific photos from a review (without deleting the whole review). The test uploads a photo, deletes that exact photo from the review, and confirms the review remains valid but now has zero photos. This ensures users can manage their review media after posting.
+
+\paragraph{Delete Review}
+Checks that only the reviewer can delete the review. The test confirms a non-reviewer cannot delete it, and then confirms the reviewer can delete it successfully. Finally, it loads the reviewed user's review list and confirms the deleted review is gone.
+
+\paragraph{View Reviews}
+Checks that viewing a user's reviews returns the information needed for the public profile UI. The test confirms each review includes the reviewer's identity details (such as name and avatar). It also confirms the summary numbers are correct, including total review count and average rating.
+
+\paragraph{Portfolio Validation}
+Portfolio item creation and profile display were validated through end-to-end UI checks on the public profile pages. We verified that portfolio items can be added with images, that they render correctly on the profile, and that updates are visible after refresh.
 
 % ===================== 5. System Architecture Updates =====================
 \section{System Architecture Updates}
@@ -697,7 +721,7 @@ The OpenBid platform has successfully completed Iteration 3.2 with all planned f
 \subsection{Team Contributions}
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Tyler Jung:} Payment system integration, deployment configuration, bug fixes
-  \item \textbf{Mani:} Reviews and portfolio systems, photo uploads, integration testing
+  \item \textbf{Mani Kumar:} Reviews and portfolio systems, photo uploads, integration testing, UI enhancements.
   \item \textbf{Yanness (Biyan Huang):} Messaging system, profile enhancements, bug fixes
   \item \textbf{Alaister:} Admin dashboard implementation, RBAC middleware, testing
 \end{itemize}
