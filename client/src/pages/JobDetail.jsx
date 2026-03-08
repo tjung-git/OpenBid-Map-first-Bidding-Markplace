@@ -1122,19 +1122,39 @@ export default function JobDetail() {
                             )}
                             {isOwner &&
                               (jobStatus === "accepted" ||
-                                jobStatus == "awarded") &&
+                                jobStatus === "awarded") &&
                               (!job.paymentStatus ||
                                 job.paymentStatus === "pending") && (
+                                <div className="job-bid-actions">
+                                  <Button
+                                    size="sm"
+                                    kind="primary"
+                                    onClick={() =>
+                                      navigate(
+                                        `/payment?jobId=${jobId}&bidId=${bid.id}&amount=${bid.amount}`,
+                                      )
+                                    }
+                                  >
+                                    Pay Now
+                                  </Button>
+                                </div>
+                              )}
+                            {isOwner &&
+                              (jobStatus === "accepted" ||
+                                jobStatus === "awarded") &&
+                              bid.paymentIntentId &&
+                              paymentIntentStatus ===
+                                "requires_payment_method" && (
                                 <Button
                                   size="sm"
-                                  kind="primary"
+                                  kind="tertiary"
                                   onClick={() =>
                                     navigate(
                                       `/payment?jobId=${jobId}&bidId=${bid.id}&amount=${bid.amount}`,
                                     )
                                   }
                                 >
-                                  Pay Now
+                                  ⚠️ Payment Failed - Retry
                                 </Button>
                               )}
                           </div>
@@ -1221,41 +1241,6 @@ export default function JobDetail() {
                         .toUpperCase()}
                     </div>
                   )}
-                  {isOwner &&
-                    status === "accepted" &&
-                    (!job.paymentStatus || job.paymentStatus === "pending") && (
-                      <div className="job-bid-actions">
-                        <Button
-                          size="sm"
-                          kind="primary"
-                          onClick={() =>
-                            navigate(
-                              `/payment?jobId=${jobId}&bidId=${bid.id}&amount=${bid.amount}`,
-                            )
-                          }
-                        >
-                          Pay Now
-                        </Button>
-                      </div>
-                    )}
-                  {isOwner &&
-                    status === "accepted" &&
-                    bid.paymentIntentId &&
-                    paymentIntentStatus === "requires_payment_method" && (
-                      <div className="job-bid-actions">
-                        <Button
-                          size="sm"
-                          kind="tertiary"
-                          onClick={() =>
-                            navigate(
-                              `/payment?jobId=${jobId}&bidId=${bid.id}&amount=${bid.amount}`,
-                            )
-                          }
-                        >
-                          ⚠️ Payment Failed - Retry
-                        </Button>
-                      </div>
-                    )}
                 </div>
                 <div className="reviews-bidder-meta">
                   <div className="reviews-bidder-name">
