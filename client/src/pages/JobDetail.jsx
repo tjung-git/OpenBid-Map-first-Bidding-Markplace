@@ -116,7 +116,7 @@ export default function JobDetail() {
       setFlash(location.state.message);
       navigate(".", { replace: true, state: {} });
     }
-    
+
     // Force refresh if coming back from payment
     if (location.state?.refreshData) {
       refreshJob();
@@ -209,7 +209,9 @@ export default function JobDetail() {
     setBidError("");
     setFlash("");
     if (isOwnJob) {
-      setBidError("You posted this job. Switch to Job Poster view to manage it.");
+      setBidError(
+        "You posted this job. Switch to Job Poster view to manage it.",
+      );
       return;
     }
     if (biddingClosed) {
@@ -352,12 +354,20 @@ export default function JobDetail() {
         );
       } else {
         await Promise.all([refreshJob(), refreshBids()]);
-        
+
         const acceptedBid = resp.acceptedBid;
-        if (acceptedBid && user?.uid === acceptedBid.providerId && resp.requiresPayment) {
-          navigate(`/payment?jobId=${jobId}&bidId=${bidId}&amount=${resp.paymentAmount}`);
+        if (
+          acceptedBid &&
+          user?.uid === acceptedBid.providerId &&
+          resp.requiresPayment
+        ) {
+          navigate(
+            `/payment?jobId=${jobId}&bidId=${bidId}&amount=${resp.paymentAmount}`,
+          );
         } else {
-          setFlash("Bid accepted. The contractor will be notified to complete payment.");
+          setFlash(
+            "Bid accepted. The contractor will be notified to complete payment.",
+          );
         }
       }
     } catch (error) {
@@ -695,7 +705,9 @@ export default function JobDetail() {
         setUpdateError("Unable to release payment. Please try again.");
       } else {
         await Promise.all([refreshJob(), refreshBids()]);
-        setFlash("Payment released successfully! Funds have been transferred to the contractor.");
+        setFlash(
+          "Payment released successfully! Funds have been transferred to the contractor.",
+        );
       }
     } catch (error) {
       setUpdateError("Unable to release payment. Please try again.");
@@ -813,8 +825,8 @@ export default function JobDetail() {
                       job.paymentStatus === "held"
                         ? "Payment is held in escrow. Release it when work is complete."
                         : job.paymentStatus === "captured"
-                        ? "Payment has been released to the contractor."
-                        : "You accepted a bid. Finish your job and get paid."
+                          ? "Payment has been released to the contractor."
+                          : "You accepted a bid. Finish your job and get paid."
                     }
                     kind="info"
                     lowContrast
@@ -826,7 +838,9 @@ export default function JobDetail() {
                         onClick={() => setShowReleaseModal(true)}
                         disabled={releasingPayment}
                       >
-                        {releasingPayment ? "Releasing Payment..." : "Release Payment to Contractor"}
+                        {releasingPayment
+                          ? "Releasing Payment..."
+                          : "Release Payment to Contractor"}
                       </Button>
                     </div>
                   )}
@@ -1106,6 +1120,23 @@ export default function JobDetail() {
                                 Chat
                               </Button>
                             )}
+                            {isOwner &&
+                              (jobStatus === "accepted" ||
+                                jobStatus == "awarded") &&
+                              (!job.paymentStatus ||
+                                job.paymentStatus === "pending") && (
+                                <Button
+                                  size="sm"
+                                  kind="primary"
+                                  onClick={() =>
+                                    navigate(
+                                      `/payment?jobId=${jobId}&bidId=${bid.id}&amount=${bid.amount}`,
+                                    )
+                                  }
+                                >
+                                  Pay Now
+                                </Button>
+                              )}
                           </div>
                         )}
                         {isOwner && !canAccept && (
@@ -1190,33 +1221,41 @@ export default function JobDetail() {
                         .toUpperCase()}
                     </div>
                   )}
-                  {isOwner && status === "accepted" && (!job.paymentStatus || job.paymentStatus === "pending") && (
-                    <div className="job-bid-actions">
-                      <Button
-                        size="sm"
-                        kind="primary"
-                        onClick={() =>
-                          navigate(`/payment?jobId=${jobId}&bidId=${bid.id}&amount=${bid.amount}`)
-                        }
-                      >
-                        Pay Now
-                      </Button>
-                    </div>
-                  )}
-                  {isOwner && status === "accepted" && bid.paymentIntentId &&
-                   paymentIntentStatus === "requires_payment_method" && (
-                    <div className="job-bid-actions">
-                      <Button
-                        size="sm"
-                        kind="tertiary"
-                        onClick={() =>
-                          navigate(`/payment?jobId=${jobId}&bidId=${bid.id}&amount=${bid.amount}`)
-                        }
-                      >
-                        ⚠️ Payment Failed - Retry
-                      </Button>
-                    </div>
-                  )}
+                  {isOwner &&
+                    status === "accepted" &&
+                    (!job.paymentStatus || job.paymentStatus === "pending") && (
+                      <div className="job-bid-actions">
+                        <Button
+                          size="sm"
+                          kind="primary"
+                          onClick={() =>
+                            navigate(
+                              `/payment?jobId=${jobId}&bidId=${bid.id}&amount=${bid.amount}`,
+                            )
+                          }
+                        >
+                          Pay Now
+                        </Button>
+                      </div>
+                    )}
+                  {isOwner &&
+                    status === "accepted" &&
+                    bid.paymentIntentId &&
+                    paymentIntentStatus === "requires_payment_method" && (
+                      <div className="job-bid-actions">
+                        <Button
+                          size="sm"
+                          kind="tertiary"
+                          onClick={() =>
+                            navigate(
+                              `/payment?jobId=${jobId}&bidId=${bid.id}&amount=${bid.amount}`,
+                            )
+                          }
+                        >
+                          ⚠️ Payment Failed - Retry
+                        </Button>
+                      </div>
+                    )}
                 </div>
                 <div className="reviews-bidder-meta">
                   <div className="reviews-bidder-name">
@@ -1584,7 +1623,8 @@ export default function JobDetail() {
         danger
       >
         <p style={{ marginBottom: "1rem" }}>
-          You are about to release the escrowed payment to the contractor. This action cannot be undone.
+          You are about to release the escrowed payment to the contractor. This
+          action cannot be undone.
         </p>
         <p style={{ marginBottom: "1rem" }}>
           <strong>Please confirm:</strong>
@@ -1595,7 +1635,8 @@ export default function JobDetail() {
           <li>You understand this payment is final and irreversible</li>
         </ul>
         <p>
-          Once released, the funds will be transferred to the contractor immediately.
+          Once released, the funds will be transferred to the contractor
+          immediately.
         </p>
       </Modal>
     </div>
