@@ -9,6 +9,9 @@ OpenBid is a **map-first bidding marketplace platform** developed by Team 1: Tyl
 - **Bidding System**: Detailed bid management and awarding workflow.
 - **Role Switching**: Seamlessly toggle between Contractor and Bidder profiles.
 - **Secure Auth**: Email/Password authentication with optional 2FA and KYC verification.
+- **Payments** Pay your hires quickly and efficiently.
+- **Profile** Customize your profile with reviews and a portfolio. Review user profiles.
+- **Admin** Manage users, jobs and bids in a central dashboard as an admin.
 
 ## Quick Start
 
@@ -38,12 +41,13 @@ npm run dev
 Visit `http://localhost:5173/` to access the application.
 
 > **Note:** Prototype mode uses mock data and in-memory storage. All data is reset when the server restarts. This is the default mode for this iteration.
+> **Admin Login (prototype mode):** Use username: openbidadmin@gmail.com and password: adminiamadmin to log into the app as an admin.
 
 ### Running in Production Mode - `PROTOTYPE=FALSE`
 
 For full functionality with persistent data, email verification, and KYC, see the [Configuration](#configuration) section below.
 
-> **Note:** Instructions for configuring KYC (Stripe), Duo (2FA), and Google Maps API keys will be provided in later iterations.
+> **Note:** Instructions for configuring KYC (Stripe), Duo (2FA), and Google Maps API keys and Payments (Stripe) will be provided in later iterations.
 
 ## Configuration
 
@@ -100,7 +104,7 @@ For full functionality with persistent data, email verification, and KYC, see th
    DUO_REDIRECT_URI=
    ```
 
-  Get Stripe keys from [https://dashboard.stripe.com/test/apikeys](https://dashboard.stripe.com/test/apikeys)
+Get Stripe keys from [https://dashboard.stripe.com/test/apikeys](https://dashboard.stripe.com/test/apikeys)
 
 ### 3. Client Environment (`client/.env`)
 
@@ -134,12 +138,14 @@ npm test
 ### Switching Between Modes
 
 **Prototype Mode (default):**
+
 - No `.env` files needed
 - Uses in-memory mocks
 - Data resets on server restart
 - Ideal for development and testing
 
 **Firebase Mode:**
+
 - Requires `.env` configuration (see [Configuration](#configuration))
 - Set `PROTOTYPE=FALSE` in both `server/.env` and `VITE_PROTOTYPE=FALSE` in `client/.env`
 - Uses real Firebase backend
