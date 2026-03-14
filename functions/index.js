@@ -51,6 +51,10 @@ const envMappings = [
     target: "FIREBASE_WEB_API_KEY",
     sources: ["FIREBASE_WEB_API_KEY", "APP_FIREBASE_WEB_API_KEY"],
   },
+  {
+    target: "FIREBASE_STORAGE_BUCKET",
+    sources: ["FIREBASE_STORAGE_BUCKET", "APP_FIREBASE_STORAGE_BUCKET"],
+  },
 ];
 
 function loadEnv() {
