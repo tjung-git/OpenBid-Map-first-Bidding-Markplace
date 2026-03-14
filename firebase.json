@@ -53,7 +53,7 @@
         }
       ],
       "predeploy": [
-        "npm --prefix client install",
+        "npm --prefix client install --include=optional",
         "npm --prefix client run build"
       ]
     }
