@@ -5,11 +5,16 @@
 node_modules/
 client/node_modules/
 server/node_modules/
+functions/server/
+client/dist/
+.firebase/
 
 # Environment variables
 .env
 client/.env
 server/.env
+functions/.env
+functions/.env.*
 
 # Keep the example files
 !.env.example
@@ -22,3 +27,4 @@ server/review-test.jpg
 
 # Test coverage
 coverage/
+!functions/.env.example
