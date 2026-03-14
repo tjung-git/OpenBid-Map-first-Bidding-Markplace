@@ -1,9 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-const env = (primary, fallback) =>
-  process.env[primary] || process.env[fallback];
-
 export const config = {
   prototype: (process.env.PROTOTYPE || "TRUE").toUpperCase() === "TRUE",
   port: Number(process.env.PORT || 4000),
@@ -13,21 +10,16 @@ export const config = {
     "http://localhost:5173",
 
   firebase: {
-    projectId: env("FIREBASE_PROJECT_ID", "APP_FIREBASE_PROJECT_ID"),
-    clientEmail: env("FIREBASE_CLIENT_EMAIL", "APP_FIREBASE_CLIENT_EMAIL"),
-    privateKey: env("FIREBASE_PRIVATE_KEY", "APP_FIREBASE_PRIVATE_KEY")?.replace(
-      /\\n/g,
-      "\n",
-    ),
-    apiKey: env("FIREBASE_WEB_API_KEY", "APP_FIREBASE_WEB_API_KEY"),
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    apiKey: process.env.FIREBASE_WEB_API_KEY,
     storageBucket:
-      (env("FIREBASE_STORAGE_BUCKET", "APP_FIREBASE_STORAGE_BUCKET")
-        ? env("FIREBASE_STORAGE_BUCKET", "APP_FIREBASE_STORAGE_BUCKET")
-            .replace(/^gs:\/\//, "")
-            .replace(/\/+$/, "")
+      (process.env.FIREBASE_STORAGE_BUCKET
+        ? process.env.FIREBASE_STORAGE_BUCKET.replace(/^gs:\/\//, "").replace(/\/+$/, "")
         : undefined) ||
-      (env("FIREBASE_PROJECT_ID", "APP_FIREBASE_PROJECT_ID")
-        ? `${env("FIREBASE_PROJECT_ID", "APP_FIREBASE_PROJECT_ID")}.appspot.com`
+      (process.env.FIREBASE_PROJECT_ID
+        ? `${process.env.FIREBASE_PROJECT_ID}.appspot.com`
         : undefined),
   },
 
@@ -38,10 +30,7 @@ export const config = {
     "http://localhost:5173/login",
 
   stripe: {
-    secretKey:
-      process.env.STRIPE_SECRET_KEY ||
-      process.env.STRIPE_SECRET_KEY_FOR_PROD ||
-      process.env.STRIPE_SECRET_KEY_FOR_TESTING,
+    secretKey: process.env.STRIPE_SECRET_KEY_FOR_TESTING,
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   },
 
