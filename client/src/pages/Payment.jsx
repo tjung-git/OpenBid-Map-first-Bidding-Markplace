@@ -96,11 +96,13 @@ function PaymentForm({ jobId, bidId, amount }) {
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [paymentReady, setPaymentReady] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!stripe || !elements) {
-      console.error("Stripe or elements not loaded");
+    if (!stripe || !elements || !paymentReady) {
+      console.error("Stripe payment form not ready");
+      setError("Payment form is still loading. Please wait a moment and try again.");
       return;
     }
 
@@ -109,14 +111,21 @@ function PaymentForm({ jobId, bidId, amount }) {
 
     try {
       console.log("Confirming payment with Stripe...");
-      
-      // Confirm the payment with Stripe (this handles submit internally)
+
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        console.error("Payment element submit error:", submitError);
+        setError(submitError.message || "Payment form is incomplete.");
+        setProcessing(false);
+        return;
+      }
+
       const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/payment/success?jobId=${jobId}&bidId=${bidId}`,
         },
-        redirect: 'if_required',
+        redirect: "if_required",
       });
 
       console.log("Stripe confirmPayment response:", {
@@ -180,12 +189,12 @@ function PaymentForm({ jobId, bidId, amount }) {
       )}
 
       <form onSubmit={handleSubmit} className="payment-form">
-        <PaymentElement />
+        <PaymentElement onReady={() => setPaymentReady(true)} />
 
         <div className="payment-actions">
           <Button
             type="submit"
-            disabled={!stripe || processing}
+            disabled={!stripe || !elements || !paymentReady || processing}
             className="payment-submit-btn"
           >
             {processing ? "Processing..." : "Pay & Secure Job"}
