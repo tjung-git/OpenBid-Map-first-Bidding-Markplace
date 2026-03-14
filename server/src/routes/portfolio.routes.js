@@ -1,5 +1,4 @@
 import { Router } from "express";
-import multer from "multer";
 import Jimp from "jimp";
 import { randomUUID } from "crypto";
 import { config } from "../config.js";
@@ -8,20 +7,11 @@ import { auth as realAuth } from "../adapters/auth.real.js";
 import { db as mockDb } from "../adapters/db.mock.js";
 import { db as realDb } from "../adapters/db.real.js";
 import { getStorageBucket } from "../lib/firebase.js";
+import { parseMultipartImageFiles } from "../lib/multipart.js";
 
 const router = Router();
 const auth = config.prototype ? mockAuth : realAuth;
 const db = config.prototype ? mockDb : realDb;
-
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: { fileSize: 8 * 1024 * 1024 }, // 8MB per image (pre-resize)
-  fileFilter: (req, file, cb) =>
-    file.mimetype.startsWith("image/")
-      ? cb(null, true)
-      : cb(new Error("Only image files are allowed")),
-});
 
 function pickPublicUser(user) {
   if (!user) return null;
@@ -249,7 +239,6 @@ router.patch("/:itemId", async (req, res, next) => {
 
 router.post(
   "/:itemId/photos",
-  upload.array("photos", 6),
   async (req, res, next) => {
     try {
       const ctx = await requireUser(req, res);
@@ -270,7 +259,28 @@ router.post(
         return res.status(403).json({ error: "forbidden" });
       }
 
-      const files = Array.isArray(req.files) ? req.files : [];
+      let files;
+      try {
+        files = await parseMultipartImageFiles(req, {
+          fieldName: "photos",
+          maxFiles: 6,
+          maxFileSize: 8 * 1024 * 1024,
+        });
+      } catch (error) {
+        const message = error?.message || String(error);
+        if (
+          message === "Only image files are allowed" ||
+          message === "File too large" ||
+          message === "Too many files" ||
+          message === "raw_body_required" ||
+          message === "multipart_form_data_required" ||
+          message === "Unexpected end of form"
+        ) {
+          return res.status(400).json({ error: message });
+        }
+        return next(error);
+      }
+
       if (files.length === 0) {
         return res.status(400).json({ error: "no_photos_uploaded" });
       }
@@ -311,9 +321,6 @@ router.post(
 
       return res.json({ item: updated });
     } catch (error) {
-      if (error.message === "Only image files are allowed") {
-        return res.status(400).json({ error: error.message });
-      }
       return next(error);
     }
   }
