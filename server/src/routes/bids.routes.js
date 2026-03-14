@@ -203,11 +203,11 @@ router.post("/:jobId/:bidId/accept", async (req, res, next) => {
     const decisionTime = new Date().toISOString();
     const acceptedBid = await db.bid.update(bidId, {
       status: "accepted",
-      statusNote: "Contractor accepted this bid.",
+      statusNote: "You have accepted this bid.",
       bidClosedAt: decisionTime,
     });
 
-    const rejectionNote = "Contractor accepted another bid.";
+    const rejectionNote = "Job poster accepted another bid.";
     const rejectedBids = await Promise.all(
       bids
         .filter((entry) => entry.id !== bidId)
@@ -231,6 +231,8 @@ router.post("/:jobId/:bidId/accept", async (req, res, next) => {
       acceptedBid,
       rejectedBids: rejectedBids.filter(Boolean),
       job: jobUpdate || job,
+      requiresPayment: true,
+      paymentAmount: targetBid.amount,
     });
   } catch (e) {
     next(e);

@@ -1,0 +1,359 @@
+.messenger-container {
+  display: flex;
+  height: calc(100vh - 48px);
+  /* Adjust based on navbar height */
+  background: #ffffff;
+  margin: 0;
+  max-width: none;
+  padding: 0;
+  color: #161616;
+  margin-top: 3rem;
+  /* Account for fixed header */
+}
+
+.messenger-sidebar {
+  width: 300px;
+  background: #ffffff;
+  border-right: 1px solid #e0e0e0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  color: #161616;
+}
+
+
+.conversation-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.conversation-job-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  display: block;
+  color: #161616;
+}
+
+.conversation-last-message {
+  color: #525252;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.messenger-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  color: #161616;
+}
+
+.chat-header {
+  padding: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  background: #ffffff;
+  color: #161616;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: #fff;
+}
+
+.message-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.message-bubble {
+  max-width: 70%;
+  width: fit-content;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  position: relative;
+}
+
+.message-sent {
+  align-self: flex-end;
+  background: #0f62fe;
+  color: white;
+  border-bottom-right-radius: 0.25rem;
+}
+
+.message-received {
+  align-self: flex-start;
+  background: #f4f4f4;
+  color: #161616;
+  border-bottom-left-radius: 0.25rem;
+}
+
+.message-time {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  text-align: right;
+  margin-top: 0.25rem;
+}
+
+.chat-input-area {
+  padding: 1rem;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  gap: 1rem;
+  background: white;
+}
+
+.chat-input-area input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.chat-placeholder {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+}
+
+/* Messenger header with toggle */
+.messenger-header {
+  padding: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  font-weight: 600;
+  font-size: 1.2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  background: #ffffff;
+  color: #161616;
+}
+
+.messenger-header .cds--toggle {
+  min-width: auto;
+}
+
+/* Conversation item layout */
+.conversation-item {
+  padding: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.conversation-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.conversation-item:hover {
+  background: #fafafa;
+}
+
+.conversation-item.active {
+  background: #e5f6fd;
+}
+
+/* Unread indicator */
+.conversation-item.unread .conversation-job-title {
+  font-weight: 700;
+}
+
+.conversation-item.unread::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  background: #0f62fe;
+  border-radius: 50%;
+}
+
+.conversation-item {
+  position: relative;
+}
+
+/* Hidden conversation styling */
+.conversation-item.hidden-conv {
+  opacity: 0.6;
+  background: #f8f8f8;
+}
+
+.hidden-label {
+  font-size: 0.75rem;
+  color: #888;
+  font-weight: normal;
+}
+
+/* Empty state */
+.conversation-item.empty {
+  color: #888;
+  cursor: default;
+  justify-content: center;
+}
+
+.conversation-item.empty:hover {
+  background: transparent;
+}
+
+/* Action menu */
+.conversation-actions {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.menu-trigger {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #525252;
+}
+
+.menu-trigger:hover {
+  background: #e8e8e8;
+}
+
+.action-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  min-width: 140px;
+}
+
+.action-menu button {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #161616;
+  text-align: left;
+}
+
+.action-menu button:hover {
+  background: #f4f4f4;
+}
+
+.action-menu button.delete-action {
+  color: #da1e28;
+}
+
+.action-menu button.delete-action:hover {
+  background: #fff1f1;
+}
+
+.chat-header-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.chat-header-subtitle {
+  font-size: 0.85rem;
+  color: #525252;
+}
+
+.conversation-participants {
+  display: block;
+  font-size: 0.8rem;
+  color: #6f6f6f;
+  margin-bottom: 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Date Separator */
+.date-separator {
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0;
+  position: relative;
+}
+
+.date-separator span {
+  background: #f4f4f4;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  color: #525252;
+  font-weight: 500;
+}
+
+.mobile-back-button {
+  display: none;
+  /* Hidden by default on desktop */
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .messenger-sidebar {
+    width: 100%;
+    display: flex;
+  }
+
+  .messenger-main {
+    display: none;
+    width: 100%;
+  }
+
+  /* When chat is active */
+  .messenger-container.chat-active .messenger-sidebar {
+    display: none;
+  }
+
+  .messenger-container.chat-active .messenger-main {
+    display: flex;
+  }
+
+  .mobile-back-button {
+    display: inline-flex;
+    margin-right: 0.5rem;
+    color: #161616 !important;
+  }
+
+  .mobile-back-button svg,
+  .mobile-back-button svg path {
+    fill: #161616 !important;
+  }
+}

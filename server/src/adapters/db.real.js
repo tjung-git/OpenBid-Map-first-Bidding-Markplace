@@ -3,8 +3,13 @@ import { getDb } from "../lib/firebase.js";
 
 const collections = {
   users: "users",
+  profiles: "profiles",
+  reviews: "reviews",
+  portfolioItems: "portfolioItems",
   jobs: "jobs",
   bids: "bids",
+  conversations: "conversations",
+  messages: "messages",
 };
 
 const firestore = () => getDb();
@@ -28,7 +33,8 @@ const withTimestamps = (payload, { isNew } = {}) => {
   const data = { ...payload };
   if (isNew) {
     data.createdAt = FieldValue.serverTimestamp();
-  } else if (data.createdAt === undefined) {
+  } else {
+    // createdAt is immutable; never allow callers to overwrite it.
     delete data.createdAt;
   }
   data.updatedAt = FieldValue.serverTimestamp();
@@ -52,12 +58,20 @@ export const db = {
       const data = clean(
         withTimestamps(
           { ...user, email: user.email?.toLowerCase() },
-          { isNew: true }
-        )
+          { isNew: true },
+        ),
       );
       await ref.set(data);
       const snapshot = await ref.get();
       return toRecord(snapshot, "uid");
+    },
+    async list() {
+      const snapshot = await firestore()
+        .collection(collections.users)
+        .orderBy("createdAt", "desc")
+        .get();
+
+      return snapshot.docs.map((doc) => toRecord(doc, "uid")).filter(Boolean);
     },
     async upsert(user) {
       const ref = firestore().collection(collections.users).doc(user.uid);
@@ -65,8 +79,8 @@ export const db = {
       const data = clean(
         withTimestamps(
           { ...user, email: user.email?.toLowerCase() },
-          { isNew: !snapshot.exists }
-        )
+          { isNew: !snapshot.exists },
+        ),
       );
       await ref.set(data, { merge: true });
       const updated = await ref.get();
@@ -79,8 +93,8 @@ export const db = {
       const data = clean(
         withTimestamps(
           { ...patch, email: patch.email?.toLowerCase() },
-          { isNew: false }
-        )
+          { isNew: false },
+        ),
       );
       await ref.update(data);
       const updated = await ref.get();
@@ -88,11 +102,18 @@ export const db = {
     },
     async get(uid) {
       if (!uid) return null;
-      const doc = await firestore()
+      const docRef = firestore().collection(collections.users).doc(uid);
+      const doc = await docRef.get();
+      if (doc.exists) return toRecord(doc, "uid");
+
+      // Backward-compat: some deployments stored users with auto ids and a `uid` field.
+      const snapshot = await firestore()
         .collection(collections.users)
-        .doc(uid)
+        .where("uid", "==", uid)
+        .limit(1)
         .get();
-      return toRecord(doc, "uid");
+      if (snapshot.empty) return null;
+      return toRecord(snapshot.docs[0], "uid");
     },
     async findByEmail(email) {
       if (!email) return null;
@@ -103,6 +124,325 @@ export const db = {
         .get();
       if (snapshot.empty) return null;
       return toRecord(snapshot.docs[0], "uid");
+    },
+    async delete(uid) {
+      if (!uid) return false;
+
+      const dbRef = firestore();
+      const userRef = dbRef.collection(collections.users).doc(uid);
+      const snapshot = await userRef.get();
+      if (!snapshot.exists) return false;
+
+      await userRef.delete();
+
+      // Delete bids where providerId === uid
+      const bidsSnapshot = await dbRef
+        .collection(collections.bids)
+        .where("providerId", "==", uid)
+        .get();
+
+      if (!bidsSnapshot.empty) {
+        const batch = dbRef.batch();
+        bidsSnapshot.docs.forEach((doc) => batch.delete(doc.ref));
+        await batch.commit();
+      }
+
+      // Delete jobs where posterId === uid
+      const jobsSnapshot = await dbRef
+        .collection(collections.jobs)
+        .where("posterId", "==", uid)
+        .get();
+
+      if (!jobsSnapshot.empty) {
+        const batch = dbRef.batch();
+
+        for (const jobDoc of jobsSnapshot.docs) {
+          batch.delete(jobDoc.ref);
+
+          // Delete bids associated with that job
+          const jobBidsSnapshot = await dbRef
+            .collection(collections.bids)
+            .where("jobId", "==", jobDoc.id)
+            .get();
+
+          jobBidsSnapshot.docs.forEach((bidDoc) => batch.delete(bidDoc.ref));
+        }
+
+        await batch.commit();
+      }
+
+      return true;
+    },
+  },
+  profile: {
+    async upsert(profile) {
+      const ref = firestore().collection(collections.profiles).doc(profile.uid);
+      const snapshot = await ref.get();
+      const data = clean(withTimestamps({ ...profile }, { isNew: !snapshot.exists }));
+      await ref.set(data, { merge: true });
+      const updated = await ref.get();
+      return toRecord(updated, "uid");
+    },
+    async update(uid, patch) {
+      const ref = firestore().collection(collections.profiles).doc(uid);
+      const snapshot = await ref.get();
+      if (!snapshot.exists) return null;
+      const data = clean(withTimestamps({ ...patch }, { isNew: false }));
+      await ref.update(data);
+      const updated = await ref.get();
+      return toRecord(updated, "uid");
+    },
+    async get(uid) {
+      if (!uid) return null;
+      const doc = await firestore()
+        .collection(collections.profiles)
+        .doc(uid)
+        .get();
+      return toRecord(doc, "uid");
+    },
+  },
+  review: {
+    async create(review) {
+      const ref = await firestore()
+        .collection(collections.reviews)
+        .add(clean(withTimestamps({ ...review }, { isNew: true })));
+      const doc = await ref.get();
+      return toRecord(doc);
+    },
+    async get(reviewId) {
+      if (!reviewId) return null;
+      const doc = await firestore()
+        .collection(collections.reviews)
+        .doc(reviewId)
+        .get();
+      return toRecord(doc);
+    },
+    async update(reviewId, patch) {
+      if (!reviewId) return null;
+      const ref = firestore().collection(collections.reviews).doc(reviewId);
+      const snapshot = await ref.get();
+      if (!snapshot.exists) return null;
+      await ref.update(clean(withTimestamps({ ...patch }, { isNew: false })));
+      const updated = await ref.get();
+      return toRecord(updated);
+    },
+    async delete(reviewId) {
+      if (!reviewId) return false;
+      const ref = firestore().collection(collections.reviews).doc(reviewId);
+      const snapshot = await ref.get();
+      if (!snapshot.exists) return false;
+      await ref.delete();
+      return true;
+    },
+    async listByReviewed(reviewedId, { limit = 50 } = {}) {
+      if (!reviewedId) return [];
+      const snapshot = await firestore()
+        .collection(collections.reviews)
+        .where("reviewedId", "==", reviewedId)
+        .limit(limit)
+        .get();
+      return snapshot.docs
+        .map((doc) => toRecord(doc))
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt || b.updatedAt || 0).getTime() -
+            new Date(a.createdAt || a.updatedAt || 0).getTime()
+        );
+    },
+    async listByJob(jobId, { limit = 50 } = {}) {
+      if (!jobId) return [];
+      const snapshot = await firestore()
+        .collection(collections.reviews)
+        .where("jobId", "==", jobId)
+        .limit(limit)
+        .get();
+      return snapshot.docs
+        .map((doc) => toRecord(doc))
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt || b.updatedAt || 0).getTime() -
+            new Date(a.createdAt || a.updatedAt || 0).getTime()
+        );
+    },
+    async appendPhotos(reviewId, { photoUrls = [], photoThumbUrls = [] } = {}) {
+      if (!reviewId) return null;
+      const nextUrls = Array.isArray(photoUrls) ? photoUrls.filter(Boolean) : [];
+      const nextThumbs = Array.isArray(photoThumbUrls)
+        ? photoThumbUrls.filter(Boolean)
+        : [];
+      if (nextUrls.length === 0 && nextThumbs.length === 0) return this.get(reviewId);
+
+      const ref = firestore().collection(collections.reviews).doc(reviewId);
+      const snapshot = await ref.get();
+      if (!snapshot.exists) return null;
+
+      const currentUrls = snapshot.data()?.photoUrls;
+      const currentThumbs = snapshot.data()?.photoThumbUrls;
+
+      const mergedUrls = Array.from(
+        new Set([...(Array.isArray(currentUrls) ? currentUrls : []), ...nextUrls])
+      );
+      const mergedThumbs = Array.from(
+        new Set([
+          ...(Array.isArray(currentThumbs) ? currentThumbs : []),
+          ...nextThumbs,
+        ])
+      );
+
+      await ref.update(
+        clean(withTimestamps({ photoUrls: mergedUrls, photoThumbUrls: mergedThumbs }, { isNew: false }))
+      );
+      const updated = await ref.get();
+      return toRecord(updated);
+    },
+    async removePhotos(reviewId, { photoUrls = [], photoThumbUrls = [] } = {}) {
+      if (!reviewId) return null;
+      const removeUrls = Array.isArray(photoUrls) ? photoUrls.filter(Boolean) : [];
+      const removeThumbs = Array.isArray(photoThumbUrls)
+        ? photoThumbUrls.filter(Boolean)
+        : [];
+      if (removeUrls.length === 0 && removeThumbs.length === 0) return this.get(reviewId);
+
+      const ref = firestore().collection(collections.reviews).doc(reviewId);
+      const snapshot = await ref.get();
+      if (!snapshot.exists) return null;
+
+      const currentUrls = snapshot.data()?.photoUrls;
+      const currentThumbs = snapshot.data()?.photoThumbUrls;
+
+      const nextUrls = Array.isArray(currentUrls)
+        ? currentUrls.filter((u) => !removeUrls.includes(u))
+        : [];
+      const nextThumbs = Array.isArray(currentThumbs)
+        ? currentThumbs.filter((u) => !removeThumbs.includes(u))
+        : [];
+
+      await ref.update(
+        clean(withTimestamps({ photoUrls: nextUrls, photoThumbUrls: nextThumbs }, { isNew: false }))
+      );
+      const updated = await ref.get();
+      return toRecord(updated);
+    },
+    async appendPhotoUrls(reviewId, urls = []) {
+      return this.appendPhotos(reviewId, { photoUrls: urls });
+    },
+  },
+  portfolio: {
+    async create(item) {
+      const ref = await firestore()
+        .collection(collections.portfolioItems)
+        .add(clean(withTimestamps({ ...item }, { isNew: true })));
+      const doc = await ref.get();
+      return toRecord(doc);
+    },
+    async get(itemId) {
+      if (!itemId) return null;
+      const doc = await firestore()
+        .collection(collections.portfolioItems)
+        .doc(itemId)
+        .get();
+      return toRecord(doc);
+    },
+    async listByUser(userId, { limit = 50 } = {}) {
+      if (!userId) return [];
+      const snapshot = await firestore()
+        .collection(collections.portfolioItems)
+        .where("userId", "==", userId)
+        .limit(limit)
+        .get();
+      return snapshot.docs
+        .map((doc) => toRecord(doc))
+        .sort(
+          (a, b) =>
+            new Date(b.updatedAt || b.createdAt || 0).getTime() -
+            new Date(a.updatedAt || a.createdAt || 0).getTime()
+        );
+    },
+    async update(itemId, patch) {
+      if (!itemId) return null;
+      const ref = firestore().collection(collections.portfolioItems).doc(itemId);
+      const snapshot = await ref.get();
+      if (!snapshot.exists) return null;
+      await ref.update(clean(withTimestamps({ ...patch }, { isNew: false })));
+      const updated = await ref.get();
+      return toRecord(updated);
+    },
+    async delete(itemId) {
+      if (!itemId) return false;
+      const ref = firestore().collection(collections.portfolioItems).doc(itemId);
+      const snapshot = await ref.get();
+      if (!snapshot.exists) return false;
+      await ref.delete();
+      return true;
+    },
+    async appendPhotos(itemId, { photoUrls = [], photoThumbUrls = [] } = {}) {
+      if (!itemId) return null;
+      const nextUrls = Array.isArray(photoUrls) ? photoUrls.filter(Boolean) : [];
+      const nextThumbs = Array.isArray(photoThumbUrls)
+        ? photoThumbUrls.filter(Boolean)
+        : [];
+      if (nextUrls.length === 0 && nextThumbs.length === 0) return this.get(itemId);
+
+      const ref = firestore().collection(collections.portfolioItems).doc(itemId);
+      const snapshot = await ref.get();
+      if (!snapshot.exists) return null;
+
+      const currentUrls = snapshot.data()?.photoUrls;
+      const currentThumbs = snapshot.data()?.photoThumbUrls;
+
+      const mergedUrls = Array.from(
+        new Set([...(Array.isArray(currentUrls) ? currentUrls : []), ...nextUrls])
+      );
+      const mergedThumbs = Array.from(
+        new Set([
+          ...(Array.isArray(currentThumbs) ? currentThumbs : []),
+          ...nextThumbs,
+        ])
+      );
+
+      await ref.update(
+        clean(
+          withTimestamps(
+            { photoUrls: mergedUrls, photoThumbUrls: mergedThumbs },
+            { isNew: false }
+          )
+        )
+      );
+      const updated = await ref.get();
+      return toRecord(updated);
+    },
+    async removePhotos(itemId, { photoUrls = [], photoThumbUrls = [] } = {}) {
+      if (!itemId) return null;
+      const removeUrls = Array.isArray(photoUrls) ? photoUrls.filter(Boolean) : [];
+      const removeThumbs = Array.isArray(photoThumbUrls)
+        ? photoThumbUrls.filter(Boolean)
+        : [];
+      if (removeUrls.length === 0 && removeThumbs.length === 0) return this.get(itemId);
+
+      const ref = firestore().collection(collections.portfolioItems).doc(itemId);
+      const snapshot = await ref.get();
+      if (!snapshot.exists) return null;
+
+      const currentUrls = snapshot.data()?.photoUrls;
+      const currentThumbs = snapshot.data()?.photoThumbUrls;
+
+      const nextUrls = Array.isArray(currentUrls)
+        ? currentUrls.filter((u) => !removeUrls.includes(u))
+        : [];
+      const nextThumbs = Array.isArray(currentThumbs)
+        ? currentThumbs.filter((u) => !removeThumbs.includes(u))
+        : [];
+
+      await ref.update(
+        clean(
+          withTimestamps(
+            { photoUrls: nextUrls, photoThumbUrls: nextThumbs },
+            { isNew: false }
+          )
+        )
+      );
+      const updated = await ref.get();
+      return toRecord(updated);
     },
   },
   job: {
@@ -131,9 +471,9 @@ export const db = {
                 status: "open",
                 ...data,
               },
-              { isNew: true }
-            )
-          )
+              { isNew: true },
+            ),
+          ),
         );
       const doc = await ref.get();
       return toRecord(doc);
@@ -176,11 +516,13 @@ export const db = {
         .get();
       return toRecord(doc);
     },
+    async list() {
+      const snapshot = await firestore().collection(collections.bids).get();
+      return snapshot.docs.map((doc) => toRecord(doc)).filter(Boolean);
+    },
     async listByJob(jobId) {
       if (!jobId) return [];
-      const snapshot = await firestore()
-        .collection(collections.bids)
-        .get();
+      const snapshot = await firestore().collection(collections.bids).get();
       return snapshot.docs
         .map((doc) => toRecord(doc))
         .filter((bid) => bid.jobId === jobId);
@@ -194,8 +536,12 @@ export const db = {
       return snapshot.docs
         .map((doc) => toRecord(doc))
         .sort((a, b) => {
-          const aCreated = new Date(a.bidCreatedAt || a.createdAt || 0).getTime();
-          const bCreated = new Date(b.bidCreatedAt || b.createdAt || 0).getTime();
+          const aCreated = new Date(
+            a.bidCreatedAt || a.createdAt || 0,
+          ).getTime();
+          const bCreated = new Date(
+            b.bidCreatedAt || b.createdAt || 0,
+          ).getTime();
           return bCreated - aCreated;
         });
     },
@@ -208,13 +554,12 @@ export const db = {
               {
                 status: "active",
                 jobId: data.jobId,
-                bidCreatedAt:
-                  data.bidCreatedAt || new Date().toISOString(),
+                bidCreatedAt: data.bidCreatedAt || new Date().toISOString(),
                 ...data,
               },
-              { isNew: true }
-            )
-          )
+              { isNew: true },
+            ),
+          ),
         );
       const doc = await ref.get();
       return toRecord(doc);
@@ -249,4 +594,110 @@ export const db = {
       return snapshot.size;
     },
   },
+  conversations: {
+    async create(data) {
+      const ref = await firestore()
+        .collection(collections.conversations)
+        .add(clean(withTimestamps(data, { isNew: true })));
+      const doc = await ref.get();
+      return toRecord(doc);
+    },
+    async get(id) {
+      if (!id) return null;
+      const doc = await firestore().collection(collections.conversations).doc(id).get();
+      return toRecord(doc);
+    },
+    async find(jobId, uid1, uid2) {
+      const snapshot = await firestore()
+        .collection(collections.conversations)
+        .where("jobId", "==", jobId)
+        .where("participants", "array-contains", uid1)
+        .get();
+
+      const found = snapshot.docs.find(doc => {
+        const data = doc.data();
+        return data.participants && data.participants.includes(uid2);
+      });
+      return found ? toRecord(found) : null;
+    },
+    async listByUser(uid) {
+      // Firestore array-contains
+      const snapshot = await firestore()
+        .collection(collections.conversations)
+        .where("participants", "array-contains", uid)
+        .get();
+      return snapshot.docs.map(doc => toRecord(doc));
+    },
+    async update(id, patch) {
+      const ref = firestore().collection(collections.conversations).doc(id);
+      await ref.update(clean(withTimestamps(patch, { isNew: false })));
+      const updated = await ref.get();
+      return toRecord(updated);
+    },
+    async markRead(id, uid) {
+      const ref = firestore().collection(collections.conversations).doc(id);
+      await ref.update({
+        [`readBy.${uid}`]: new Date().toISOString(),
+        updatedAt: FieldValue.serverTimestamp()
+      });
+      const updated = await ref.get();
+      return toRecord(updated);
+    },
+    async hide(id, uid) {
+      const ref = firestore().collection(collections.conversations).doc(id);
+      await ref.update({
+        hiddenBy: FieldValue.arrayUnion(uid),
+        updatedAt: FieldValue.serverTimestamp()
+      });
+      const updated = await ref.get();
+      return toRecord(updated);
+    },
+    async unhide(id, uid) {
+      const ref = firestore().collection(collections.conversations).doc(id);
+      await ref.update({
+        hiddenBy: FieldValue.arrayRemove(uid),
+        updatedAt: FieldValue.serverTimestamp()
+      });
+      const updated = await ref.get();
+      return toRecord(updated);
+    },
+    async delete(id) {
+      const dbRef = firestore();
+      // Delete all messages in this conversation
+      const messagesSnapshot = await dbRef
+        .collection(collections.messages)
+        .where("conversationId", "==", id)
+        .get();
+
+      if (!messagesSnapshot.empty) {
+        const batch = dbRef.batch();
+        messagesSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+      }
+
+      // Delete the conversation itself
+      await dbRef.collection(collections.conversations).doc(id).delete();
+      return true;
+    }
+  },
+  messages: {
+    async create(data) {
+      const ref = await firestore()
+        .collection(collections.messages)
+        .add(clean(withTimestamps(data, { isNew: true })));
+      const doc = await ref.get();
+      return toRecord(doc);
+    },
+    async list(conversationId) {
+      const snapshot = await firestore()
+        .collection(collections.messages)
+        .where("conversationId", "==", conversationId)
+        // .orderBy("createdAt", "asc") // Index might be required
+        .get();
+      return snapshot.docs.map(doc => toRecord(doc)).sort((a, b) => {
+        // Manual sort to avoid needing immediate index creation for prototype
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      });
+    }
+  }
 };

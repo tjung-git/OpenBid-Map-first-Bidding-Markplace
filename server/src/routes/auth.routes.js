@@ -39,19 +39,30 @@ const sanitizeUser = (user) => {
   return rest;
 };
 
+async function attachProfileFields(user) {
+  if (!user) return null;
+  if (!db?.profile?.get) return user;
+  try {
+    const profile = await db.profile.get(user.uid);
+    if (profile?.avatarUrl) {
+      user.avatarUrl = profile.avatarUrl;
+    }
+  } catch (error) {
+    console.warn(
+      "[auth] Unable to attach profile fields",
+      error?.message || error,
+    );
+  }
+  return user;
+}
+
 const isKycVerified = (value) =>
   typeof value === "string" && value.trim().toLowerCase() === "verified";
 
 router.post("/signup", async (req, res, next) => {
   try {
-    const {
-      firstName,
-      lastName,
-      email,
-      password,
-      confirmPassword,
-      userType,
-    } = req.body;
+    const { firstName, lastName, email, password, confirmPassword, userType } =
+      req.body;
 
     if (!firstName || !lastName) {
       return res.status(400).json({ error: "firstName and lastName required" });
@@ -110,7 +121,7 @@ router.post("/signup", async (req, res, next) => {
       try {
         createdAccount = await signUpWithEmailPassword(
           normalizedEmail,
-          password
+          password,
         );
         uid = createdAccount.uid;
         firebaseIdToken = createdAccount.idToken;
@@ -149,7 +160,7 @@ router.post("/signup", async (req, res, next) => {
     try {
       const created = await db.user.create(userRecord);
       res.status(201).json({
-        user: sanitizeUser(created),
+        user: sanitizeUser(await attachProfileFields(created)),
       });
     } catch (error) {
       if (!config.prototype && firebaseIdToken) {
@@ -175,6 +186,7 @@ router.post("/login", async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ error: "user not found" });
     }
+    await attachProfileFields(user);
 
     let passwordOk = await verifyPassword(password, user.passwordHash);
     let firebaseSession = null;
@@ -207,7 +219,7 @@ router.post("/login", async (req, res, next) => {
           console.error(
             "[auth] Firebase fallback error",
             error.message,
-            error.status
+            error.status,
           );
           return res.status(502).json({ error: "firebase_signin_failed" });
         }
@@ -234,12 +246,15 @@ router.post("/login", async (req, res, next) => {
       } catch (error) {
         console.error(
           "[auth] Unable to synchronize Firebase email verification state",
-          error
+          error,
         );
       }
     }
 
-    if ((user.emailVerification || "").toLowerCase() !== "verified") {
+    if (
+      !config.prototype &&
+      (user.emailVerification || "").toLowerCase() !== "verified"
+    ) {
       return res.status(403).json({
         error: "verification_required",
         emailVerification: user.emailVerification || "pending",
@@ -261,7 +276,7 @@ router.post("/login", async (req, res, next) => {
             try {
               const createdAccount = await signUpWithEmailPassword(
                 normalizedEmail,
-                password
+                password,
               );
               await sendVerificationEmail(createdAccount.idToken);
               const authSession = await auth.signIn(user.email, password);
@@ -276,7 +291,7 @@ router.post("/login", async (req, res, next) => {
             } catch (provisionError) {
               console.error(
                 "[auth] Failed to provision Firebase account during login",
-                provisionError
+                provisionError,
               );
               return res
                 .status(500)
@@ -286,7 +301,7 @@ router.post("/login", async (req, res, next) => {
             console.error(
               "[auth] Firebase sign-in failed",
               error.message,
-              error.status
+              error.status,
             );
             return res.status(502).json({ error: "firebase_signin_failed" });
           }
@@ -298,7 +313,9 @@ router.post("/login", async (req, res, next) => {
     }
 
     const requirements = {
-      emailVerified: user.emailVerification === "verified",
+      emailVerified: config.prototype
+        ? true
+        : user.emailVerification === "verified",
       kycVerified: isKycVerified(user.kycStatus),
     };
 
@@ -322,7 +339,7 @@ router.post("/login", async (req, res, next) => {
         email: user.email,
         sessionPayload,
       },
-      5 * 60 * 1000
+      5 * 60 * 1000,
     );
 
     return res.status(202).json({
@@ -364,12 +381,19 @@ router.patch("/role", async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ error: "user_not_found" });
     }
+    if (user.userType === "admin") {
+      return res.status(405).json({ error: "admin_cannot_change_role" });
+    }
+
+    await attachProfileFields(user);
 
     if ((user.userType || "").toLowerCase() === requestedRole) {
       return res.json({
         user: sanitizeUser(user),
         requirements: {
-          emailVerified: user.emailVerification === "verified",
+          emailVerified: config.prototype
+            ? true
+            : user.emailVerification === "verified",
           kycVerified: isKycVerified(user.kycStatus),
         },
       });
@@ -380,11 +404,14 @@ router.patch("/role", async (req, res, next) => {
       userType: requestedRole,
       updatedAt: nowIso,
     })) || { ...user, userType: requestedRole, updatedAt: nowIso };
+    await attachProfileFields(updated);
 
     res.json({
       user: sanitizeUser(updated),
       requirements: {
-        emailVerified: updated.emailVerification === "verified",
+        emailVerified: config.prototype
+          ? true
+          : updated.emailVerification === "verified",
         kycVerified: isKycVerified(updated.kycStatus),
       },
     });
@@ -398,7 +425,10 @@ router.get("/me", async (req, res, next) => {
     const session = await auth.verify(req);
     if (!session) return res.status(401).json({ error: "unauthorized" });
     const user = await db.user.get(session.uid);
-    res.json({ user: sanitizeUser(user), prototype: config.prototype });
+    res.json({
+      user: sanitizeUser(await attachProfileFields(user)),
+      prototype: config.prototype,
+    });
   } catch (error) {
     next(error);
   }

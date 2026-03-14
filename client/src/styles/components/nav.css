@@ -1,3 +1,44 @@
 .nav-container {
-  margin-top: 4rem;
+  width: min(1120px, 100%);
+  margin: 3.5rem auto 0;
+  padding: 0.75rem 1rem 0;
+}
+
+.nav-container .cds--breadcrumb {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--cds-border-subtle-01, #393939);
+  background: var(--cds-layer-01, #262626);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+}
+
+.nav-container .cds--breadcrumb-item {
+  font-size: 0.85rem;
+}
+
+.nav-container .cds--breadcrumb-item a {
+  color: var(--cds-link-primary, #78a9ff);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.nav-container .cds--breadcrumb-item a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.nav-container .cds--breadcrumb-item--current,
+.nav-container .cds--breadcrumb-item[aria-current="page"] {
+  color: var(--cds-text-primary, #f4f4f4);
+  font-weight: 650;
+}
+
+.nav-container .cds--breadcrumb-item--current a,
+.nav-container .cds--breadcrumb-item[aria-current="page"] a {
+  color: var(--cds-text-primary, #f4f4f4);
+  pointer-events: none;
+  text-decoration: none;
 }

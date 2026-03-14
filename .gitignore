@@ -20,4 +20,11 @@ functions/.env.*
 !.env.example
 !client/.env.example
 !server/.env.example
+
+# Build outputs / generated artifacts
+client/dist/
+server/review-test.jpg
+
+# Test coverage
+coverage/
 !functions/.env.example
