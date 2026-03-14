@@ -13,49 +13,46 @@
       "npm --prefix functions run copy-server"
     ]
   },
-  "hosting": [
-    {
-      "site": "openbid2107",
-      "public": "client/dist",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "headers": [
-        {
-          "source": "**/*.@(js|css|ico|png|jpg|jpeg|svg|webp)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "public,max-age=31536000,immutable"
-            }
-          ]
-        },
-        {
-          "source": "/index.html",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        }
-      ],
-      "rewrites": [
-        {
-          "source": "/api/**",
-          "function": "api"
-        },
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
-      ],
-      "predeploy": [
-        "npm --prefix client install --include=optional",
-        "npm --prefix client run build"
-      ]
-    }
-  ]
+  "hosting": {
+    "public": "client/dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(js|css|ico|png|jpg|jpeg|svg|webp)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public,max-age=31536000,immutable"
+          }
+        ]
+      },
+      {
+        "source": "/index.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "function": "api"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "predeploy": [
+      "npm --prefix client install --include optional",
+      "npm --prefix client run build"
+    ]
+  }
 }
