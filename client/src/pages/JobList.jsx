@@ -18,13 +18,13 @@ const ROLE_OPTIONS = [
   {
     role: "contractor",
     headline: "I want to post jobs",
-    label: "Contractor",
+    label: "Job Poster",
     copy: "Create opportunities, invite bids, and manage awards.",
   },
   {
     role: "bidder",
     headline: "I want to bid on jobs",
-    label: "Bidder",
+    label: "Contractor",
     copy: "Browse open projects, review details, and submit bids.",
   },
 ];
@@ -133,7 +133,7 @@ export default function JobList() {
       targetRole === "contractor" ? "/jobs?mine=true" : "/jobs";
     const activationMessage =
       targetRole === "contractor"
-        ? "Contractor workspace activated. Post and manage your jobs."
+        ? "Job Poster workspace activated. Post and manage your jobs."
         : "Bidder workspace activated. Browse open work and submit bids.";
     if (normalizedCurrent === targetRole) {
       nav(destination, {
@@ -298,7 +298,7 @@ export default function JobList() {
         <div className="role-choice-header">
           <p className="role-choice-eyebrow">Choose your workspace</p>
           <h3>How would you like to use OpenBid today?</h3>
-          <p>Switch between bidder and contractor views whenever you need.</p>
+          <p>Switch between Job Poster and Contractor views whenever you need.</p>
         </div>
         <div className="role-choice-options">
           {ROLE_OPTIONS.map((option) => {

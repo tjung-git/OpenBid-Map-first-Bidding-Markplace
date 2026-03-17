@@ -1,7 +1,7 @@
 # Makefile for OpenBid: Map-first Bidding Marketplace
 # Team 1: Tyler, Mani, Yanness, Alaister
 
-.PHONY: help setup latex clean clean-latex dev build test deploy
+.PHONY: help setup latex clean clean-latex dev build test deploy docs-3.2
 
 # Default target
 help:
@@ -42,12 +42,18 @@ clean-latex:
 		"documentation/3.1 Software Design Documentation"/*.out "documentation/3.1 Software Design Documentation"/*.toc \
 		"documentation/3.1 Software Design Documentation"/*.bbl "documentation/3.1 Software Design Documentation"/*.blg \
 		"documentation/3.1 Software Design Documentation"/*.synctex.gz 2>/dev/null || true
+
+		@rm -f "documentation/3.2 Complete Software Implementation"/*.aux "documentation/3.2 Complete Software Implementation"/*.fdb_latexmk \
+		"documentation/3.2 Complete Software Implementation"/*.fls "documentation/3.2 Complete Software Implementation"/*.log \
+		"documentation/3.2 Complete Software Implementation"/*.out "documentation/3.2 Complete Software Implementation"/*.toc \
+		"documentation/3.2 Complete Software Implementation"/*.bbl "documentation/3.2 Complete Software Implementation"/*.blg \
+		"documentation/3.2 Complete Software Implementation"/*.synctex.gz 2>/dev/null || true
 		
 	@echo "LaTeX cleanup complete!"
 
 # Build LaTeX PDFs for documentation sections
-.PHONY: latex docs-1.1 docs-1.2 docs-2.1 docs-2.2 docs-3.1
-latex: docs-1.1 docs-1.2 docs-2.1 docs-2.2 docs-3.1
+.PHONY: latex docs-1.1 docs-1.2 docs-2.1 docs-2.2 docs-3.1 docs-3.2
+latex: docs-1.1 docs-1.2 docs-2.1 docs-2.2 docs-3.1 docs-3.2
 
 docs-1.1:
 	@echo "Building 1.1 Project Proposal..."
@@ -68,3 +74,7 @@ docs-2.2:
 docs-3.1:
 	@echo "Building 3.1 Software Design Documentation..."
 	@cd "documentation/3.1 Software Design Documentation" && latexmk -pdf -interaction=nonstopmode -quiet main.tex || true
+
+docs-3.2:
+	@echo "Building 3.2 Complete Software Implementation..."
+	@cd "documentation/3.2 Complete Software Implementation" && latexmk -pdf -interaction=nonstopmode -quiet main.tex || true

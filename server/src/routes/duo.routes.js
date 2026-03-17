@@ -28,7 +28,8 @@ function appUrl(req) {
   }
 
   const proto = req.headers["x-forwarded-proto"] || req.protocol || "http";
-  const host = req.headers["x-forwarded-host"] || req.get("host") || "localhost:5173";
+  const host =
+    req.headers["x-forwarded-host"] || req.get("host") || "localhost:5173";
   return `${proto}://${host}`.replace(/\/+$/, "");
 }
 
@@ -39,12 +40,19 @@ function issueOtcFor(state, payload) {
 }
 
 function normalizeVerdict(result) {
-  if (typeof result?.success === "boolean") return result.success ? "ALLOW" : "DENY";
+  if (typeof result?.success === "boolean")
+    return result.success ? "ALLOW" : "DENY";
   const top = result?.auth_result ?? result?.result ?? result?.status;
   if (typeof top === "string") return top.toUpperCase();
   if (typeof top === "boolean") return top ? "ALLOW" : "DENY";
   if (top && typeof top === "object") {
-    const candidates = [top.result, top.status, top.decision, top.outcome, top.verdict];
+    const candidates = [
+      top.result,
+      top.status,
+      top.decision,
+      top.outcome,
+      top.verdict,
+    ];
     for (const c of candidates) {
       if (typeof c === "string") return c.toUpperCase();
       if (typeof c === "boolean") return c ? "ALLOW" : "DENY";
@@ -52,7 +60,9 @@ function normalizeVerdict(result) {
   }
   try {
     const s = JSON.stringify(result);
-    const m = s.match(/"(?:auth_result|result|status|decision|outcome|verdict)"\s*:\s*"(ALLOW|DENY|SUCCESS|APPROVED|ALLOW_WITH_TRUST)"/i);
+    const m = s.match(
+      /"(?:auth_result|result|status|decision|outcome|verdict)"\s*:\s*"(ALLOW|DENY|SUCCESS|APPROVED|ALLOW_WITH_TRUST)"/i,
+    );
     if (m && m[1]) return m[1].toUpperCase();
   } catch {}
   return "";
@@ -66,12 +76,13 @@ function isAllowed(v) {
 router.get("/start", async (req, res) => {
   const appState = String(req.query.state || "");
   const pending = getValid(appState);
-  if (!pending) return res.status(400).json({ error: "invalid_or_expired_state" });
+  if (!pending)
+    return res.status(400).json({ error: "invalid_or_expired_state" });
 
   const client = duoClient();
   const duoState = client.generateState();
   const username = pending.email || pending.uid || "user";
-  putWithTTL(duoState, { ...pending, __duoUsername: username }, 5 * 60 * 1000);
+  putWithTTL(duoState, { ...pending, duoUsername: username }, 5 * 60 * 1000);
 
   try {
     const authUrl = await client.createAuthUrl(username, duoState);
@@ -98,11 +109,15 @@ router.get("/callback", async (req, res) => {
   }
 
   const client = duoClient();
-  const username = pending.__duoUsername || pending.email || pending.uid || "user";
+  const username =
+    pending.__duoUsername || pending.email || pending.uid || "user";
 
   try {
     const result =
-      (await client.exchangeAuthorizationCodeFor2FAResult?.(duoCode, username)) ??
+      (await client.exchangeAuthorizationCodeFor2FAResult?.(
+        duoCode,
+        username,
+      )) ??
       (await client.exchangeAuthorizationCodeFor2faResult?.(duoCode, username));
 
     const verdict = normalizeVerdict(result);

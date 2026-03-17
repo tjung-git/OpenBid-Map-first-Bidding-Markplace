@@ -51,9 +51,7 @@ export default function MyBids() {
     if (target && (target.status || "").toLowerCase() === "accepted") {
       return;
     }
-    const confirmed = window.confirm(
-      "Delete this bid? This cannot be undone."
-    );
+    const confirmed = window.confirm("Delete this bid? This cannot be undone.");
     if (!confirmed) return;
     try {
       await api.bidDelete(bidId);
@@ -111,8 +109,8 @@ export default function MyBids() {
               ? amountValue.toLocaleString()
               : bid.amount;
             const createdAt = bid.bidCreatedAt || bid.createdAt;
-                const status = (bid.status || "active").toLowerCase();
-                const deleteDisabled = status === "accepted";
+            const status = (bid.status || "active").toLowerCase();
+            const deleteDisabled = status === "accepted";
             const statusLabel =
               status.charAt(0).toUpperCase() + status.slice(1);
             const itemClassNames = ["bid-list-item", "bid-list-item--own"];
@@ -126,11 +124,13 @@ export default function MyBids() {
                   <span className="bid-tag">Bid</span>
                 </div>
                 <p className="bid-list-meta">
-                  Job: {bid.jobTitle || bid.jobId} · Contractor: {bid.contractorName || "Unknown"}
+                  Job: {bid.jobTitle || bid.jobId} · Contractor:{" "}
+                  {bid.contractorName || "Unknown"}
                 </p>
                 {bid.jobBudgetAmount !== undefined && (
                   <p className="bid-list-meta">
-                    Job Budget: {Number.isFinite(Number(bid.jobBudgetAmount))
+                    Job Budget:{" "}
+                    {Number.isFinite(Number(bid.jobBudgetAmount))
                       ? `$${Number(bid.jobBudgetAmount).toLocaleString()}`
                       : bid.jobBudgetAmount}
                   </p>
@@ -146,7 +146,7 @@ export default function MyBids() {
                     {statusLabel}
                   </span>
                 </p>
-                {bid.note && <p className="bid-list-note">“{bid.note}”</p>}
+                {bid.note && <p className="bid-list-note">"{bid.note}"</p>}
                 {bid.statusNote && (
                   <p className="bid-list-status-note">{bid.statusNote}</p>
                 )}
