@@ -303,6 +303,150 @@ $\downarrow\uparrow$ \quad Adapter Layer \\
 \caption{High-Level System Architecture}
 \end{figure}
 
+% ---- CLASS / COMPONENT DIAGRAM ----
+\subsection{Component Diagram}
+
+Figure~\ref{fig:component} presents the system's major components and their
+dependency relationships. The adapter layer is the central architectural seam:
+every route module depends on adapter interfaces rather than concrete
+implementations, enabling the prototype/production swap.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/component-diagram.png}
+\caption{Component Diagram -- dependencies flow top-to-bottom through the adapter layer}
+\label{fig:component}
+\end{figure}
+
+\paragraph{Adapter Interface Methods}
+Each adapter exposes a consistent interface regardless of its backing implementation.
+Table~\ref{tab:adapter-interfaces} summarises the key method groups.
+
+\begin{longtable}{@{}p{2.2cm} p{4cm} p{7.2cm}@{}}
+\toprule
+\textbf{Adapter} & \textbf{Sub-module} & \textbf{Methods} \\
+\midrule
+\endhead
+\texttt{db} & \texttt{user} & \texttt{create}, \texttt{get}, \texttt{update}, \texttt{delete}, \texttt{findByEmail}, \texttt{list}, \texttt{upsert} \\
+\midrule
+ & \texttt{job} & \texttt{create}, \texttt{get}, \texttt{update}, \texttt{delete}, \texttt{list} \\
+\midrule
+ & \texttt{bid} & \texttt{create}, \texttt{get}, \texttt{update}, \texttt{delete}, \texttt{listByJob}, \texttt{listByUser}, \texttt{deleteByJob}, \texttt{list} \\
+\midrule
+ & \texttt{conversations} & \texttt{create}, \texttt{get}, \texttt{find}, \texttt{listByUser}, \texttt{markRead}, \texttt{hide}, \texttt{unhide}, \texttt{delete} \\
+\midrule
+ & \texttt{messages} & \texttt{create}, \texttt{list} \\
+\midrule
+ & \texttt{review} & \texttt{create}, \texttt{get}, \texttt{update}, \texttt{delete}, \texttt{listByReviewed}, \texttt{listByJob}, \texttt{appendPhotos} \\
+\midrule
+ & \texttt{portfolio} & \texttt{create}, \texttt{get}, \texttt{update}, \texttt{delete}, \texttt{listByUser}, \texttt{appendPhotos} \\
+\midrule
+\texttt{auth} & -- & \texttt{signIn(email, password)}, \texttt{verify(req)} \\
+\midrule
+\texttt{payments} & -- & \texttt{createPaymentIntent}, \texttt{capture}, \texttt{refund}, \texttt{cancel}, \texttt{getStatus} \\
+\midrule
+\texttt{kyc} & -- & \texttt{verification(uid)}, \texttt{status(uid)} \\
+\bottomrule
+\label{tab:adapter-interfaces}
+\end{longtable}
+
+% ---- CLASS / DATA MODEL DIAGRAM ----
+\newpage
+\subsection{Class Diagram -- Data Model}
+
+Figure~\ref{fig:class-diagram} presents the system's core data entities and
+their relationships as stored in Firebase Firestore.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/class-diagram.png}
+\caption{Class Diagram -- Core data entities and relationships}
+\label{fig:class-diagram}
+\end{figure}
+
+% ---- SEQUENCE DIAGRAM: PAYMENT ----
+\newpage
+\subsection{Sequence Diagram -- Payment Escrow Flow}
+
+Figures~\ref{fig:seq-payment-1} and~\ref{fig:seq-payment-2} trace the full escrow lifecycle from bid award
+through fund capture or refund.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/sequence-payment-1.png}
+\caption{Payment Escrow Sequence -- Steps 1--4: Award, Fund, Authorize, Confirm}
+\label{fig:seq-payment-1}
+\end{figure}
+
+\newpage
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/sequence-payment-2.png}
+\caption{Payment Escrow Sequence -- Steps 5--6: Release/Refund and Reviews}
+\label{fig:seq-payment-2}
+\end{figure}
+
+\paragraph{KYC Gate (within step 5a)}
+Before executing a capture, the server retrieves the contractor's
+\texttt{kycVerified} flag from Firestore. If \texttt{false}, the server calls
+\texttt{kyc.verification(uid)} to create a Stripe Identity session and returns
+the session URL with HTTP~403. The contractor completes identity verification
+on the Stripe-hosted page; a webhook event updates \texttt{kycVerified = true}.
+The next capture attempt proceeds normally.
+
+% ---- SEQUENCE DIAGRAM: AUTH + 2FA ----
+\newpage
+\subsection{Sequence Diagram -- Authentication and Two-Factor Flow}
+
+Figures~\ref{fig:seq-auth-1} and~\ref{fig:seq-auth-2} trace the authentication flow including optional
+Duo Security two-factor authentication.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/sequence-auth-1.png}
+\caption{Authentication Sequence -- Steps 1--3: Registration, Verification, Login}
+\label{fig:seq-auth-1}
+\end{figure}
+
+\newpage
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/sequence-auth-2.png}
+\caption{Authentication Sequence -- Steps 4--5: Duo 2FA and Session Management}
+\label{fig:seq-auth-2}
+\end{figure}
+
+% ---- ACTIVITY DIAGRAM ----
+\newpage
+\subsection{Activity Diagram -- Job Lifecycle}
+
+Figure~\ref{fig:activity-job} models the complete lifecycle of a job from
+creation through completion or cancellation, including the payment and review
+sub-flows.
+
+\begin{figure}[H]
+\centering
+\includegraphics[height=0.82\textheight,keepaspectratio]{diagrams/activity-job-lifecycle.png}
+\caption{Activity Diagram -- Job Lifecycle with Payment and Review Sub-flows}
+\label{fig:activity-job}
+\end{figure}
+
+\paragraph{State Transitions Summary}
+\begin{center}
+\begin{tabular}{@{}l l l@{}}
+\toprule
+\textbf{From} & \textbf{Trigger} & \textbf{To} \\
+\midrule
+\texttt{open} & Contractor awards bid & \texttt{awarded} \\
+\texttt{awarded} & Payment confirmed & \texttt{in\_progress} \\
+\texttt{in\_progress} & Contractor captures payment & \texttt{completed} \\
+\texttt{in\_progress} & Contractor requests refund & \texttt{cancelled} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
 \subsection{Role and Access Control Model}
 
 Every authenticated user holds one of two operational roles -- \texttt{contractor} or
@@ -347,9 +491,12 @@ in manual capture mode.
 
 \paragraph{State Machine}
 \begin{center}
-\texttt{[unfunded]} $\xrightarrow{\text{contractor funds}}$ \texttt{held}
-$\xrightarrow{\text{job complete}}$ \texttt{released}\\[4pt]
-\texttt{held} $\xrightarrow{\text{job cancelled}}$ \texttt{refunded}
+\begin{tabular}{@{}ccccccc@{}}
+\texttt{unfunded} & $\longrightarrow$ & \texttt{held} & $\longrightarrow$ & \texttt{released} \\
+ & \footnotesize{contractor funds} & & \footnotesize{job complete} & \\[8pt]
+ & & \texttt{held} & $\longrightarrow$ & \texttt{refunded} \\
+ & & & \footnotesize{job cancelled} & \\
+\end{tabular}
 \end{center}
 
 State transitions are guarded server-side: only the contractor who created the job
@@ -682,6 +829,133 @@ locationHelpers             & 3  & Pass & Vitest \\
 \textbf{Total}              & \textbf{170} & \textbf{All Pass} & \\
 \bottomrule
 \end{longtable}
+
+\subsection{Code Coverage Reports}
+
+Code coverage was collected using V8 (client, via Vitest) and Istanbul
+(server, via Jest). The tables below report statement, branch, function,
+and line coverage percentages for each source module.
+
+\subsubsection{Server-Side Coverage}
+
+\begin{center}
+\small
+\begin{longtable}{@{}p{4cm} r r r r@{}}
+\toprule
+\textbf{File / Directory} & \textbf{\% Stmts} & \textbf{\% Branch} & \textbf{\% Funcs} & \textbf{\% Lines} \\
+\midrule
+\endhead
+\textbf{All files} & \textbf{50.59} & \textbf{38.92} & \textbf{53.80} & \textbf{53.72} \\
+\midrule
+\multicolumn{5}{l}{\textit{src/}} \\
+\quad config.js & 100 & 72.22 & 100 & 100 \\
+\midrule
+\multicolumn{5}{l}{\textit{src/routes/}} \\
+\quad auth.routes.js & 64.03 & 52.70 & 100 & 64.28 \\
+\quad jobs.routes.js & 64.80 & 60.86 & 77.77 & 71.81 \\
+\quad bids.routes.js & 42.14 & 29.07 & 40.00 & 44.96 \\
+\quad payments.routes.js & 79.71 & 80.45 & 100 & 78.90 \\
+\quad kyc.routes.js & 87.09 & 92.85 & 100 & 89.28 \\
+\quad messages.routes.js & 90.66 & 85.18 & 88.23 & 91.66 \\
+\quad reviews.routes.js & 74.00 & 51.92 & 90.00 & 81.81 \\
+\quad upload.routes.js & 73.62 & 45.76 & 90.00 & 78.82 \\
+\quad admin.routes.js & 19.14 & 13.80 & 31.42 & 21.16 \\
+\midrule
+\multicolumn{5}{l}{\textit{src/adapters/}} \\
+\quad db.real.js & 51.32 & 26.57 & 57.50 & 57.91 \\
+\quad kyc.real.js & 44.18 & 25.00 & 100 & 42.85 \\
+\quad auth.mock.js & 10.00 & 0 & 0 & 11.11 \\
+\quad auth.real.js & 6.66 & 0 & 0 & 7.69 \\
+\quad payments.mock.js & 16.66 & 100 & 0 & 16.66 \\
+\quad kyc.mock.js & 25.00 & 0 & 0 & 25.00 \\
+\quad db.mock.js & 1.58 & 0 & 0 & 1.73 \\
+\midrule
+\multicolumn{5}{l}{\textit{src/lib/}} \\
+\quad duoState.js & 33.33 & 0 & 33.33 & 36.36 \\
+\quad firebase.js & 5.26 & 0 & 0 & 5.55 \\
+\quad firebaseIdentity.js & 13.51 & 0 & 11.11 & 14.28 \\
+\midrule
+\multicolumn{5}{l}{\textit{src/\_\_tests\_\_/}} \\
+\quad testUtils.js & 75.70 & 70.33 & 80.00 & 76.94 \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+\textbf{12 test suites passed, 121 tests passed} (2 skipped).
+
+\paragraph{Analysis}
+Route modules that are the primary targets of mock and integration test suites
+show the highest coverage: \texttt{messages.routes.js} (91.66\% lines),
+\texttt{kyc.routes.js} (89.28\%), and \texttt{payments.routes.js} (78.90\%).
+Adapter files such as \texttt{db.mock.js} and \texttt{auth.mock.js} show low
+statement coverage because Jest's instrumentation records them as loaded source
+files, but their methods are exercised indirectly through the route tests
+rather than through direct unit tests. The \texttt{admin.routes.js} file has
+lower coverage because a significant portion of its CRUD logic is tested only
+against the Firebase emulator in integration tests, which run in a separate
+configuration.
+
+\subsubsection{Client-Side Coverage}
+
+\begin{center}
+\small
+\begin{longtable}{@{}p{4.6cm} r r r r@{}}
+\toprule
+\textbf{File / Directory} & \textbf{\% Stmts} & \textbf{\% Branch} & \textbf{\% Funcs} & \textbf{\% Lines} \\
+\midrule
+\endhead
+\textbf{All files} & \textbf{20.58} & \textbf{53.39} & \textbf{28.07} & \textbf{20.58} \\
+\midrule
+\multicolumn{5}{l}{\textit{src/pages/}} \\
+\quad AdminDashboard.jsx & 67.98 & 44.02 & 36.11 & 67.98 \\
+\quad Messenger.jsx & 73.35 & 65.27 & 42.85 & 73.35 \\
+\quad Profile.jsx & 45.08 & 52.52 & 25.00 & 45.08 \\
+\quad Login.jsx & 0 & 0 & 0 & 0 \\
+\quad Signup.jsx & 0 & 0 & 0 & 0 \\
+\quad JobDetail.jsx & 0 & 0 & 0 & 0 \\
+\quad JobList.jsx & 0 & 0 & 0 & 0 \\
+\quad JobBid.jsx & 0 & 0 & 0 & 0 \\
+\quad BidDetail.jsx & 0 & 0 & 0 & 0 \\
+\quad MyBids.jsx & 0 & 0 & 0 & 0 \\
+\quad NewJob.jsx & 0 & 0 & 0 & 0 \\
+\quad Payment.jsx & 0 & 0 & 0 & 0 \\
+\midrule
+\multicolumn{5}{l}{\textit{src/components/}} \\
+\quad Nav.jsx & 78.43 & 41.66 & 100 & 78.43 \\
+\quad MapView.jsx & 0 & 0 & 0 & 0 \\
+\quad AdminRoute.jsx & 0 & 0 & 0 & 0 \\
+\quad NonAdminRoute.jsx & 0 & 0 & 0 & 0 \\
+\quad ProtectedApp.jsx & 0 & 0 & 0 & 0 \\
+\midrule
+\multicolumn{5}{l}{\textit{src/services/}} \\
+\quad config.js & 100 & 100 & 100 & 100 \\
+\quad socket.js & 100 & 100 & 100 & 100 \\
+\quad session.js & 86.11 & 60.86 & 88.23 & 86.11 \\
+\quad api.js & 21.35 & 100 & 0 & 21.35 \\
+\midrule
+\multicolumn{5}{l}{\textit{src/hooks/}} \\
+\quad useSession.js & 62.50 & 60.00 & 75.00 & 62.50 \\
+\midrule
+\multicolumn{5}{l}{\textit{src/util/}} \\
+\quad mapHelpers.js & 100 & 100 & 100 & 100 \\
+\quad locationHelpers.js & 100 & 100 & 100 & 100 \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+\textbf{8 test suites passed, 60 tests passed.}
+
+\paragraph{Analysis}
+Client-side tests focus on the components and services that contain the most
+complex logic. Utility modules (\texttt{mapHelpers}, \texttt{locationHelpers},
+\texttt{socket}, \texttt{config}) achieve 100\% coverage. The service layer
+(\texttt{session.js} at 86\%) and key interactive pages (\texttt{Messenger} at
+73\%, \texttt{AdminDashboard} at 68\%) are well covered. Pages such as
+\texttt{Login}, \texttt{Signup}, \texttt{JobDetail}, and \texttt{Payment} show
+0\% statement coverage because they are primarily tested through end-to-end
+user flows in prototype mode rather than isolated component tests. The overall
+branch coverage of 53.39\% reflects strong coverage of conditional logic in the
+modules that are tested.
 
 \newpage
 

@@ -1,0 +1,36 @@
+sequenceDiagram
+    actor U as User
+    participant UI as React Client
+    participant SRV as Express Server
+    participant FB as Firebase Auth
+    participant DUO as Duo Security
+
+    rect rgb(240, 240, 255)
+        Note over U, DUO: 4. Login with Duo 2FA (when configured)
+        U->>UI: Enters email & password
+        UI->>SRV: POST /auth/login
+        SRV-->>SRV: Verify password ✓
+        SRV-->>UI: 200 {requiresDuo: true, duoState}
+        UI-->>U: Redirect to Duo prompt
+        U->>DUO: Complete Duo challenge<br/>(push notification or passcode)
+        DUO-->>SRV: OIDC callback with auth code
+        SRV->>DUO: Exchange code for token
+        DUO-->>SRV: Duo verification token ✓
+        SRV->>FB: signInWithEmailAndPassword()
+        FB-->>SRV: Firebase ID token
+        SRV-->>UI: 200 {token, user, role}
+        UI-->>U: Redirect to Map View
+    end
+
+    rect rgb(248, 249, 250)
+        Note over U, DUO: 5. Session Management & Role Switching
+        UI->>SRV: GET /auth/me (on page load)
+        Note right of SRV: Verify Firebase ID token<br/>via Authorization header
+        SRV-->>UI: 200 {user, role, isAdmin}
+        Note right of UI: Session stored in localStorage<br/>2-minute inactivity timeout<br/>Auto-logout on expiry
+        U->>UI: Clicks role toggle
+        UI->>SRV: POST /auth/role {userType: "bidder"}
+        SRV-->>SRV: db.user.update(uid, {userType})
+        SRV-->>UI: 200 {updated user}
+        UI-->>UI: Update session & UI
+    end
