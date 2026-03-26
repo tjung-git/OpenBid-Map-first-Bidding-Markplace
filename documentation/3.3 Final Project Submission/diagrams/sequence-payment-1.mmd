@@ -1,0 +1,39 @@
+sequenceDiagram
+    actor C as Contractor
+    participant UI as React Client
+    participant SRV as Express Server
+    participant ST as Stripe API
+
+    rect rgb(248, 249, 250)
+        Note over C, ST: 1. Award Bid
+        C->>UI: Clicks "Award Bid"
+        UI->>SRV: POST /bids/:jobId/:bidId/accept
+        SRV-->>SRV: bid.status = "accepted"<br/>job.status = "awarded"<br/>other bids = "rejected"
+        SRV-->>UI: 200 OK
+    end
+
+    rect rgb(255, 255, 255)
+        Note over C, ST: 2. Create PaymentIntent (manual capture)
+        C->>UI: Clicks "Fund Escrow"
+        UI->>SRV: POST /payments/create-intent<br/>{jobId, bidId, amount}
+        SRV->>ST: stripe.paymentIntents.create()<br/>capture_method: "manual"
+        ST-->>SRV: clientSecret, paymentIntentId
+        SRV-->>SRV: paymentStatus = "pending"
+        SRV-->>UI: {clientSecret, paymentIntentId}
+    end
+
+    rect rgb(248, 249, 250)
+        Note over C, ST: 3. Collect Card & Authorize
+        C->>UI: Enters card details
+        UI->>ST: stripe.confirmPayment(clientSecret)
+        ST-->>UI: PaymentIntent status: "requires_capture"
+    end
+
+    rect rgb(255, 255, 255)
+        Note over C, ST: 4. Confirm Payment (funds held in escrow)
+        UI->>SRV: POST /payments/:jobId/confirm
+        SRV->>ST: payments.getStatus()
+        ST-->>SRV: status: "requires_capture" ✓
+        SRV-->>SRV: paymentStatus = "held"<br/>job.status = "in_progress"
+        SRV-->>UI: {ok: true, status: "held"}
+    end

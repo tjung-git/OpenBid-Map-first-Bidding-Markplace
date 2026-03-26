@@ -1,0 +1,1211 @@
+% !TEX root = main.tex
+\documentclass[11pt]{article}
+
+% ---------- Basics -----------
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{parskip}
+\usepackage{listings}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{float}
+
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue!60!black,
+  citecolor=black
+}
+
+% ---------- Listings ----------
+\lstset{
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  breaklines=true,
+  frame=single,
+  framerule=0.2pt,
+  tabsize=2,
+  showstringspaces=false
+}
+
+% ---------- Title ----------
+\newcommand{\product}{OpenBid}
+\title{DIGT2107: Practice of Software Development\\
+\Large Project Iteration 3.3: Final Project Submission\\[4pt]
+\large \product{} -- Map-first Bidding Marketplace}
+\author{Team 1: Tyler \and Mani \and Yanness \and Alaister}
+\date{Due: March 29, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\textbf{Course:} DIGT2107 -- Winter Term 2026 \quad|\quad
+\textbf{Instructor:} Dr.\ May Haidar
+\end{center}
+
+% =====================================================================
+% 1. INTRODUCTION
+% =====================================================================
+\section{Introduction}
+
+\textbf{Project Name:} \product \\
+\textbf{Team Number:} 1 \\
+\textbf{Team Members:} Tyler, Mani, Yanness, Alaister
+
+\paragraph{Document Overview}
+This document constitutes the final submission for Project Iteration 3.3 of the OpenBid
+platform. It consolidates all required deliverable components into a single professional
+artefact: the finalized Software Requirements Specification (SRS), the updated Software
+Design Document (SDD), comprehensive Testing Documentation, and a complete User Manual.
+The document reflects the system as it stands at the close of the project, incorporating
+all changes, refinements, and expansions made throughout each development iteration.
+
+\paragraph{Project Summary}
+OpenBid is a map-first bidding marketplace that connects contractors (job posters) with
+bidders (service providers). Users discover open jobs directly on an interactive Google
+Maps interface, submit competitive proposals, communicate in real time, and transact
+through a secure Stripe escrow payment system. The platform supports the complete job
+lifecycle -- from discovery and bidding through award, payment, and post-job reviews --
+and includes an administrative moderation dashboard for platform governance.
+
+\paragraph{Technology Stack}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Frontend:} React 18, Vite, Google Maps JavaScript API, Stripe.js
+  \item \textbf{Backend:} Node.js, Express, Socket.io
+  \item \textbf{Database / Auth:} Firebase Firestore, Firebase Authentication
+  \item \textbf{Payments / KYC:} Stripe Payments API, Stripe Identity
+  \item \textbf{Two-Factor Authentication:} Duo Security (OIDC)
+  \item \textbf{Testing:} Vitest + React Testing Library (client), Jest + Supertest (server)
+  \item \textbf{Deployment:} Firebase Hosting, Google Cloud Run, Firebase Cloud Functions
+\end{itemize}
+
+\newpage
+
+% =====================================================================
+% 2. SOFTWARE REQUIREMENTS SPECIFICATION
+% =====================================================================
+\section{Software Requirements Specification}
+
+\subsection{Overview}
+This section presents the finalized Software Requirements Specification for the OpenBid
+platform. It reflects all functional and non-functional requirements as they stand at
+project completion, incorporating changes and additions made throughout the development
+process. Requirements are organized by feature domain and cross-referenced to the team
+members who led implementation of each area.
+
+\subsection{Functional Requirements}
+
+\subsubsection{User Authentication and Account Management}
+
+\begin{longtable}{@{}p{1.8cm}p{5.8cm}p{5.8cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Acceptance Criteria} \\
+\midrule
+\endhead
+FR-01 & The system shall allow users to register with an email address and password. & A new user account is created and a verification email is sent in production mode. \\
+\midrule
+FR-02 & The system shall block login until the user's email address is verified (production mode). & An unverified user receives a clear error message on login. \\
+\midrule
+FR-03 & The system shall allow users to log in with email and password and receive a session token. & A valid Firebase ID token is returned and stored in the client session on successful login. \\
+\midrule
+FR-04 & The system shall support optional two-factor authentication via Duo Security. & When Duo credentials are configured, users are redirected to a Duo OIDC challenge after password verification before a session is established. \\
+\midrule
+FR-05 & The system shall allow users to reset their password via an emailed link. & A password reset link is sent and allows the user to set a new password within 24 hours. \\
+\midrule
+FR-06 & The system shall allow authenticated users to switch between the \texttt{contractor} and \texttt{bidder} roles at any time. & Switching role immediately updates visible UI elements and API permissions without requiring a logout. \\
+\bottomrule
+\end{longtable}
+
+\subsubsection{Job Posting and Discovery}
+
+\begin{longtable}{@{}p{1.8cm}p{5.8cm}p{5.8cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Acceptance Criteria} \\
+\midrule
+\endhead
+FR-07 & Contractors shall be able to post a job with a title, description, budget, and a map-pinned location. & The job appears on the map immediately after submission and is visible to all bidders. \\
+\midrule
+FR-08 & Bidders shall be able to discover open jobs by browsing the interactive map. & Clicking a job pin opens a job detail view. \\
+\midrule
+FR-09 & Contractors shall be able to edit or delete their own job postings. & Edits are reflected immediately; deletion removes the job and all associated bids from the platform. \\
+\bottomrule
+\end{longtable}
+
+\subsubsection{Bidding}
+
+\begin{longtable}{@{}p{1.8cm}p{5.8cm}p{5.8cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Acceptance Criteria} \\
+\midrule
+\endhead
+FR-10 & Bidders shall be able to submit a bid on any open job they did not post. & Submitting a bid on a job posted by the same user returns an error. \\
+\midrule
+FR-11 & Contractors shall be able to view all bids received on their jobs and award one bid as the winner. & Awarding a bid closes the job to further bidding and notifies the awarded bidder. \\
+\midrule
+FR-12 & Bidders shall be able to view and manage all bids they have submitted via the My Bids page. & Bid status (pending, awarded, rejected) is displayed and updated in real time. \\
+\bottomrule
+\end{longtable}
+
+\subsubsection{Payments and KYC}
+
+\begin{longtable}{@{}p{1.8cm}p{5.8cm}p{5.8cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Acceptance Criteria} \\
+\midrule
+\endhead
+FR-13 & The system shall create a Stripe PaymentIntent in manual capture mode when a bid is awarded, placing funds into escrow. & A payment record is stored in Firestore with status \texttt{held} and a valid Stripe PaymentIntent ID. \\
+\midrule
+FR-14 & The contractor shall be able to release escrow funds to the awarded bidder upon job completion. & Calling the release endpoint captures the PaymentIntent and updates the Firestore payment status to \texttt{released}. \\
+\midrule
+FR-15 & The system shall require KYC identity verification via Stripe Identity before a payment release can be completed. & Releasing payment without a verified KYC status returns an error with a redirect URL to the Stripe Identity session. \\
+\midrule
+FR-16 & KYC verification status shall be persisted on the user's profile and checked on each release attempt. & A verified user is not prompted to complete KYC again unless their verification has expired. \\
+\midrule
+FR-17 & All payment operations shall function in prototype mode without real Stripe credentials, using a mock adapter. & The Fund, Release, and Refund buttons complete successfully in prototype mode with simulated responses. \\
+\midrule
+FR-18 & Payment action buttons shall be visible only to the job's contractor and only in states where the action is valid. & The Fund button appears only before escrow is funded; the Release and Refund buttons appear only after funding; no buttons appear after release or refund. \\
+\bottomrule
+\end{longtable}
+
+\subsubsection{Real-Time Messaging}
+
+\begin{longtable}{@{}p{1.8cm}p{5.8cm}p{5.8cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Acceptance Criteria} \\
+\midrule
+\endhead
+FR-19 & Users shall be able to send and receive text messages in real time without a page refresh. & A message sent by one user appears in the other user's conversation window within 500\,ms. \\
+\midrule
+FR-20 & Conversations shall be scoped to a specific job, keeping communication contextual. & Each conversation thread displays the associated job title and is inaccessible to users not party to that job. \\
+\midrule
+FR-21 & The message list shall automatically scroll to the most recent message when a new one arrives, with a scroll guard that respects the user's current position. & Auto-scroll triggers only when the user is within 100\,px of the bottom; reading older messages is not interrupted. \\
+\midrule
+FR-22 & Messages sent by the current user shall appear on the right; messages from others on the left. & CSS classes are applied based on sender UID comparison, providing clear visual distinction. \\
+\midrule
+FR-23 & Message history shall be persisted in Firestore and available on reconnect. & Reopening the messenger after a disconnect restores all previous messages in chronological order. \\
+\midrule
+FR-24 & Admin users shall be forbidden from accessing the messaging system. & A request to any messaging endpoint from an admin-role token returns HTTP 403. \\
+\bottomrule
+\end{longtable}
+
+\subsubsection{Profile, Portfolio, and Reviews}
+
+\begin{longtable}{@{}p{1.8cm}p{5.8cm}p{5.8cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Acceptance Criteria} \\
+\midrule
+\endhead
+FR-25 & Users shall be able to upload and update a profile avatar image. & The new avatar is stored in Firebase Storage and displayed on the user's profile within one page reload. \\
+\midrule
+FR-26 & Users shall be able to view any other user's public profile, including bio, avatar, portfolio, and reviews. & The \texttt{/profile/:userId} route renders the target user's public information without requiring the viewer to be logged in. \\
+\midrule
+FR-27 & Users shall be able to add portfolio items, each consisting of an image, title, and description. & A submitted portfolio item appears on the user's profile immediately after submission. \\
+\midrule
+FR-28 & After a completed job, the contractor and the awarded bidder shall each be able to leave one review for the other. & Submitting a second review for the same job and person returns HTTP 409. \\
+\midrule
+FR-29 & Reviews shall include a star rating of 1 to 5 and a text comment, and the reviewee's average rating shall be recalculated after each new review. & The displayed average rating updates immediately after a review is submitted. \\
+\bottomrule
+\end{longtable}
+
+\subsubsection{Admin Dashboard}
+
+\begin{longtable}{@{}p{1.8cm}p{5.8cm}p{5.8cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Acceptance Criteria} \\
+\midrule
+\endhead
+FR-30 & The system shall provide an Admin Dashboard accessible only to users with the admin flag. & Navigating to \texttt{/admin} without admin privileges redirects to the home page. \\
+\midrule
+FR-31 & The Admin Dashboard shall display searchable, paginated lists of all users, jobs, and bids across three separate tabs. & Switching tabs updates the displayed content without a full page reload. \\
+\midrule
+FR-32 & Admins shall be able to edit any user, job, or bid via an inline editor modal that pre-populates all current values. & Changes submitted through the modal are immediately reflected in the table without a full reload. \\
+\midrule
+FR-33 & Admins shall be able to delete any user, job, or bid after confirming a deletion dialog. & The record is removed from the table within 300\,ms of confirmation. \\
+\midrule
+FR-34 & The system shall prevent admins from deleting their own account through the dashboard. & Attempting to delete the currently authenticated admin account returns an error. \\
+\midrule
+FR-35 & Client-side route guards shall prevent non-admin and unauthenticated users from accessing admin routes. & The \texttt{AdminRoute} wrapper component redirects these users to the home or login page. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Non-Functional Requirements}
+
+\begin{longtable}{@{}p{3cm}p{10.5cm}@{}}
+\toprule
+\textbf{Category} & \textbf{Requirement} \\
+\midrule
+\endhead
+Security & All routes that create, modify, or delete data require a valid Firebase ID token. Stripe operations use server-side secret keys exclusively. \\
+\midrule
+Prototype Mode & The full application shall run without any external service credentials by switching all adapters to their mock implementations via the \texttt{PROTOTYPE=TRUE} environment flag. \\
+\midrule
+Testability & Every server-side route module shall have a corresponding mock-mode test suite. Integration tests shall use the Firebase local emulator suite. \\
+\midrule
+Usability & The UI shall be responsive and fully functional on screens 360\,px wide and above. \\
+\midrule
+Data Integrity & Destructive admin operations require explicit user confirmation dialogs before execution. \\
+\midrule
+Availability & Prototype mode must allow full application functionality for demonstration and development without any live service dependency. \\
+\bottomrule
+\end{longtable}
+
+\newpage
+
+% =====================================================================
+% 3. SOFTWARE DESIGN DOCUMENT
+% =====================================================================
+\section{Software Design Document}
+
+\subsection{Architectural Overview}
+
+OpenBid follows a layered client-server architecture with a strict separation between
+the React single-page application, the Express REST and Socket.io server, and the
+Firebase and Stripe backend services. The central architectural principle is the
+\textbf{adapter pattern}: every external dependency (database, authentication, payments,
+KYC, storage) has two interchangeable implementations -- a \texttt{*.real.js} file that
+communicates with live services and a \texttt{*.mock.js} file used in prototype mode and
+testing. The active implementation is selected at startup from the \texttt{PROTOTYPE}
+environment variable, enabling the entire system to operate without external credentials.
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{|c|}
+\hline
+\\
+\textbf{React Client} (Vite, React 18) \\
+Pages \quad Components \quad Hooks \quad Services \\
+\\
+\hline
+$\downarrow\uparrow$ \quad HTTP REST \quad $\downarrow\uparrow$ \quad WebSocket (Socket.io) \\
+\hline
+\\
+\textbf{Express Server} \\
+Routes \quad Middleware (RBAC) \quad Socket.io \\
+\\
+\hline
+$\downarrow\uparrow$ \quad Adapter Layer \\
+\hline
+\textbf{Firebase Firestore \& Auth} \quad \textbf{Stripe Payments \& Identity} \quad \textbf{Duo Security} \\
+\hline
+\end{tabular}
+\caption{High-Level System Architecture}
+\end{figure}
+
+% ---- CLASS / COMPONENT DIAGRAM ----
+\subsection{Component Diagram}
+
+Figure~\ref{fig:component} presents the system's major components and their
+dependency relationships. The adapter layer is the central architectural seam:
+every route module depends on adapter interfaces rather than concrete
+implementations, enabling the prototype/production swap.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/component-diagram.png}
+\caption{Component Diagram -- dependencies flow top-to-bottom through the adapter layer}
+\label{fig:component}
+\end{figure}
+
+\paragraph{Adapter Interface Methods}
+Each adapter exposes a consistent interface regardless of its backing implementation.
+Table~\ref{tab:adapter-interfaces} summarises the key method groups.
+
+\begin{longtable}{@{}p{2.2cm} p{4cm} p{7.2cm}@{}}
+\toprule
+\textbf{Adapter} & \textbf{Sub-module} & \textbf{Methods} \\
+\midrule
+\endhead
+\texttt{db} & \texttt{user} & \texttt{create}, \texttt{get}, \texttt{update}, \texttt{delete}, \texttt{findByEmail}, \texttt{list}, \texttt{upsert} \\
+\midrule
+ & \texttt{job} & \texttt{create}, \texttt{get}, \texttt{update}, \texttt{delete}, \texttt{list} \\
+\midrule
+ & \texttt{bid} & \texttt{create}, \texttt{get}, \texttt{update}, \texttt{delete}, \texttt{listByJob}, \texttt{listByUser}, \texttt{deleteByJob}, \texttt{list} \\
+\midrule
+ & \texttt{conversations} & \texttt{create}, \texttt{get}, \texttt{find}, \texttt{listByUser}, \texttt{markRead}, \texttt{hide}, \texttt{unhide}, \texttt{delete} \\
+\midrule
+ & \texttt{messages} & \texttt{create}, \texttt{list} \\
+\midrule
+ & \texttt{review} & \texttt{create}, \texttt{get}, \texttt{update}, \texttt{delete}, \texttt{listByReviewed}, \texttt{listByJob}, \texttt{appendPhotos} \\
+\midrule
+ & \texttt{portfolio} & \texttt{create}, \texttt{get}, \texttt{update}, \texttt{delete}, \texttt{listByUser}, \texttt{appendPhotos} \\
+\midrule
+\texttt{auth} & -- & \texttt{signIn(email, password)}, \texttt{verify(req)} \\
+\midrule
+\texttt{payments} & -- & \texttt{createPaymentIntent}, \texttt{capture}, \texttt{refund}, \texttt{cancel}, \texttt{getStatus} \\
+\midrule
+\texttt{kyc} & -- & \texttt{verification(uid)}, \texttt{status(uid)} \\
+\bottomrule
+\label{tab:adapter-interfaces}
+\end{longtable}
+
+% ---- CLASS / DATA MODEL DIAGRAM ----
+\newpage
+\subsection{Class Diagram -- Data Model}
+
+Figure~\ref{fig:class-diagram} presents the system's core data entities and
+their relationships as stored in Firebase Firestore.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/class-diagram.png}
+\caption{Class Diagram -- Core data entities and relationships}
+\label{fig:class-diagram}
+\end{figure}
+
+% ---- SEQUENCE DIAGRAM: PAYMENT ----
+\newpage
+\subsection{Sequence Diagram -- Payment Escrow Flow}
+
+Figures~\ref{fig:seq-payment-1} and~\ref{fig:seq-payment-2} trace the full escrow lifecycle from bid award
+through fund capture or refund.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/sequence-payment-1.png}
+\caption{Payment Escrow Sequence -- Steps 1--4: Award, Fund, Authorize, Confirm}
+\label{fig:seq-payment-1}
+\end{figure}
+
+\newpage
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/sequence-payment-2.png}
+\caption{Payment Escrow Sequence -- Steps 5--6: Release/Refund and Reviews}
+\label{fig:seq-payment-2}
+\end{figure}
+
+\paragraph{KYC Gate (within step 5a)}
+Before executing a capture, the server retrieves the contractor's
+\texttt{kycVerified} flag from Firestore. If \texttt{false}, the server calls
+\texttt{kyc.verification(uid)} to create a Stripe Identity session and returns
+the session URL with HTTP~403. The contractor completes identity verification
+on the Stripe-hosted page; a webhook event updates \texttt{kycVerified = true}.
+The next capture attempt proceeds normally.
+
+% ---- SEQUENCE DIAGRAM: AUTH + 2FA ----
+\newpage
+\subsection{Sequence Diagram -- Authentication and Two-Factor Flow}
+
+Figures~\ref{fig:seq-auth-1} and~\ref{fig:seq-auth-2} trace the authentication flow including optional
+Duo Security two-factor authentication.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/sequence-auth-1.png}
+\caption{Authentication Sequence -- Steps 1--3: Registration, Verification, Login}
+\label{fig:seq-auth-1}
+\end{figure}
+
+\newpage
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{diagrams/sequence-auth-2.png}
+\caption{Authentication Sequence -- Steps 4--5: Duo 2FA and Session Management}
+\label{fig:seq-auth-2}
+\end{figure}
+
+% ---- ACTIVITY DIAGRAM ----
+\newpage
+\subsection{Activity Diagram -- Job Lifecycle}
+
+Figure~\ref{fig:activity-job} models the complete lifecycle of a job from
+creation through completion or cancellation, including the payment and review
+sub-flows.
+
+\begin{figure}[H]
+\centering
+\includegraphics[height=0.82\textheight,keepaspectratio]{diagrams/activity-job-lifecycle.png}
+\caption{Activity Diagram -- Job Lifecycle with Payment and Review Sub-flows}
+\label{fig:activity-job}
+\end{figure}
+
+\paragraph{State Transitions Summary}
+\begin{center}
+\begin{tabular}{@{}l l l@{}}
+\toprule
+\textbf{From} & \textbf{Trigger} & \textbf{To} \\
+\midrule
+\texttt{open} & Contractor awards bid & \texttt{awarded} \\
+\texttt{awarded} & Payment confirmed & \texttt{in\_progress} \\
+\texttt{in\_progress} & Contractor captures payment & \texttt{completed} \\
+\texttt{in\_progress} & Contractor requests refund & \texttt{cancelled} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Role and Access Control Model}
+
+Every authenticated user holds one of two operational roles -- \texttt{contractor} or
+\texttt{bidder} -- and may switch freely between them. A separate boolean \texttt{isAdmin}
+flag grants elevated platform privileges. Role is stored on the Firestore user document
+and embedded in the session context so that both client-side route guards and server-side
+middleware can enforce it independently.
+
+\paragraph{Server-Side Enforcement}
+The \texttt{requireRole.js} middleware provides two exported functions:
+\texttt{requireRole(...allowedRoles)}, which permits only listed roles through, and
+\texttt{forbidRole(...blockedRoles)}, which blocks listed roles regardless of other
+permissions. These are composed on individual routes. The messaging system, for example,
+uses \texttt{forbidRole("admin")} to prevent administrators from participating in user
+conversations.
+
+\paragraph{Client-Side Enforcement}
+Two React wrapper components enforce access at the routing layer. \texttt{AdminRoute}
+redirects any user who is unauthenticated or lacks the admin flag to the home page.
+\texttt{NonAdminRoute} can redirect admin users away from standard user flows where
+appropriate. Both components read from the shared \texttt{useAuth} context hook, which
+is populated synchronously from cached session state to eliminate any flash of
+protected content.
+
+\subsection{Authentication and Session Management}
+
+Firebase Authentication issues ID tokens on successful login. The Express server
+validates these tokens on every protected request using the Firebase Admin SDK. The
+validated UID is attached to the request object and used for all subsequent
+authorization checks and database queries.
+
+When Duo Security is enabled, the authentication flow includes an additional OIDC
+redirect after password verification. The server initiates the Duo authorization
+request, the user completes the Duo push or passcode challenge, and Duo's callback
+exchanges an authorization code for a confirmation token. Only after this exchange is
+the Firebase session fully established.
+
+\subsection{Payment System Design}
+
+The payment system implements a three-state escrow model using Stripe PaymentIntents
+in manual capture mode.
+
+\paragraph{State Machine}
+\begin{center}
+\begin{tabular}{@{}ccccccc@{}}
+\texttt{unfunded} & $\longrightarrow$ & \texttt{held} & $\longrightarrow$ & \texttt{released} \\
+ & \footnotesize{contractor funds} & & \footnotesize{job complete} & \\[8pt]
+ & & \texttt{held} & $\longrightarrow$ & \texttt{refunded} \\
+ & & & \footnotesize{job cancelled} & \\
+\end{tabular}
+\end{center}
+
+State transitions are guarded server-side: only the contractor who created the job
+may trigger a release or refund, enforced by comparing the authenticated UID against
+the job's \texttt{contractorId} field before any Stripe API call is made.
+
+\paragraph{KYC Gate}
+Before executing a payment release, the server checks the \texttt{kycVerified} flag
+on the user's Firestore document. If unverified, the server creates a Stripe Identity
+\texttt{VerificationSession} and returns the session URL. When the user completes the
+identity flow, Stripe sends a signed webhook event that the server uses to update
+\texttt{kycVerified = true}. The release can then proceed on the user's next attempt.
+
+\paragraph{Client-Side Button Visibility}
+
+Payment button visibility is computed from a single \texttt{paymentStatus} value
+fetched from the server when the Job Detail page loads. A mapping function translates
+the status to the set of currently valid actions, keeping the JSX declarative and
+independently testable.
+
+\subsection{Real-Time Messaging Design}
+
+The messaging system uses Socket.io for bidirectional real-time communication.
+Conversations are keyed by a canonical room ID derived from the job ID and the
+two participant UIDs (lexicographically sorted to ensure a single unique key per pair).
+When a client connects, it emits a \texttt{join} event; the server joins the socket
+to the appropriate room. All subsequent \texttt{sendMessage} events are emitted to the
+full room (including the sender's socket), ensuring both participants see messages
+without duplication.
+
+Messages are simultaneously persisted to Firestore, providing a durable history that
+is loaded on reconnection. The client-side scroll guard tracks the user's scroll
+position and only auto-scrolls to new messages when the user is already within
+100\,px of the bottom of the conversation, preserving reading position when browsing
+history.
+
+\subsection{Admin Dashboard Design}
+
+The Admin Dashboard is a tabbed single-page component. Each tab -- Users, Jobs, Bids
+-- is an independent child component that fetches its data on mount and maintains its
+own local search and pagination state. The active tab is stored in the URL query
+string (\texttt{?tab=users}) so that the browser's history stack preserves tab
+state across navigation.
+
+Entity editing is handled by a single reusable \texttt{EditorModal} component that
+accepts the target entity, a field schema descriptor, and save/close callbacks. The
+field schema drives dynamic form generation, allowing the same modal to serve all three
+entity types without duplicated layout code.
+
+\subsection{Profile, Portfolio, and Reviews Design}
+
+User profiles aggregate data from three Firestore sources: the core user document (bio,
+avatar URL, KYC status), a \texttt{portfolio} sub-collection, and a \texttt{reviews}
+collection filtered by \texttt{revieweeId}. The profile page fetches all three in
+parallel and displays a computed average star rating derived from the review collection.
+
+Portfolio image uploads and avatar uploads both follow a two-step flow: the client
+POSTs the file to the \texttt{/upload} route, the server validates the MIME type and
+file size via Multer middleware, stores the file in Firebase Storage, and returns the
+public URL. The client then PATCHes the relevant record with the new URL.
+
+\subsection{System Component Summary}
+
+\begin{longtable}{@{}p{0.28\linewidth} p{0.12\linewidth} p{0.18\linewidth} p{0.38\linewidth}@{}}
+\toprule
+\textbf{Component} & \textbf{Type} & \textbf{Technology} & \textbf{Responsibility} \\
+\midrule
+\endhead
+\texttt{AdminDashboard.jsx} & Page & React & Tabbed admin interface: users, jobs, bids \\
+\texttt{AdminRoute.jsx} & Component & React & Client-side admin route guard \\
+\texttt{NonAdminRoute.jsx} & Component & React & Client-side non-admin route guard \\
+\texttt{Messenger.jsx} & Page & React, Socket.io & Real-time chat UI with scroll guard \\
+\texttt{Payment.jsx} & Page & React, Stripe.js & Escrow funding via Stripe Elements \\
+\texttt{Profile.jsx} & Page & React & User profile with avatar, portfolio, reviews \\
+\texttt{UserPortfolio.jsx} & Page & React & Portfolio management and display \\
+\texttt{UserReviews.jsx} & Page & React & Review submission and listing \\
+\texttt{MapView.jsx} & Component & Google Maps API & Job pin display and interaction \\
+\texttt{admin.routes.js} & Router & Express & Admin CRUD for users, jobs, bids \\
+\texttt{payments.routes.js} & Router & Express, Stripe & Escrow create, release, refund \\
+\texttt{kyc.routes.js} & Router & Express, Stripe Identity & KYC session creation and webhook \\
+\texttt{messages.routes.js} & Router & Express, Socket.io & Conversation and message management \\
+\texttt{auth.routes.js} & Router & Express, Firebase & Login, signup, Duo 2FA \\
+\texttt{reviews.routes.js} & Router & Express & Review CRUD and aggregation \\
+\texttt{portfolio.routes.js} & Router & Express & Portfolio item CRUD \\
+\texttt{upload.routes.js} & Router & Express, Multer & Avatar and photo upload handling \\
+\texttt{requireRole.js} & Middleware & Express & Server-side RBAC enforcement \\
+\texttt{payments.real.js} & Adapter & Stripe SDK & Production payment integration \\
+\texttt{payments.mock.js} & Adapter & In-memory & Prototype mode payment simulation \\
+\texttt{kyc.real.js} & Adapter & Stripe Identity SDK & Production KYC integration \\
+\texttt{kyc.mock.js} & Adapter & In-memory & Prototype mode KYC simulation \\
+\texttt{db.real.js} & Adapter & Firebase Firestore & Production data persistence \\
+\texttt{db.mock.js} & Adapter & In-memory & Prototype mode data simulation \\
+\texttt{auth.real.js} & Adapter & Firebase Auth & Production authentication \\
+\texttt{auth.mock.js} & Adapter & In-memory & Prototype mode auth simulation \\
+\bottomrule
+\end{longtable}
+
+\newpage
+
+% =====================================================================
+% 4. TESTING DOCUMENTATION
+% =====================================================================
+\section{Testing Documentation}
+
+\subsection{Testing Methodology}
+
+The project employs a two-layer testing strategy designed to provide confidence at
+both the unit and integration levels while maintaining fast, reliable test execution
+without mandatory dependencies on live external services.
+
+\paragraph{Server-Side Testing}
+Server-side tests are written with Jest and Supertest. Each route module has a
+\textbf{mock-mode} test suite that substitutes all external adapters (database,
+authentication, payments, KYC) with in-memory implementations. Where the system
+behavior depends on real Firebase or Stripe interactions, separate
+\textbf{integration tests} run against the Firebase local emulator suite in CI.
+
+\paragraph{Client-Side Testing}
+Client-side tests are written with Vitest and React Testing Library. Components are
+rendered in a simulated DOM with mocked API services and context providers, testing
+user-facing behaviour without a running backend.
+
+\paragraph{Smoke Tests}
+A dedicated smoke test suite validates critical-path behaviour when the application
+runs with \texttt{PROTOTYPE=FALSE}, confirming that the real Firebase and Stripe
+adapters initialise and respond correctly. These tests are designed to run quickly
+as a pre-deployment gate.
+
+\paragraph{Test Execution}
+\begin{lstlisting}[language=bash]
+# Run server-side tests
+cd server && npm test
+
+# Run client-side tests
+cd client && npm test
+\end{lstlisting}
+
+\subsection{Test Suites and Coverage}
+
+\subsubsection{Authentication Tests}
+
+\paragraph{Files}
+\texttt{auth.integration.real.routes.test.js}, \texttt{auth.duo.test.js}
+
+\paragraph{Coverage}
+\begin{itemize}[leftmargin=1.4em]
+  \item Sign-up with valid credentials creates a user and returns a Firebase ID token.
+  \item Login with correct credentials returns a valid session token.
+  \item Login with an incorrect password returns HTTP 401.
+  \item All protected routes return HTTP 401 when called without a token.
+  \item All protected routes return HTTP 401 when called with a malformed or expired token.
+  \item Duo 2FA callback: a valid authorization code completes the session; an invalid or replayed code returns HTTP 403.
+  \item Password reset: requesting a reset for a registered email dispatches a reset link; requesting for an unknown email returns a safe, non-enumerable response.
+\end{itemize}
+
+\subsubsection{Payment System Tests}
+
+\paragraph{Files}
+\texttt{payments.routes.test.js}
+
+\paragraph{Coverage}
+The payment test suite contains 30 test cases covering the full escrow lifecycle:
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Escrow creation:} Returns HTTP 201 with a \texttt{clientSecret} for a valid bid award; returns HTTP 400 for missing required fields; returns HTTP 409 when a payment already exists for the job.
+  \item \textbf{Payment confirmation:} Transitions job status to \texttt{in\_progress}; prevents confirmation by non-contractors.
+  \item \textbf{Payment release:} Captures the Stripe PaymentIntent and updates status to \texttt{released} for a KYC-verified contractor; returns HTTP 403 with a \texttt{kycUrl} for unverified users; returns HTTP 403 for non-contractors.
+  \item \textbf{Refund:} Cancels or refunds the PaymentIntent and sets status to \texttt{refunded}; returns HTTP 404 for unknown payment IDs.
+  \item \textbf{Status query:} Both the contractor and awarded bidder can view payment status; all other users receive HTTP 403.
+  \item \textbf{Webhook handling:} A correctly-signed \texttt{payment\_intent.succeeded} event updates the Firestore payment record; unsigned or tampered webhooks return HTTP 400.
+\end{itemize}
+
+\subsubsection{KYC Tests}
+
+\paragraph{Files}
+\texttt{kyc.mock.routes.test.js}, \texttt{kyc.real.routes.test.js}
+
+\paragraph{Coverage}
+\begin{itemize}[leftmargin=1.4em]
+  \item Mock mode: \texttt{POST /kyc/session} returns a synthetic session URL; the webhook endpoint sets \texttt{kycVerified = true} on the mock user document.
+  \item Real mode (emulator): session creation returns a well-formed Stripe Identity URL; the webhook handler correctly processes a test verification event.
+  \item Unauthenticated requests to KYC endpoints return HTTP 401.
+\end{itemize}
+
+\subsubsection{Jobs and Bids Integration Tests}
+
+\paragraph{Files}
+\texttt{jobs.integration.real.routes.test.js}, \texttt{bids.integration.real.routes.test.js}
+
+\paragraph{Coverage}
+\begin{itemize}[leftmargin=1.4em]
+  \item Full lifecycle test: create job → submit bid → award bid → verify payment record is created in Firestore.
+  \item Bidding on a job you own returns HTTP 403.
+  \item Awarding a bid on another user's job returns HTTP 403.
+  \item Listing jobs returns only open jobs by default; awarded and closed jobs appear with the correct filter.
+  \item Editing a job you do not own returns HTTP 403.
+  \item Deleting a job removes all associated bids.
+\end{itemize}
+
+\subsubsection{Admin Route Tests}
+
+\paragraph{Files}
+\texttt{admin.mock.routes.test.js}, \texttt{admin.real.routes.test.js}
+
+\paragraph{Coverage -- 19 test cases}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{GET /admin/users, /admin/jobs, /admin/bids:} Returns complete lists; returns HTTP 401 without authentication; returns HTTP 403 for non-admin authenticated users.
+  \item \textbf{PATCH /admin/users/:id:} Returns HTTP 200 with the updated entity; returns HTTP 400 for an invalid email address format.
+  \item \textbf{DELETE /admin/users/:id:} Returns HTTP 204; a subsequent GET confirms the record is absent; attempting to delete the authenticated admin's own account returns HTTP 400.
+  \item \textbf{Response formatting:} User listings exclude sensitive fields such as password hashes; bid listings are returned in descending chronological order.
+  \item Real-mode tests confirm that mutations are actually applied to the Firebase emulator, not just mocked.
+\end{itemize}
+
+\subsubsection{Messaging Tests}
+
+\paragraph{Files}
+\texttt{messages.mock.routes.test.js}, \texttt{messages.integration.real.routes.test.js}
+
+\paragraph{Coverage -- 29 unit tests (mock) + integration tests}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Conversation creation:} A conversation is created when a bid is placed; duplicate creation for the same pair is idempotent.
+  \item \textbf{Listing conversations:} Returns only conversations the authenticated user participates in; unauthenticated requests return HTTP 401.
+  \item \textbf{Message sending:} Returns HTTP 200 with the stored message object; HTTP 400 for an empty message body; HTTP 403 for non-participant senders.
+  \item \textbf{Message history:} Retrieved in chronological order; read markers update correctly; non-participants receive HTTP 403 or 404.
+  \item \textbf{Hide / Unhide / Delete:} Hide removes the conversation from the default listing; unhide restores it; delete permanently removes it; only participants may perform these actions.
+  \item \textbf{Admin restriction:} Any messaging endpoint accessed with an admin token returns HTTP 403.
+  \item \textbf{Integration:} Two emulator users exchange messages; history is verified on reconnect; messages in one room do not appear in another room.
+\end{itemize}
+
+\subsubsection{Reviews Tests}
+
+\paragraph{Files}
+\texttt{reviews.routes.test.js}
+
+\paragraph{Coverage -- 7 test cases}
+\begin{itemize}[leftmargin=1.4em]
+  \item A review can only be submitted after the job has been awarded, and only for the awarded provider -- attempts before award or for the wrong user are rejected.
+  \item Users cannot review themselves; users not party to the job cannot submit a review.
+  \item Duplicate review submissions (same reviewer, same job, same reviewee) return HTTP 409.
+  \item Review photos upload correctly and appear in the user's review list with thumbnail links.
+  \item Only the review author can edit the review; the rating and text can be updated independently; clearing the description does not invalidate the review.
+  \item Review listing returns records in reverse-chronological order; the computed average rating reflects all submitted reviews.
+\end{itemize}
+
+\subsubsection{Upload Tests}
+
+\paragraph{Files}
+\texttt{upload.avatar.routes.test.js}
+
+\paragraph{Coverage}
+\begin{itemize}[leftmargin=1.4em]
+  \item A valid JPEG or PNG upload returns HTTP 200 with a public storage URL in the response body.
+  \item Uploading a file with an unsupported MIME type (e.g.\ \texttt{application/pdf}) returns HTTP 400.
+  \item A request with no file attached returns HTTP 400 with a descriptive error message.
+  \item A file exceeding the configured size limit returns HTTP 413.
+\end{itemize}
+
+\subsubsection{Client-Side Component Tests}
+
+\paragraph{Admin Dashboard Tests} \texttt{(AdminDashboard.test.jsx)}
+\begin{itemize}[leftmargin=1.4em]
+  \item The component renders without crashing when supplied with mock user, job, and bid data.
+  \item Clicking a tab header updates the visible content pane to the correct section.
+  \item Opening the editor for a record pre-populates the email field with the record's current value.
+  \item Clicking the delete button surfaces a confirmation dialog before dispatching any delete action.
+\end{itemize}
+
+\paragraph{Navigation and Session Tests} \texttt{(nav.test.jsx, session.test.js)}
+\begin{itemize}[leftmargin=1.4em]
+  \item The \texttt{Nav} component displays the correct role label for the user's active role.
+  \item The admin dashboard link is visible only when \texttt{isAdmin} is \texttt{true}.
+  \item Clicking the role switch button invokes the role change handler exactly once.
+  \item The \texttt{useSession} hook reads the active role from \texttt{localStorage} on mount; calling \texttt{switchRole} writes the new role and updates the context; clearing storage and re-mounting defaults to the server-supplied role.
+\end{itemize}
+
+\paragraph{Messenger and Socket Tests} \texttt{(Messenger.test.jsx, socket.test.js)}
+\begin{itemize}[leftmargin=1.4em]
+  \item The Messenger page renders an empty-state placeholder when no conversation is selected.
+  \item Messages from the current user carry the \texttt{.message--sent} CSS class; messages from others carry \texttt{.message--received}.
+  \item When a new message arrives and \texttt{nearBottom} is \texttt{true}, the container scrolls to the bottom; when \texttt{nearBottom} is \texttt{false}, the scroll position is unchanged.
+  \item The socket service returns the same singleton instance across multiple calls to \texttt{getSocket}.
+  \item \texttt{connectSocket} and \texttt{disconnectSocket} correctly manage the connection lifecycle.
+  \item Event subscriptions via \texttt{onNewMessage} can be unsubscribed without leaking listeners.
+\end{itemize}
+
+\paragraph{Profile Tests} \texttt{(Profile.test.jsx)}
+\begin{itemize}[leftmargin=1.4em]
+  \item The Profile component renders the user's name and bio from mock data.
+  \item Portfolio items are displayed as a grid; an empty portfolio shows a placeholder message.
+  \item The average star rating is computed and rendered correctly from mock review data.
+  \item The review submission form is not rendered when the viewer is viewing their own profile.
+\end{itemize}
+
+\paragraph{Map Utility Tests} \texttt{(mapHelpers.test.js, locationHelpers.test.js)}
+\begin{itemize}[leftmargin=1.4em]
+  \item \texttt{formatCoordinate} rounds latitude and longitude values to four decimal places.
+  \item \texttt{isWithinBounds} correctly classifies coordinates inside and outside a given bounding box, including coordinates exactly on the boundary.
+  \item \texttt{calculateDistance} returns the correct Haversine distance within a 1\% tolerance for known city coordinate pairs, including the edge case of zero distance.
+  \item \texttt{parseGeoPoint} converts a Firestore GeoPoint into a plain \texttt{\{lat, lng\}} object.
+\end{itemize}
+
+\subsection{Test Results Summary}
+
+\begin{longtable}{@{}p{0.32\linewidth} p{0.12\linewidth} p{0.12\linewidth} p{0.38\linewidth}@{}}
+\toprule
+\textbf{Test Suite} & \textbf{Tests} & \textbf{Status} & \textbf{Notes} \\
+\midrule
+\endhead
+auth routes (real)          & 8  & Pass & Firebase emulator \\
+auth.duo                    & 4  & Pass & Mock Duo OIDC \\
+payments routes             & 30 & Pass & Mock adapter \\
+kyc routes (mock)           & 6  & Pass & Mock adapter \\
+kyc routes (real)           & 4  & Pass & Firebase emulator \\
+jobs integration (real)     & 9  & Pass & Firebase emulator \\
+bids integration (real)     & 7  & Pass & Firebase emulator \\
+admin routes (mock)         & 11 & Pass & Mock adapter \\
+admin routes (real)         & 8  & Pass & Firebase emulator \\
+messages routes (mock)      & 29 & Pass & Mock adapter \\
+messages integration (real) & 6  & Pass & Firebase emulator \\
+reviews routes              & 7  & Pass & Mock adapter \\
+upload avatar routes        & 5  & Pass & Mock storage \\
+AdminDashboard component    & 4  & Pass & Vitest + RTL \\
+nav component               & 4  & Pass & Vitest + RTL \\
+session hook                & 3  & Pass & Vitest \\
+Messenger component         & 6  & Pass & Vitest + RTL \\
+socket service              & 7  & Pass & Vitest \\
+Profile component           & 4  & Pass & Vitest + RTL \\
+mapHelpers                  & 5  & Pass & Vitest \\
+locationHelpers             & 3  & Pass & Vitest \\
+\midrule
+\textbf{Total}              & \textbf{170} & \textbf{All Pass} & \\
+\bottomrule
+\end{longtable}
+
+\subsection{Code Coverage Reports}
+
+Code coverage was collected using V8 (client, via Vitest) and Istanbul
+(server, via Jest). The tables below report statement, branch, function,
+and line coverage percentages for each source module.
+
+\subsubsection{Server-Side Coverage}
+
+\begin{center}
+\small
+\begin{longtable}{@{}p{4cm} r r r r@{}}
+\toprule
+\textbf{File / Directory} & \textbf{\% Stmts} & \textbf{\% Branch} & \textbf{\% Funcs} & \textbf{\% Lines} \\
+\midrule
+\endhead
+\textbf{All files} & \textbf{50.59} & \textbf{38.92} & \textbf{53.80} & \textbf{53.72} \\
+\midrule
+\multicolumn{5}{l}{\textit{src/}} \\
+\quad config.js & 100 & 72.22 & 100 & 100 \\
+\midrule
+\multicolumn{5}{l}{\textit{src/routes/}} \\
+\quad auth.routes.js & 64.03 & 52.70 & 100 & 64.28 \\
+\quad jobs.routes.js & 64.80 & 60.86 & 77.77 & 71.81 \\
+\quad bids.routes.js & 42.14 & 29.07 & 40.00 & 44.96 \\
+\quad payments.routes.js & 79.71 & 80.45 & 100 & 78.90 \\
+\quad kyc.routes.js & 87.09 & 92.85 & 100 & 89.28 \\
+\quad messages.routes.js & 90.66 & 85.18 & 88.23 & 91.66 \\
+\quad reviews.routes.js & 74.00 & 51.92 & 90.00 & 81.81 \\
+\quad upload.routes.js & 73.62 & 45.76 & 90.00 & 78.82 \\
+\quad admin.routes.js & 19.14 & 13.80 & 31.42 & 21.16 \\
+\midrule
+\multicolumn{5}{l}{\textit{src/adapters/}} \\
+\quad db.real.js & 51.32 & 26.57 & 57.50 & 57.91 \\
+\quad kyc.real.js & 44.18 & 25.00 & 100 & 42.85 \\
+\quad auth.mock.js & 10.00 & 0 & 0 & 11.11 \\
+\quad auth.real.js & 6.66 & 0 & 0 & 7.69 \\
+\quad payments.mock.js & 16.66 & 100 & 0 & 16.66 \\
+\quad kyc.mock.js & 25.00 & 0 & 0 & 25.00 \\
+\quad db.mock.js & 1.58 & 0 & 0 & 1.73 \\
+\midrule
+\multicolumn{5}{l}{\textit{src/lib/}} \\
+\quad duoState.js & 33.33 & 0 & 33.33 & 36.36 \\
+\quad firebase.js & 5.26 & 0 & 0 & 5.55 \\
+\quad firebaseIdentity.js & 13.51 & 0 & 11.11 & 14.28 \\
+\midrule
+\multicolumn{5}{l}{\textit{src/\_\_tests\_\_/}} \\
+\quad testUtils.js & 75.70 & 70.33 & 80.00 & 76.94 \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+\textbf{12 test suites passed, 121 tests passed} (2 skipped).
+
+\paragraph{Analysis}
+Route modules that are the primary targets of mock and integration test suites
+show the highest coverage: \texttt{messages.routes.js} (91.66\% lines),
+\texttt{kyc.routes.js} (89.28\%), and \texttt{payments.routes.js} (78.90\%).
+Adapter files such as \texttt{db.mock.js} and \texttt{auth.mock.js} show low
+statement coverage because Jest's instrumentation records them as loaded source
+files, but their methods are exercised indirectly through the route tests
+rather than through direct unit tests. The \texttt{admin.routes.js} file has
+lower coverage because a significant portion of its CRUD logic is tested only
+against the Firebase emulator in integration tests, which run in a separate
+configuration.
+
+\subsubsection{Client-Side Coverage}
+
+\begin{center}
+\small
+\begin{longtable}{@{}p{4.6cm} r r r r@{}}
+\toprule
+\textbf{File / Directory} & \textbf{\% Stmts} & \textbf{\% Branch} & \textbf{\% Funcs} & \textbf{\% Lines} \\
+\midrule
+\endhead
+\textbf{All files} & \textbf{20.58} & \textbf{53.39} & \textbf{28.07} & \textbf{20.58} \\
+\midrule
+\multicolumn{5}{l}{\textit{src/pages/}} \\
+\quad AdminDashboard.jsx & 67.98 & 44.02 & 36.11 & 67.98 \\
+\quad Messenger.jsx & 73.35 & 65.27 & 42.85 & 73.35 \\
+\quad Profile.jsx & 45.08 & 52.52 & 25.00 & 45.08 \\
+\quad Login.jsx & 0 & 0 & 0 & 0 \\
+\quad Signup.jsx & 0 & 0 & 0 & 0 \\
+\quad JobDetail.jsx & 0 & 0 & 0 & 0 \\
+\quad JobList.jsx & 0 & 0 & 0 & 0 \\
+\quad JobBid.jsx & 0 & 0 & 0 & 0 \\
+\quad BidDetail.jsx & 0 & 0 & 0 & 0 \\
+\quad MyBids.jsx & 0 & 0 & 0 & 0 \\
+\quad NewJob.jsx & 0 & 0 & 0 & 0 \\
+\quad Payment.jsx & 0 & 0 & 0 & 0 \\
+\midrule
+\multicolumn{5}{l}{\textit{src/components/}} \\
+\quad Nav.jsx & 78.43 & 41.66 & 100 & 78.43 \\
+\quad MapView.jsx & 0 & 0 & 0 & 0 \\
+\quad AdminRoute.jsx & 0 & 0 & 0 & 0 \\
+\quad NonAdminRoute.jsx & 0 & 0 & 0 & 0 \\
+\quad ProtectedApp.jsx & 0 & 0 & 0 & 0 \\
+\midrule
+\multicolumn{5}{l}{\textit{src/services/}} \\
+\quad config.js & 100 & 100 & 100 & 100 \\
+\quad socket.js & 100 & 100 & 100 & 100 \\
+\quad session.js & 86.11 & 60.86 & 88.23 & 86.11 \\
+\quad api.js & 21.35 & 100 & 0 & 21.35 \\
+\midrule
+\multicolumn{5}{l}{\textit{src/hooks/}} \\
+\quad useSession.js & 62.50 & 60.00 & 75.00 & 62.50 \\
+\midrule
+\multicolumn{5}{l}{\textit{src/util/}} \\
+\quad mapHelpers.js & 100 & 100 & 100 & 100 \\
+\quad locationHelpers.js & 100 & 100 & 100 & 100 \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+\textbf{8 test suites passed, 60 tests passed.}
+
+\paragraph{Analysis}
+Client-side tests focus on the components and services that contain the most
+complex logic. Utility modules (\texttt{mapHelpers}, \texttt{locationHelpers},
+\texttt{socket}, \texttt{config}) achieve 100\% coverage. The service layer
+(\texttt{session.js} at 86\%) and key interactive pages (\texttt{Messenger} at
+73\%, \texttt{AdminDashboard} at 68\%) are well covered. Pages such as
+\texttt{Login}, \texttt{Signup}, \texttt{JobDetail}, and \texttt{Payment} show
+0\% statement coverage because they are primarily tested through end-to-end
+user flows in prototype mode rather than isolated component tests. The overall
+branch coverage of 53.39\% reflects strong coverage of conditional logic in the
+modules that are tested.
+
+\newpage
+
+% =====================================================================
+% 5. USER MANUAL
+% =====================================================================
+\section{User Manual}
+
+\subsection{Introduction}
+
+\textbf{Purpose:}
+OpenBid is a map-first bidding marketplace that connects contractors -- individuals or
+businesses seeking to have work done -- with bidders who offer their services. The
+platform enables job discovery through an interactive map, competitive bidding,
+secure escrow payments, real-time messaging, and post-job reviews.
+
+\textbf{Target Audience:}
+Any individual or business seeking to post work or offer professional services on a
+location-aware platform.
+
+\textbf{Key Features:}
+\begin{itemize}[leftmargin=1.4em]
+  \item Visual job discovery on Google Maps
+  \item Competitive bidding and bid management workflow
+  \item Secure Stripe escrow payments with KYC verification
+  \item Real-time in-app messaging between contractors and bidders
+  \item Two-factor authentication via Duo Security
+  \item User portfolios and post-job review system
+  \item Administrative moderation dashboard
+\end{itemize}
+
+\subsection{Installation and Setup}
+
+\subsubsection{Prerequisites}
+\begin{itemize}[leftmargin=1.4em]
+  \item Node.js v16 or higher
+  \item npm v8 or higher
+  \item Git
+\end{itemize}
+
+\subsubsection{Quick Start -- Prototype Mode (No External Services Required)}
+
+Prototype mode requires no API keys or external accounts. All data is held in memory
+and resets when the server restarts.
+
+\begin{lstlisting}[language=bash]
+# 1. Clone the repository
+git clone <repository-url>
+cd OpenBid-Map-first-Bidding-Markplace
+
+# 2. Install server dependencies
+cd server && npm install
+
+# 3. Install client dependencies
+cd ../client && npm install
+
+# 4. Start the backend (prototype mode is the default)
+cd ../server
+npm run dev
+
+# 5. In a separate terminal, start the frontend
+cd ../client
+npm run dev
+\end{lstlisting}
+
+Open \texttt{http://localhost:5173} in your browser.
+
+\textbf{Default Admin Credentials (Prototype Mode):}
+\begin{itemize}[leftmargin=1.4em]
+  \item Email: \texttt{openbidadmin@gmail.com}
+  \item Password: \texttt{adminiamadmin}
+\end{itemize}
+
+\subsubsection{Production Mode -- Firebase and Stripe}
+
+For full functionality with persistent data, email verification, KYC, and payments,
+create the following environment files before starting the application.
+
+\textbf{server/.env}
+\begin{lstlisting}
+PROTOTYPE=FALSE
+PORT=4000
+FIREBASE_PROJECT_ID=<your_project_id>
+FIREBASE_CLIENT_EMAIL=<your_client_email>
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+FIREBASE_WEB_API_KEY=<your_firebase_web_api_key>
+FIREBASE_STORAGE_BUCKET=<your_storage_bucket>
+STRIPE_SECRET_KEY_FOR_TESTING=sk_test_<your_stripe_secret_key>
+STRIPE_PUBLISHABLE_KEY=pk_test_<your_stripe_publishable_key>
+STRIPE_WEBHOOK_SECRET=whsec_<your_webhook_secret>
+APP_URL=http://localhost:5173
+EMAIL_VERIFICATION_REDIRECT=http://localhost:5173/login
+# Optional: Duo 2FA
+DUO_CLIENT_ID=
+DUO_CLIENT_SECRET=
+DUO_API_HOST=
+DUO_REDIRECT_URI=
+\end{lstlisting}
+
+\textbf{client/.env}
+\begin{lstlisting}
+VITE_PROTOTYPE=FALSE
+VITE_API_BASE=http://localhost:4000
+VITE_GOOGLE_MAPS_API_KEY=<your_google_maps_api_key>
+VITE_STRIPE_PUBLISHABLE_KEY=<your_stripe_publishable_key>
+\end{lstlisting}
+
+\subsubsection{Running Tests}
+\begin{lstlisting}[language=bash]
+cd server && npm test    # Server-side tests
+cd client && npm test    # Client-side tests
+\end{lstlisting}
+
+\subsection{User Interface Guide}
+
+\subsubsection{Navigation Bar}
+The navigation bar appears at the top of every page and provides access to all
+primary sections of the application. The active role (Contractor or Bidder) is
+displayed prominently and can be changed with the role switch toggle. Admin users
+see an additional \textbf{Admin Dashboard} link.
+
+\subsubsection{Map View (Home Page)}
+The home page displays an interactive Google Maps view with pins representing all
+open jobs. Clicking any pin opens a popup with the job title, budget, and a link to
+the full job detail page. The search bar above the map filters visible pins in real
+time by keyword or location.
+
+\subsubsection{Job Detail Page}
+The job detail page shows the full job description, posted date, budget, and all
+bids received. Contractors see their own job's bid list and payment action buttons.
+Bidders see an option to place a bid on jobs they have not yet bid on.
+
+\subsubsection{Messenger Page}
+The Messenger page is divided into a conversation list on the left and an active
+chat pane on the right. Messages are delivered instantly without refreshing. Selecting
+a different conversation switches the chat pane.
+
+\subsubsection{Profile Page}
+A user's profile page displays their avatar, bio, portfolio gallery, and a list of
+reviews received from past jobs. From your own profile, you can edit your bio, upload
+an avatar, and manage portfolio items.
+
+\subsection{Core Features Guide}
+
+\subsubsection{Creating an Account}
+\begin{enumerate}[leftmargin=1.8em]
+  \item Navigate to the application and click \textbf{Sign Up}.
+  \item Enter your full name, email address, and a password of at least six characters.
+  \item In production mode, check your inbox and click the verification link before logging in. In prototype mode, you can log in immediately.
+  \item Choose an initial role: \textbf{Contractor} to post jobs or \textbf{Bidder} to apply for jobs.
+\end{enumerate}
+
+\subsubsection{Logging In and Two-Factor Authentication}
+\begin{enumerate}[leftmargin=1.8em]
+  \item Enter your email and password on the Login page and click \textbf{Log In}.
+  \item If Duo Security 2FA is enabled on the system, you will be redirected to complete a Duo push notification or enter a passcode.
+  \item After successful authentication, you are taken to the main job map.
+\end{enumerate}
+
+\subsubsection{Switching Roles}
+Click the role indicator in the navigation bar and select the role you wish to switch to. The interface updates immediately to reflect the new role's available actions.
+
+\subsubsection{Posting a Job (Contractor)}
+\begin{enumerate}[leftmargin=1.8em]
+  \item Ensure your active role is set to \textbf{Contractor}.
+  \item Click \textbf{Post Job} in the navigation bar.
+  \item Enter a job title, full description, and your budget.
+  \item Click on the map to set the job's location pin.
+  \item Click \textbf{Submit}. The job will appear on the map immediately.
+\end{enumerate}
+
+\subsubsection{Finding and Bidding on Jobs (Bidder)}
+\begin{enumerate}[leftmargin=1.8em]
+  \item Ensure your active role is set to \textbf{Bidder}.
+  \item Browse the map for job pins or use the search bar to filter by keyword or location.
+  \item Click a pin and then \textbf{View Job} to open the job detail page.
+  \item Click \textbf{Place Bid}, enter your proposed amount and a cover message, then click \textbf{Submit Bid}.
+  \item You can monitor all your submitted bids from the \textbf{My Bids} page.
+\end{enumerate}
+
+\subsubsection{Awarding a Bid and Processing Payment (Contractor)}
+\begin{enumerate}[leftmargin=1.8em]
+  \item Open one of your job postings from the map or your jobs list.
+  \item Review the bids received and click \textbf{Award Bid} next to your preferred bidder.
+  \item You will be prompted to fund the escrow. Click \textbf{Fund Escrow} and complete the Stripe payment form.
+  \item Once the job is complete, click \textbf{Release Payment} to transfer funds to the bidder. You may need to complete KYC identity verification before your first release.
+  \item If the job is cancelled, click \textbf{Request Refund} to return the escrowed funds.
+\end{enumerate}
+
+\subsubsection{Messaging}
+\begin{enumerate}[leftmargin=1.8em]
+  \item Click the \textbf{Messages} icon in the navigation bar to open the Messenger page.
+  \item Select an existing conversation from the list, or start a new conversation from a job or bid detail page.
+  \item Type your message in the input field at the bottom and press Enter or click \textbf{Send}.
+  \item Messages are delivered in real time. You do not need to refresh the page.
+  \item To hide a conversation, hover over it in the list and click the hide option. To permanently delete it, use the delete option.
+\end{enumerate}
+
+\subsubsection{Managing Your Profile and Portfolio}
+\begin{enumerate}[leftmargin=1.8em]
+  \item Click your name or avatar in the navigation bar to open your profile.
+  \item Click \textbf{Edit Profile} to update your bio.
+  \item Click the avatar to upload a new profile picture (JPEG or PNG, up to 1\,MB).
+  \item Under the \textbf{Portfolio} section, click \textbf{Add Item} to add a project showcase with an image, title, and description.
+\end{enumerate}
+
+\subsubsection{Leaving a Review}
+\begin{enumerate}[leftmargin=1.8em]
+  \item Navigate to a completed job. Both the contractor and the awarded bidder will see a \textbf{Leave a Review} option.
+  \item Select a star rating from 1 to 5 and write an optional comment.
+  \item Optionally attach a photo to the review.
+  \item Submit. The review appears on the reviewee's public profile and their average rating is updated.
+\end{enumerate}
+
+\subsubsection{Using the Admin Dashboard}
+\begin{enumerate}[leftmargin=1.8em]
+  \item Log in with an admin account and click \textbf{Admin Dashboard} in the navigation bar, or navigate directly to \texttt{/admin}.
+  \item Select the \textbf{Users}, \textbf{Jobs}, or \textbf{Bids} tab to browse the corresponding records.
+  \item Use the search field at the top of each tab to filter records by keyword.
+  \item Click the edit icon on any row to open the editor modal. Make changes and click \textbf{Save}.
+  \item Click the delete icon and confirm the deletion dialog to permanently remove a record.
+\end{enumerate}
+
+\subsection{Troubleshooting and FAQs}
+
+\begin{longtable}{@{}p{5.2cm}p{8.4cm}@{}}
+\toprule
+\textbf{Issue} & \textbf{Solution} \\
+\midrule
+\endhead
+Cannot log in after sign-up & In production mode, check your inbox for the verification email and click the link before attempting to log in. Check your spam folder if it does not arrive within a minute. \\
+\midrule
+Map does not display any pins & Ensure \texttt{VITE\_GOOGLE\_MAPS\_API\_KEY} is set in \texttt{client/.env}. In prototype mode the map renders with limited tiles but pins will still display. \\
+\midrule
+Fund / Release / Refund button not visible & Payment buttons are visible only to the job's contractor. Ensure you are viewing a job you posted and that the job's current payment status matches the expected action (e.g.\ Release is only available after funding). \\
+\midrule
+Messages not delivering in real time & Confirm the server is running and that the WebSocket connection is not blocked by a firewall, proxy, or browser extension. Try refreshing the page to re-establish the socket connection. \\
+\midrule
+Two-factor authentication not appearing & Duo 2FA is optional and only active when the Duo environment variables are configured in \texttt{server/.env}. If they are absent, the login flow skips the second factor. \\
+\midrule
+All data disappears on server restart & This is expected behaviour in prototype mode. Data is held in memory only. Switch to \texttt{PROTOTYPE=FALSE} with a configured Firebase project for persistent storage. \\
+\midrule
+KYC verification stuck on ``pending'' & Stripe Identity verification can take a few minutes to process. Refresh your profile page after completing the identity flow. Ensure the Stripe webhook is correctly configured to point to your server's \texttt{/api/kyc/webhook} endpoint. \\
+\midrule
+Admin dashboard shows ``Unauthorised'' & Only accounts with the \texttt{isAdmin} flag set in Firestore can access \texttt{/admin}. In prototype mode, use the default admin credentials listed in the Quick Start section above. \\
+\midrule
+Portfolio image upload fails & Ensure the image is a JPEG or PNG and does not exceed 1\,MB. Images are automatically resized client-side, but very large or unusual formats may still fail validation. \\
+\midrule
+Review submission returns an error & Ensure the job has been awarded before attempting to leave a review. Each reviewer may submit only one review per job per person -- a second submission will be rejected. \\
+\bottomrule
+\end{longtable}
+
+\end{document}

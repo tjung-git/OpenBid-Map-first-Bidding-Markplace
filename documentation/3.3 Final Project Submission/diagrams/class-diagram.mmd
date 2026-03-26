@@ -1,0 +1,112 @@
+classDiagram
+    direction LR
+
+    class User {
+        +String uid
+        +String email
+        +String firstName
+        +String lastName
+        +String userType
+        +Boolean isAdmin
+        +String emailVerification
+        +String kycStatus
+        +String kycSessionId
+        +String passwordHash
+        +String avatarUrl
+        +Timestamp createdAt
+        +Timestamp updatedAt
+    }
+
+    class Profile {
+        +String uid
+        +String bio
+        +String avatarUrl
+        +String kycStatus
+    }
+
+    class Job {
+        +String id
+        +String posterId
+        +String title
+        +String description
+        +Number budgetAmount
+        +Object location
+        +String status
+        +String awardedBidId
+        +String awardedProviderId
+        +String paymentIntentId
+        +String paymentStatus
+        +String completedAt
+        +Timestamp createdAt
+    }
+
+    class Bid {
+        +String id
+        +String jobId
+        +String providerId
+        +Number amount
+        +String note
+        +String status
+        +String paymentIntentId
+        +String paymentStatus
+        +Timestamp createdAt
+    }
+
+    class Conversation {
+        +String id
+        +String jobId
+        +Array~String~ participants
+        +Object readBy
+        +Array~String~ hiddenBy
+        +Timestamp createdAt
+    }
+
+    class Message {
+        +String id
+        +String conversationId
+        +String senderUid
+        +String content
+        +Timestamp createdAt
+    }
+
+    class Review {
+        +String id
+        +String jobId
+        +String reviewerId
+        +String reviewedId
+        +Number rating
+        +String description
+        +Array~String~ photoUrls
+        +Array~String~ photoThumbUrls
+        +Timestamp createdAt
+    }
+
+    class PortfolioItem {
+        +String id
+        +String userId
+        +String title
+        +String description
+        +Array~String~ photoUrls
+        +Array~String~ photoThumbUrls
+        +Timestamp createdAt
+    }
+
+    User "1" --> "0..*" Job : posts as contractor
+    User "1" --> "0..*" Bid : submits as bidder
+    User "1" --> "1" Profile : has
+    User "1" --> "0..*" Review : writes
+    User "1" --> "0..*" Review : receives
+    User "1" --> "0..*" PortfolioItem : owns
+    User "1" --> "0..*" Conversation : participates in
+    User "1" --> "0..*" Message : sends
+
+    Job "1" --> "0..*" Bid : receives
+    Job "1" --> "0..1" Bid : awards
+    Job "1" --> "0..*" Conversation : scopes
+    Job "1" --> "0..*" Review : generates
+
+    Conversation "1" --> "0..*" Message : contains
+
+    note for User "Roles: bidder | contractor\nAdmin: separate isAdmin flag\nKYC: pending | verified | failed"
+    note for Job "Status: open → awarded →\nin_progress → completed | cancelled\nPayment: pending → held →\ncaptured | refunded"
+    note for Bid "Status: active → accepted | rejected"

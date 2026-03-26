@@ -1,0 +1,110 @@
+graph TB
+    subgraph CLIENT["<b>«Client» React SPA</b> &nbsp;(Vite + React 18)"]
+        direction TB
+        subgraph PAGES["Pages"]
+            MapView["MapView"]
+            JobDetail["JobDetail"]
+            Messenger["Messenger"]
+            Profile["Profile"]
+            Payment["Payment"]
+            AdminDash["AdminDashboard"]
+            MyBids["MyBids"]
+            NewJob["NewJob"]
+            UserReviews["UserReviews"]
+            UserPortfolio["UserPortfolio"]
+        end
+        subgraph COMPONENTS["Components"]
+            Nav["Nav"]
+            ProtectedApp["ProtectedApp"]
+            AdminRoute["AdminRoute"]
+            NonAdminRoute["NonAdminRoute"]
+            SearchAuto["SearchAutocomplete"]
+        end
+        subgraph SERVICES["Services & Hooks"]
+            ApiJS["api.js"]
+            SessionJS["session.js"]
+            SocketJS["socket.js"]
+            UseSession["useSession.js"]
+            ConfigJS["config.js"]
+        end
+    end
+
+    subgraph SERVER["<b>«Server» Express + Socket.io</b>"]
+        direction TB
+        subgraph ROUTES["API Routes (/api)"]
+            AuthR["auth.routes"]
+            JobsR["jobs.routes"]
+            BidsR["bids.routes"]
+            PayR["payments.routes"]
+            KYCR["kyc.routes"]
+            MsgR["messages.routes"]
+            RevR["reviews.routes"]
+            PortR["portfolio.routes"]
+            AdminR["admin.routes"]
+            UploadR["upload.routes"]
+        end
+        subgraph MIDDLEWARE["Middleware"]
+            ReqRole["requireRole()"]
+            ForbRole["forbidRole()"]
+        end
+    end
+
+    subgraph ADAPTERS["<b>Adapter Layer</b> &nbsp;(swapped by PROTOTYPE env flag)"]
+        direction LR
+        subgraph DB_ADAPT["Database"]
+            DBMock["db.mock.js<br/><i>In-memory Maps</i>"]
+            DBReal["db.real.js<br/><i>Firebase Firestore</i>"]
+        end
+        subgraph AUTH_ADAPT["Authentication"]
+            AuthMock["auth.mock.js<br/><i>Header-based UID</i>"]
+            AuthReal["auth.real.js<br/><i>Firebase Admin SDK</i>"]
+        end
+        subgraph PAY_ADAPT["Payments"]
+            PayMock["payments.mock.js<br/><i>Simulated intents</i>"]
+            PayReal["payments.real.js<br/><i>Stripe SDK</i>"]
+        end
+        subgraph KYC_ADAPT["KYC"]
+            KYCMock["kyc.mock.js<br/><i>Simulated sessions</i>"]
+            KYCReal["kyc.real.js<br/><i>Stripe Identity</i>"]
+        end
+    end
+
+    subgraph EXTERNAL["<b>«External Services»</b>"]
+        direction LR
+        Firestore["Firebase<br/>Firestore"]
+        FireAuth["Firebase<br/>Auth"]
+        FireStore["Firebase<br/>Storage"]
+        Stripe["Stripe<br/>Payments"]
+        StripeID["Stripe<br/>Identity"]
+        GMaps["Google<br/>Maps API"]
+        Duo["Duo<br/>Security"]
+    end
+
+    CLIENT -->|"HTTP REST API"| SERVER
+    CLIENT <-->|"WebSocket (Socket.io)"| SERVER
+    ROUTES --> MIDDLEWARE
+    ROUTES -->|"Adapter Interfaces"| ADAPTERS
+    ADAPTERS -->|"Production Mode"| EXTERNAL
+
+    classDef clientStyle fill:#a5d8ff,stroke:#1971c2,stroke-width:2px
+    classDef serverStyle fill:#b2f2bb,stroke:#2f9e44,stroke-width:2px
+    classDef adapterStyle fill:#fff3bf,stroke:#e67700,stroke-width:2px
+    classDef externalStyle fill:#ffc9c9,stroke:#e03131,stroke-width:2px
+    classDef pageStyle fill:#d0ebff,stroke:#1971c2,stroke-width:1px
+    classDef routeStyle fill:#d8f5a2,stroke:#2f9e44,stroke-width:1px
+    classDef mwStyle fill:#ffe8cc,stroke:#e8590c,stroke-width:1px
+    classDef mockStyle fill:#fff3bf,stroke:#e67700,stroke-width:1px
+    classDef realStyle fill:#d0ebff,stroke:#1971c2,stroke-width:1px
+
+    class CLIENT clientStyle
+    class SERVER serverStyle
+    class ADAPTERS adapterStyle
+    class EXTERNAL externalStyle
+    class MapView,JobDetail,Messenger,Profile,Payment,AdminDash,MyBids,NewJob,UserReviews,UserPortfolio pageStyle
+    class Nav,ProtectedApp,AdminRoute,NonAdminRoute,SearchAuto pageStyle
+    class ApiJS,SessionJS,SocketJS,UseSession,ConfigJS pageStyle
+    class AuthR,JobsR,BidsR,PayR,KYCR,MsgR,RevR,PortR,AdminR,UploadR routeStyle
+    class ReqRole,ForbRole mwStyle
+    class DBMock,AuthMock,PayMock,KYCMock mockStyle
+    class DBReal,AuthReal,PayReal,KYCReal realStyle
+    class Firestore,FireAuth,FireStore,Stripe,StripeID,GMaps,Duo externalStyle

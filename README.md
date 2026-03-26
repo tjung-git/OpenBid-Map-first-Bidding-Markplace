@@ -117,6 +117,20 @@ VITE_GOOGLE_MAPS_API_KEY=<google_map_api_key>
 VITE_STRIPE_PUBLISHABLE_KEY=<stripe_publishable_key>
 ```
 
+#### Google Maps API Key Setup
+
+1. Create a google cloud platform account.
+2. Enter the GCP portal and navigate to the Maps API and Services page.
+3. Create a Maps Javascript API Key and assign the following services to it. API services in the Maps catergory may need to be enabled beforehand, including the Maps Javascript API service.
+   - Directions API
+   - Geocoding API
+   - Maps JavaScript API
+   - Maps Static API
+   - Places API
+   - Places API (New)
+4. Restrict usage of the key based on ip/website address for your use case.
+5. Use the API key in the client side env file.
+
 ### Email Verification & KYC
 
 - Firebase sends verification emails automatically during signup
