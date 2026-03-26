@@ -1,0 +1,46 @@
+flowchart TD
+    START(("●")):::startEnd -->|"Contractor creates job<br/>(POST /jobs)"| OPEN
+
+    OPEN["<b>OPEN</b><br/><i>Visible on map, accepting bids</i>"]:::blueState
+    OPEN -->|"Contractor awards a bid<br/>(POST /bids/:jId/:bId/accept)"| AWARDED
+
+    OPEN -.- BIDS["Bidders submit bids<br/>(POST /bids/:jobId)"]:::actionNote
+
+    AWARDED["<b>AWARDED</b><br/><i>Bid accepted, awaiting payment</i>"]:::orangeState
+    AWARDED -.- REJECT["Other bids → rejected"]:::rejectNote
+    AWARDED -->|"Contractor funds escrow<br/>(POST /payments/create-intent)"| PENDING
+
+    PENDING["<b>PAYMENT PENDING</b><br/><i>Card authorized, awaiting confirm</i>"]:::yellowState
+    PENDING -->|"Payment confirmed<br/>(POST /payments/:jobId/confirm)"| INPROG
+
+    INPROG["<b>IN PROGRESS</b><br/><i>Funds held in escrow</i>"]:::blueState
+    INPROG --> DECISION{" "}
+
+    DECISION -->|"Job completed<br/>(POST /payments/:jobId/capture)"| CAPTURE
+    DECISION -->|"Job cancelled<br/>(POST /payments/:jobId/refund)"| REFUND
+
+    CAPTURE["Capture payment<br/><i>⚠ KYC verification required</i>"]:::greenAction
+    REFUND["Refund payment<br/><i>Funds returned to contractor</i>"]:::redAction
+
+    CAPTURE --> COMPLETED
+    REFUND --> CANCELLED
+
+    COMPLETED["<b>COMPLETED</b><br/><i>Funds captured & transferred</i>"]:::greenState
+    CANCELLED["<b>CANCELLED</b><br/><i>Funds refunded</i>"]:::redState
+
+    COMPLETED -->|"Optional: both parties<br/>leave reviews<br/>(POST /reviews)"| REVIEW
+    REVIEW["Leave Reviews<br/><i>1–5 stars + comment</i>"]:::purpleAction
+    REVIEW --> END1(("●")):::startEnd
+    CANCELLED --> END2(("●")):::startEnd
+
+    classDef startEnd fill:#1e1e1e,stroke:#1e1e1e,color:#fff
+    classDef blueState fill:#a5d8ff,stroke:#1971c2,stroke-width:2px,color:#1e1e1e
+    classDef orangeState fill:#ffe8cc,stroke:#e8590c,stroke-width:2px,color:#1e1e1e
+    classDef yellowState fill:#fff3bf,stroke:#e67700,stroke-width:2px,color:#1e1e1e
+    classDef greenState fill:#b2f2bb,stroke:#2f9e44,stroke-width:2px,color:#1e1e1e
+    classDef redState fill:#ffc9c9,stroke:#e03131,stroke-width:2px,color:#1e1e1e
+    classDef greenAction fill:#d8f5a2,stroke:#2f9e44,stroke-width:1px,color:#1e1e1e
+    classDef redAction fill:#ffc9c9,stroke:#e03131,stroke-width:1px,color:#1e1e1e
+    classDef purpleAction fill:#d0bfff,stroke:#6741d9,stroke-width:1px,color:#1e1e1e
+    classDef actionNote fill:#f8f9fa,stroke:#dee2e6,stroke-width:1px,color:#868e96,stroke-dasharray: 5 5
+    classDef rejectNote fill:#fff5f5,stroke:#e03131,stroke-width:1px,color:#e03131,stroke-dasharray: 5 5

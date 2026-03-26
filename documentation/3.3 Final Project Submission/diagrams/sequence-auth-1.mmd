@@ -1,0 +1,45 @@
+sequenceDiagram
+    actor U as User
+    participant UI as React Client
+    participant SRV as Express Server
+    participant FB as Firebase Auth
+
+    rect rgb(248, 249, 250)
+        Note over U, FB: 1. Registration
+        U->>UI: Fills signup form<br/>(name, email, password)
+        UI->>SRV: POST /auth/signup
+        SRV-->>SRV: Validate email format<br/>Hash password (bcrypt)
+        SRV->>FB: createUser(email, password)
+        FB-->>SRV: uid created
+        SRV-->>SRV: db.user.create({uid, email,<br/>firstName, lastName, passwordHash})
+        SRV->>FB: sendEmailVerification()
+        SRV-->>UI: 201 {uid, token}
+        UI-->>U: "Check email to verify"
+    end
+
+    rect rgb(255, 255, 255)
+        Note over U, FB: 2. Email Verification (production only)
+        U->>FB: Clicks verification link in email
+        FB-->>FB: emailVerified = true
+    end
+
+    rect rgb(248, 249, 250)
+        Note over U, FB: 3. Login (without 2FA)
+        U->>UI: Enters email & password
+        UI->>SRV: POST /auth/login
+        SRV-->>SRV: db.user.findByEmail(email)
+        SRV-->>SRV: bcrypt.compare(password, hash)
+        alt Invalid credentials
+            SRV-->>UI: 401 "Invalid email or password"
+            UI-->>U: Show error message
+        else Email not verified
+            SRV-->>UI: 403 "Please verify your email"
+            UI-->>U: Show verification reminder
+        else Valid credentials, no Duo configured
+            SRV->>FB: signInWithEmailAndPassword()
+            FB-->>SRV: Firebase ID token
+            SRV-->>UI: 200 {token, user, role}
+            UI-->>UI: Store token in session<br/>Start 2-min inactivity timer
+            UI-->>U: Redirect to Map View
+        end
+    end
